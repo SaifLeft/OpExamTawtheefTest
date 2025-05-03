@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TawtheefTest.Models
 {
-  public class Question
+  public class QuestionDTO
   {
     public int Id { get; set; }
     public int ExamId { get; set; }

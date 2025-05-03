@@ -11,6 +11,6 @@ namespace TawtheefTest.Models
     public int OrderPosition { get; set; }
 
     // Navigation property
-    public Question Question { get; set; }
+    public QuestionDTO Question { get; set; }
   }
 }

@@ -8,7 +8,7 @@ using TawtheefTest.Data.Structure;
 
 #nullable disable
 
-namespace OpExamTawtheefTest.Migrations
+namespace TawtheefTest.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20250430122549_InitialCreate")]
@@ -19,7 +19,7 @@ namespace OpExamTawtheefTest.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.8");
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Candidate", b =>
+            modelBuilder.Entity("Candidate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -46,7 +46,7 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("Candidates");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.CandidateAnswer", b =>
+            modelBuilder.Entity("CandidateAnswer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -74,7 +74,7 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("CandidateAnswers");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.CandidateExam", b =>
+            modelBuilder.Entity("CandidateExam", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -107,7 +107,7 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("CandidateExams");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Exam", b =>
+            modelBuilder.Entity("Exam", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -146,7 +146,7 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("Exams");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Job", b =>
+            modelBuilder.Entity("Job", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -168,7 +168,7 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("Jobs");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Option", b =>
+            modelBuilder.Entity("Option", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -191,7 +191,7 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("Options");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.OTPVerification", b =>
+            modelBuilder.Entity("OTPVerification", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -216,7 +216,7 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("OTPVerifications");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Question", b =>
+            modelBuilder.Entity("Question", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -244,9 +244,9 @@ namespace OpExamTawtheefTest.Migrations
                     b.ToTable("Questions");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Candidate", b =>
+            modelBuilder.Entity("Candidate", b =>
                 {
-                    b.HasOne("OpExamTawtheefTest.Models.Job", "Job")
+                    b.HasOne("Job", "Job")
                         .WithMany("Candidates")
                         .HasForeignKey("JobId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -255,15 +255,15 @@ namespace OpExamTawtheefTest.Migrations
                     b.Navigation("Job");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.CandidateAnswer", b =>
+            modelBuilder.Entity("CandidateAnswer", b =>
                 {
-                    b.HasOne("OpExamTawtheefTest.Models.CandidateExam", "CandidateExam")
+                    b.HasOne("CandidateExam", "CandidateExam")
                         .WithMany("CandidateAnswers")
                         .HasForeignKey("CandidateExamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("OpExamTawtheefTest.Models.Question", "Question")
+                    b.HasOne("Question", "Question")
                         .WithMany("CandidateAnswers")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -274,15 +274,15 @@ namespace OpExamTawtheefTest.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.CandidateExam", b =>
+            modelBuilder.Entity("CandidateExam", b =>
                 {
-                    b.HasOne("OpExamTawtheefTest.Models.Candidate", "Candidate")
+                    b.HasOne("Candidate", "Candidate")
                         .WithMany("CandidateExams")
                         .HasForeignKey("CandidateId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("OpExamTawtheefTest.Models.Exam", "Exam")
+                    b.HasOne("Exam", "Exam")
                         .WithMany("CandidateExams")
                         .HasForeignKey("ExamId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -293,9 +293,9 @@ namespace OpExamTawtheefTest.Migrations
                     b.Navigation("Exam");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Exam", b =>
+            modelBuilder.Entity("Exam", b =>
                 {
-                    b.HasOne("OpExamTawtheefTest.Models.Job", "Job")
+                    b.HasOne("Job", "Job")
                         .WithMany("Exams")
                         .HasForeignKey("JobId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -304,9 +304,9 @@ namespace OpExamTawtheefTest.Migrations
                     b.Navigation("Job");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Option", b =>
+            modelBuilder.Entity("Option", b =>
                 {
-                    b.HasOne("OpExamTawtheefTest.Models.Question", "Question")
+                    b.HasOne("Question", "Question")
                         .WithMany("Options")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -315,9 +315,9 @@ namespace OpExamTawtheefTest.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Question", b =>
+            modelBuilder.Entity("Question", b =>
                 {
-                    b.HasOne("OpExamTawtheefTest.Models.Exam", "Exam")
+                    b.HasOne("Exam", "Exam")
                         .WithMany("Questions")
                         .HasForeignKey("ExamId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -326,31 +326,31 @@ namespace OpExamTawtheefTest.Migrations
                     b.Navigation("Exam");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Candidate", b =>
+            modelBuilder.Entity("Candidate", b =>
                 {
                     b.Navigation("CandidateExams");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.CandidateExam", b =>
+            modelBuilder.Entity("CandidateExam", b =>
                 {
                     b.Navigation("CandidateAnswers");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Exam", b =>
+            modelBuilder.Entity("Exam", b =>
                 {
                     b.Navigation("CandidateExams");
 
                     b.Navigation("Questions");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Job", b =>
+            modelBuilder.Entity("Job", b =>
                 {
                     b.Navigation("Candidates");
 
                     b.Navigation("Exams");
                 });
 
-            modelBuilder.Entity("OpExamTawtheefTest.Models.Question", b =>
+            modelBuilder.Entity("Question", b =>
                 {
                     b.Navigation("CandidateAnswers");
 

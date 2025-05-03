@@ -1,9 +1,9 @@
-@model IEnumerable<OpExamTawtheefTest.Models.Exam>
+@model IEnumerable<Exam>
 
 @{
     ViewData["Title"] = "الاختبارات المتاحة";
-    var candidate = ViewData["Candidate"] as OpExamTawtheefTest.Models.Candidate;
-    var candidateExams = ViewData["CandidateExams"] as IEnumerable<OpExamTawtheefTest.Models.CandidateExam>;
+    var candidate = ViewData["Candidate"] as Candidate;
+    var candidateExams = ViewData["CandidateExams"] as IEnumerable<CandidateExam>;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">

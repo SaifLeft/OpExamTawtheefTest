@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace OpExamTawtheefTest.Migrations
+namespace TawtheefTest.Migrations
 {
     public partial class InitialCreate : Migration
     {

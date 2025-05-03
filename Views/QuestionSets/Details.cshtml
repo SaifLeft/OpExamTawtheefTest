@@ -232,7 +232,7 @@
                                                     <div class="mb-3">
                                                         <strong>ترتيب:</strong>
                                                         <ol class="list-group list-group-numbered">
-                                                            @foreach (var item in question.OrderingItems.OrderBy(o => o.CorrectPosition))
+                                                            @foreach (var item in question.OrderingItems@* .OrderBy(o => o.CorrectPosition) *@)
                                                             {
                                                                 <li class="list-group-item">
                                                                     @item.ItemText

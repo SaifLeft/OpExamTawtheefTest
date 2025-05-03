@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using TawtheefTest.Models;
+using TawtheefTest.Data.Structure;
 
 namespace TawtheefTest.Services
 {
@@ -18,5 +18,6 @@ namespace TawtheefTest.Services
     Task<List<Question>> GenerateQuestionsFromVideo(string videoId, string questionType, string language, string difficulty, int questionCount, int optionsCount);
     Task<List<Question>> GenerateQuestionsWithOrderingOrMatching(string topic, string questionType, string language, string difficulty, int questionCount, int numberOfRows);
     Task<List<Question>> GenerateQuestionsWithMultiSelect(string topic, string questionType, string language, string difficulty, int questionCount, int optionsCount, int numberOfCorrectOptions);
+    Task<bool> GenerateQuestionsAsync(int questionSetId);
   }
 }

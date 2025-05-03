@@ -3,7 +3,7 @@
 
 @{
     ViewData["Title"] = "أداء الاختبار";
-    var candidateAnswers = ViewData["CandidateAnswers"] as IEnumerable<OpExamTawtheefTest.Models.CandidateAnswer>;
+    var candidateAnswers = ViewData["CandidateAnswers"] as IEnumerable<CandidateAnswer>;
 
     // Create a dictionary for easy lookup of candidate answers
     var answersDictionary = candidateAnswers.ToDictionary(a => a.QuestionId, a => a);
