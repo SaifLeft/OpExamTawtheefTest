@@ -1,0 +1,62 @@
+@{
+  TempData.Keep();
+  string? currentPage = Convert.ToString(ViewContext.RouteData.Values["Page"])!;
+}
+
+<!-- Menu -->
+@* ! Do this simple *@
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+
+  @* ! Hide app brand if navbar-full *@
+  <div
+    class='app-brand demo @((@ViewData["navbarFull"] != null && Convert.ToBoolean(@ViewData["navbarFull"])) ? "d-xl-none" : "")'>
+    <a asp-controller="Home" asp-action="Index" class="app-brand-link">
+      <span class="app-brand-logo demo">
+        @await Html.PartialAsync("~/Views/Shared/_Partials/_Macros.cshtml")
+      </span>
+      <span class="app-brand-text demo menu-text fw-bold ms-2">@(TempData["appName"] ?? "نظام الاختبارات")</span>
+    </a>
+
+    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+      <i class="bx menu-toggle-icon d-none d-xl-block fs-4 align-middle"></i>
+      <i class="bx bx-x d-block d-xl-none bx-sm align-middle"></i>
+    </a>
+  </div>
+
+  @* ! Hide menu divider if navbar-full *@
+  <div
+    class='menu-divider mt-0 @((@ViewData["navbarFull"] != null && Convert.ToBoolean(@ViewData["navbarFull"])) ? "d-xl-none" : "")'>
+  </div>
+
+  <div class="menu-inner-shadow"></div>
+
+  @* ! Starter Kit menu-items *@
+  <ul class="menu-inner py-1">
+    <li class='menu-item@(currentPage == "/Index" ? " active" : "")'>
+      <a asp-controller="Home" asp-action="Index" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-home"></i>
+        <div data-i18n="Home">الرئيسية</div>
+      </a>
+    </li>
+    <li class='menu-item@(currentPage == "/Page2" ? " active" : "")'>
+      <a asp-controller="Jobs" asp-action="Index" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-detail"></i>
+        <div data-i18n="Jobs">الوظائف</div>
+      </a>
+    </li>
+    <li class='menu-item'>
+      <a asp-controller="Candidates" asp-action="Index" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-user"></i>
+        <div data-i18n="Candidates">المرشحون</div>
+      </a>
+    </li>
+    <li class='menu-item'>
+      <a asp-controller="Exams" asp-action="Index" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-file"></i>
+        <div data-i18n="Exams">الاختبارات</div>
+      </a>
+    </li>
+  </ul>
+
+</aside>
+<!-- / Menu -->

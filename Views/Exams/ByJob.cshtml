@@ -1,0 +1,75 @@
+
+@model IEnumerable<ExamListDTO>
+
+@{
+    ViewData["Title"] = "اختبارات الوظيفة";
+}
+
+<div class="container">
+    <h2 class="text-center mb-4">الاختبارات الخاصة بالوظيفة @ViewBag.JobName</h2>
+
+    <div class="row mb-3">
+        <div class="col">
+            <a asp-controller="Jobs" asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> العودة للقائمة
+            </a>
+            <a asp-controller="Exams" asp-action="Create" asp-route-jobId="@ViewBag.JobId" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> إنشاء اختبار جديد
+            </a>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الامتحان</th>
+                        <th>مستوى الصعوبة</th>
+                        <th>وقت الامتحان (دقائق)</th>
+                        <th>عدد الأسئلة</th>
+                        <th>نوع الأسئلة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var exam in Model)
+                    {
+                        <tr>
+                            <td>@exam.Id</td>
+                            <td>@(exam.Name ?? "بدون اسم")</td>
+                            <td>@exam.Difficulty</td>
+                            <td>@exam.Duration</td>
+                            <td>@(exam.QuestionCount)</td>
+                            <td>@exam.QuestionType</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a asp-controller="Exams" asp-action="Details" asp-route-id="@exam.Id"
+                                        class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i> عرض
+                                    </a>
+                                    <a asp-controller="Exams" asp-action="Edit" asp-route-id="@exam.Id"
+                                        class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i> تعديل
+                                    </a>
+                                    <a asp-controller="Exams" asp-action="Delete" asp-route-id="@exam.Id"
+                                        class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> حذف
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            لا توجد اختبارات مرتبطة بهذه الوظيفة.
+        </div>
+    }
+</div>

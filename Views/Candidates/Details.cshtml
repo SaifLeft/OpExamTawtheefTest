@@ -1,0 +1,61 @@
+@using OpExamTawtheefTest.DTOs.ExamModels
+@using TawtheefTest.DTOs.ExamModels
+@model CandidateDTO
+
+@{
+    ViewData["Title"] = "تفاصيل المرشح - Candidate Details";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>تفاصيل المرشح</h1>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary me-2">
+                <i class="bi bi-pencil-square"></i> تعديل
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> العودة للقائمة
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">معلومات المرشح</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">الاسم</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.Name)</dd>
+
+                        <dt class="col-sm-4">رقم الهاتف</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.PhoneNumber)</dd>
+
+                        <dt class="col-sm-4">الوظيفة</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.JobName)</dd>
+
+                        <dt class="col-sm-4">تاريخ التسجيل</dt>
+                        <dd class="col-sm-8">@Model.RegisteredDate.ToString("yyyy-MM-dd")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">الاختبارات</h5>
+                </div>
+                <div class="card-body">
+                    <p>عرض الاختبارات المتعلقة بهذا المرشح.</p>
+                    <a asp-controller="CandidateExams" asp-action="ByCandidateId" asp-route-id="@Model.Id"
+                        class="btn btn-info">
+                        <i class="bi bi-eye"></i> عرض الاختبارات
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

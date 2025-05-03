@@ -1,0 +1,46 @@
+@{
+    ViewData["Title"] = "التحقق من الرمز";
+    var phoneNumber = ViewData["PhoneNumber"] as string;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white text-center">
+                <h5 class="mb-0">التحقق من رمز OTP</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-shield-lock" style="font-size: 3rem;"></i>
+                </div>
+
+                <div class="alert alert-info">
+                    <p class="mb-0">تم إرسال رمز التحقق إلى رقم الهاتف <strong>@phoneNumber</strong></p>
+                    <p class="small mb-0 mt-1">ملاحظة: في هذه النسخة التجريبية، الرمز هو:
+                        <strong>@TempData["OTPCode"]</strong></p>
+                </div>
+
+                <form asp-action="VerifyOTP" method="post">
+                    <input type="hidden" name="phoneNumber" value="@phoneNumber">
+
+                    <div class="mb-3">
+                        <label for="otpCode" class="form-label">رمز التحقق</label>
+                        <input type="text" class="form-control text-center" id="otpCode" name="otpCode" maxlength="6"
+                            required>
+                        <small class="form-text text-muted">أدخل رمز التحقق المكون من 6 أرقام الذي تم إرساله إلى
+                            هاتفك</small>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> تحقق وتسجيل الدخول
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <a asp-action="Login" class="btn btn-link">العودة لصفحة تسجيل الدخول</a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,106 @@
+@using OpExamTawtheefTest.DTOs
+@model IEnumerable<ExamResultDto>
+@{
+    ViewData["title"] = "نتائج الاختبار";
+}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+        <span class="text-muted fw-light">الاختبارات / @ViewBag.ExamName /</span> نتائج الاختبار
+    </h4>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">نتائج المتقدمين</h5>
+            <div>
+                <a href="@Url.Action("Details", "Exams", new { id = ViewBag.ExamId })" class="btn btn-outline-secondary">
+                    <i class="bx bx-arrow-back me-1"></i>
+                    العودة إلى الاختبار
+                </a>
+                @if (Model.Any())
+                {
+                    <a href="@Url.Action("ExportResults", "Exams", new { id = ViewBag.ExamId })" class="btn btn-outline-primary ms-2">
+                        <i class="bx bx-export me-1"></i>
+                        تصدير النتائج
+                    </a>
+                }
+            </div>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info text-center">
+                    <i class="bx bx-info-circle fs-1 mb-2"></i>
+                    <p>لا توجد نتائج بعد. لم يتقدم أحد للاختبار أو لم يكمل أحد الاختبار بعد.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>المتقدم</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>تاريخ البدء</th>
+                                <th>تاريخ الإنتهاء</th>
+                                <th>المدة المستغرقة</th>
+                                <th>النتيجة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var result in Model)
+                            {
+                                <tr>
+                                    <td>@result.ApplicantName</td>
+                                    <td>@result.ApplicantEmail</td>
+                                    <td>@result.StartTime?.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                                    <td>@result.EndTime?.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                                    <td>
+                                        @if (result.StartTime.HasValue && result.EndTime.HasValue)
+                                        {
+                                            var duration = result.EndTime.Value - result.StartTime.Value;
+                                            @($"{duration.Hours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}")
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (result.Score.HasValue)
+                                        {
+                                            var scoreClass = result.Score >= 70 ? "success" : (result.Score >= 50 ? "warning" : "danger");
+                                            <span class="badge bg-label-@scoreClass">@result.Score%</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-label-secondary">لم يكتمل</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                                <i class="bx bx-dots-vertical-rounded"></i>
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" href="@Url.Action("ResultDetails", "Exams", new { id = result.Id })">
+                                                    <i class="bx bx-show-alt me-1"></i> عرض التفاصيل
+                                                </a>
+                                                <a class="dropdown-item" href="@Url.Action("SendResultEmail", "Exams", new { id = result.Id })">
+                                                    <i class="bx bx-envelope me-1"></i> إرسال النتيجة بالبريد
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div> 

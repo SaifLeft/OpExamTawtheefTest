@@ -1,0 +1,98 @@
+@model CandidateExam
+
+@{
+    ViewData["Title"] = "نتائج الاختبار";
+    var candidateAnswers = ViewData["CandidateAnswers"] as IEnumerable<CandidateAnswer>;
+
+    var totalQuestions = candidateAnswers.Count();
+    var correctAnswers = candidateAnswers.Count(a => a.IsCorrect);
+    var score = totalQuestions > 0 ? ((double)correctAnswers / totalQuestions) * 100 : 0;
+    var passed = score >= 60;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>نتائج الاختبار</h1>
+    <a asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-arrow-return-left"></i> العودة إلى الاختبارات
+    </a>
+</div>
+
+@if (!Model.Exam.ShowResultsImmediately)
+{
+    <div class="alert alert-info">
+        <h4 class="mb-0">لم يتم إعلان النتائج بعد</h4>
+        <p>سيتم إعلان النتائج في وقت لاحق وفقًا لتوجيهات المشرف.</p>
+    </div>
+}
+else
+{
+    <div class="row mb-4">
+        <div class="col-md-6 mx-auto">
+            <div class="card">
+                <div class="card-header text-center bg-@(passed ? "success" : "danger") text-white">
+                    <h5 class="mb-0">@(passed ? "تهانينا! لقد اجتزت الاختبار" : "للأسف، لم تجتز الاختبار")</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3">@Math.Round(score, 1)%</div>
+
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h5>الإجابات الصحيحة</h5>
+                            <div class="display-6 text-success">@correctAnswers</div>
+                        </div>
+                        <div class="col-6">
+                            <h5>إجمالي الأسئلة</h5>
+                            <div class="display-6">@totalQuestions</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <p class="mb-0">تاريخ البدء: @Model.StartTime?.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                        <p class="mb-0">تاريخ الانتهاء: @Model.EndTime?.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                        @if (Model.StartTime.HasValue && Model.EndTime.HasValue)
+                        {
+                            var duration = Model.EndTime.Value - Model.StartTime.Value;
+                            <p>المدة: @duration.Hours ساعة و @duration.Minutes دقيقة و @duration.Seconds ثانية</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>تفاصيل الإجابات</h3>
+
+    @foreach (var answer in candidateAnswers)
+    {
+        var questionIndex = candidateAnswers.ToList().IndexOf(answer) + 1;
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>سؤال @questionIndex</span>
+                <span class="badge bg-@(answer.IsCorrect ? "success" : "danger")">
+                    @(answer.IsCorrect ? "صحيح" : "خطأ")
+                </span>
+            </div>
+            <div class="card-body">
+                <p><strong>السؤال:</strong> @answer.Question.QuestionText</p>
+
+                @if (answer.Question.QuestionType.ToUpper() == "MCQ")
+                {
+                    <p><strong>إجابتك:</strong> @(answer.Question.Options.FirstOrDefault(o => o.Id.ToString() ==
+                                answer.Answer)?.OptionText ?? "لم تتم الإجابة")</p>
+                    <p><strong>الإجابة الصحيحة:</strong> @answer.Question.Options.FirstOrDefault(o => o.IsCorrect)?.OptionText</p>
+                }
+                else if (answer.Question.QuestionType.ToUpper() == "TF")
+                {
+                    <p><strong>إجابتك:</strong> @(answer.Answer == "true" ? "صحيح" : "خطأ")</p>
+                    <p><strong>الإجابة الصحيحة:</strong> @(answer.Question.Options.FirstOrDefault(o => o.IsCorrect)?.OptionText ==
+                                "True" ? "صحيح" : "خطأ")</p>
+                }
+                else
+                {
+                    <p><strong>إجابتك:</strong> @answer.Answer</p>
+                    <p><strong>الإجابة الصحيحة:</strong> @answer.Question.CorrectAnswer</p>
+                }
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,39 @@
+@{
+  TempData.Keep();
+  string? currentPage = Convert.ToString(ViewContext.RouteData.Values["Page"])!;
+  ViewData["containerNav"] ??= "container-fluid";
+}
+
+<!-- Menu -->
+<aside id="layout-menu" class="layout-menu-horizontal menu-horizontal  menu bg-menu-theme flex-grow-0">
+  <div class='@ViewData["containerNav"] d-flex h-100'>
+    @* ! Starter Kit menu-items *@
+    <ul class="menu-inner">
+      <li class='menu-item@(currentPage == "/Index" ? " active" : "")'>
+        <a asp-controller="Home" asp-action="Index" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-home"></i>
+          <div data-i18n="Home">الرئيسية</div>
+        </a>
+      </li>
+      <li class='menu-item@(currentPage == "/Jobs" ? " active" : "")'>
+        <a asp-controller="Jobs" asp-action="Index" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-detail"></i>
+          <div data-i18n="Jobs">الوظائف</div>
+        </a>
+      </li>
+      <li class='menu-item@(currentPage == "/Candidates" ? " active" : "")'>
+        <a asp-controller="Candidates" asp-action="Index" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-user"></i>
+          <div data-i18n="Candidates">المرشحون</div>
+        </a>
+      </li>
+      <li class='menu-item@(currentPage == "/Exams" ? " active" : "")'>
+        <a asp-controller="Exams" asp-action="Index" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-file"></i>
+          <div data-i18n="Exams">الاختبارات</div>
+        </a>
+      </li>
+    </ul>
+  </div>
+</aside>
+<!-- / Menu -->

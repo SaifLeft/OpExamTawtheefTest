@@ -1,0 +1,67 @@
+@{
+    ViewData["Title"] = "الصفحة الرئيسية";
+}
+
+<div class="text-center">
+    <h1 class="display-4">مرحباً بك في نظام توليد الأسئلة</h1>
+    <p>تطبيق تجريبي لتوليد الأسئلة باستخدام الذكاء الاصطناعي</p>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">الوظائف</h5>
+                <p class="card-text display-4">@ViewData["JobsCount"]</p>
+                <a asp-controller="Jobs" asp-action="Index" class="btn btn-primary">عرض الوظائف</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">المرشحون</h5>
+                <p class="card-text display-4">@ViewData["CandidatesCount"]</p>
+                <a asp-controller="Candidates" asp-action="Index" class="btn btn-primary">عرض المرشحين</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">الاختبارات</h5>
+                <p class="card-text display-4">@ViewData["ExamsCount"]</p>
+                <a asp-controller="Exams" asp-action="Index" class="btn btn-primary">عرض الاختبارات</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">للإدارة</h5>
+                <p class="card-text">إدارة الوظائف والمرشحين وإنشاء الاختبارات</p>
+                <div class="d-grid gap-2">
+                    <a asp-controller="Jobs" asp-action="Create" class="btn btn-outline-primary">إضافة وظيفة جديدة</a>
+                    <a asp-controller="Candidates" asp-action="Create" class="btn btn-outline-primary">إضافة مرشح
+                        جديد</a>
+                    <a asp-controller="Exams" asp-action="Create" class="btn btn-outline-primary">إنشاء اختبار جديد</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">للمرشحين</h5>
+                <p class="card-text">تسجيل الدخول وأداء الاختبارات</p>
+                <div class="d-grid gap-2">
+                    <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-success">تسجيل الدخول
+                        للمرشحين</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

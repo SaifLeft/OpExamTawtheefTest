@@ -1,0 +1,137 @@
+@model IEnumerable<TawtheefTest.DTOs.ExamDto>
+
+@{
+    ViewData["title"] = "الاختبارات";
+}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold py-3 mb-0">الاختبارات</h4>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="bx bx-plus me-1"></i>
+            إنشاء اختبار جديد
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <img src="~/assets/img/illustrations/empty-state.svg" alt="لا توجد اختبارات" class="img-fluid"
+                            style="max-width: 300px;">
+                    </div>
+                    <h5>لا توجد اختبارات</h5>
+                    <p class="text-muted">قم بإنشاء اختبار جديد للبدء.</p>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="bx bx-plus me-1"></i>
+                        إنشاء اختبار جديد
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive text-nowrap">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>الاختبار</th>
+                                <th>المهنة</th>
+                                <th>الحالة</th>
+                                <th>المدة</th>
+                                <th>تاريخ البداية</th>
+                                <th>تاريخ النهاية</th>
+                                <th>المتقدمين</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-border-bottom-0">
+                            @foreach (var exam in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <strong>@exam.Name</strong>
+                                            @if (!string.IsNullOrEmpty(exam.Description))
+                                            {
+                                                <small class="text-truncate" style="max-width: 250px;">
+                                                    @exam.Description
+                                                </small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>@exam.JobName</td>
+                                    <td>
+                                        @{
+                                            string statusClass = "secondary";
+                                            string statusText = "غير معروف";
+
+                                            if (DateTime.Now < exam.StartDate)
+                                            {
+                                                statusClass = "info";
+                                                statusText = "قادم";
+                                            }
+                                            else if (DateTime.Now > exam.EndDate)
+                                            {
+                                                statusClass = "dark";
+                                                statusText = "منتهي";
+                                            }
+                                            else
+                                            {
+                                                statusClass = "success";
+                                                statusText = "نشط";
+                                            }
+                                        }
+                                        <span class="badge bg-label-@statusClass">@statusText</span>
+                                    </td>
+                                    <td>@exam.Duration دقيقة</td>
+                                    <td>@exam.StartDate.ToString("yyyy/MM/dd")</td>
+                                    <td>@exam.EndDate.ToString("yyyy/MM/dd")</td>
+                                    <td>
+                                        <span class="badge bg-label-primary rounded-pill">@(exam.ApplicantsCount ?? 0)</span>
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow"
+                                                data-bs-toggle="dropdown">
+                                                <i class="bx bx-dots-vertical-rounded"></i>
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" href="@Url.Action("Details", new { id = exam.Id })">
+                                                    <i class="bx bx-show-alt me-1"></i> عرض
+                                                </a>
+                                                <a class="dropdown-item"
+                                                    href="@Url.Action("QuestionSets", new { id = exam.Id })">
+                                                    <i class="bx bx-list-check me-1"></i> مجموعات الأسئلة
+                                                </a>
+                                                <a class="dropdown-item" href="@Url.Action("Edit", new { id = exam.Id })">
+                                                    <i class="bx bx-edit-alt me-1"></i> تعديل
+                                                </a>
+                                                <a class="dropdown-item" href="@Url.Action("Results", new { id = exam.Id })">
+                                                    <i class="bx bx-bar-chart-alt-2 me-1"></i> النتائج
+                                                </a>
+                                                <a class="dropdown-item" href="@Url.Action("Clone", new { id = exam.Id })">
+                                                    <i class="bx bx-duplicate me-1"></i> نسخ
+                                                </a>
+                                                <a class="dropdown-item" href="@Url.Action("Preview", new { id = exam.Id })"
+                                                    target="_blank">
+                                                    <i class="bx bx-window-open me-1"></i> معاينة
+                                                </a>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item text-danger"
+                                                    href="@Url.Action("Delete", new { id = exam.Id })">
+                                                    <i class="bx bx-trash me-1"></i> حذف
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

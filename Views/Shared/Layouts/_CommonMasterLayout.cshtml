@@ -1,0 +1,57 @@
+@await Html.PartialAsync("~/Views/Shared/Layouts/Sections/_Variables.cshtml")
+@inject IHttpContextAccessor httpContextAccessor
+
+<!DOCTYPE html>
+<html lang="ar"
+  class='light-style @ViewData["navbarFixed"] @ViewData["menuFixed"] @ViewData["menuCollapsed"] @ViewData["footerFixed"] @ViewData["customizerHidden"]'
+  dir="rtl" data-theme="theme-default" data-assets-path='@(httpContextAccessor.HttpContext.Request.PathBase + "/")'
+  data-template='@(TempData.ContainsKey("menuHorizontal") && Convert.ToBoolean(TempData["menuHorizontal"]) ? "horizontal-menu-template" : "vertical-menu-template")'>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+
+  <title>@(ViewData["title"] ?? "") | @(TempData["appName"] ?? "نظام الاختبارات") - نظام توليد الأسئلة</title>
+  <meta name="description" content="تطبيق تجريبي لتوليد الأسئلة باستخدام الذكاء الاصطناعي" />
+
+  <!-- Canonical SEO -->
+  <link rel="canonical" href='@(TempData["productPage"] ?? "https://example.com")'>
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="~/img/favicon/favicon.ico" />
+
+  <!-- Core Styles -->
+  @await Html.PartialAsync("~/Views/Shared/Layouts/Sections/_Styles.cshtml")
+
+  <!-- Vendor Styles -->
+  @RenderSection("VendorStyles", required: false)
+
+  <!-- Page Styles -->
+  @RenderSection("PageStyles", required: false)
+
+  <!-- Include Scripts for customizer, helper, analytics, config -->
+  @await Html.PartialAsync("~/Views/Shared/Layouts/Sections/_ScriptsIncludes.cshtml")
+</head>
+
+<body>
+  <!-- Layout Content -->
+  @RenderBody()
+  <!--/ Layout Content -->
+
+  <!-- Core Scripts -->
+  @await Html.PartialAsync("~/Views/Shared/Layouts/Sections/_Scripts.cshtml")
+
+  <!-- Vendor Scripts -->
+  @RenderSection("VendorScripts", required: false)
+
+  <script src="~/js/main.dist.js"></script>
+
+  <!-- Page Scripts-->
+  @RenderSection("PageScripts", required: false)
+
+  <!-- Scripts Section -->
+  @RenderSection("Scripts", required: false)
+
+</body>
+
+</html>

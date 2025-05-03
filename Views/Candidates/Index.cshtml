@@ -1,0 +1,68 @@
+@model OpExamTawtheefTest.ViewModels.CandidateListViewModel
+
+@{
+    ViewData["Title"] = "المرشحون - Candidates";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>المرشحون</h1>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> إضافة مرشح جديد
+        </a>
+    </div>
+
+    @if (Model.Candidates != null && Model.Candidates.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>الاسم</th>
+                        <th>رقم الهاتف</th>
+                        <th>الوظيفة</th>
+                        <th>تاريخ التسجيل</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Candidates)
+                    {
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>@item.PhoneNumber</td>
+                            <td>
+                                <a asp-action="ByJob" asp-route-id="@item.JobId">@item.JobName</a>
+                            </td>
+                            <td>@item.RegisteredDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i> عرض
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-pencil-square"></i> تعديل
+                                    </a>
+                                    <a asp-controller="CandidateExams" asp-action="ByCandidateId" asp-route-id="@item.Id"
+                                        class="btn btn-sm btn-success">
+                                        <i class="bi bi-file-earmark-text"></i> الاختبارات
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> حذف
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <h4>لا يوجد مرشحين - No Candidates</h4>
+            <p>لم يتم إضافة أي مرشحين بعد. - No candidates have been added yet.</p>
+        </div>
+    }
+</div>
