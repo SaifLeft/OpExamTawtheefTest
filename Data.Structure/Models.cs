@@ -96,13 +96,8 @@ namespace TawtheefTest.Data.Structure
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    [Required]
-    [EmailAddress]
-    [StringLength(100)]
-    public string Email { get; set; } = string.Empty;
-
     [StringLength(20)]
-    public string Phone { get; set; } = string.Empty;
+    public int PhoneNumber { get; set; }
 
     [Required]
     public int JobId { get; set; }

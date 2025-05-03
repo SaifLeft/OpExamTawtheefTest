@@ -120,6 +120,7 @@ namespace TawtheefTest.Data.Structure
           .WithOne(oi => oi.Question)
           .HasForeignKey(oi => oi.QuestionId)
           .OnDelete(DeleteBehavior.Cascade);
+
     }
   }
 }
