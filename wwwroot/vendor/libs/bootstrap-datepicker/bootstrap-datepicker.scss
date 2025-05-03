@@ -180,6 +180,9 @@ $white: #fff;
 
   &.range {
     border-radius: 0 !important;
+    &.today {
+      box-shadow: none !important;
+    }
   }
 
   &.range-start:not(.range-end) {

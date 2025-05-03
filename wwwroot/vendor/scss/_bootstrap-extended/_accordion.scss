@@ -8,6 +8,52 @@
   }
 }
 
+// arrow left
+
+.accordion-arrow-left {
+  .accordion-button.collapsed:focus {
+    box-shadow: none;
+  }
+
+  .accordion-item {
+    border: 0;
+  }
+  .accordion-button {
+    padding: var(--#{$prefix}accordion-btn-padding-y) 0;
+    // Accordion icon
+    &::after {
+      content: '';
+      display: none;
+    }
+    &:not(.collapsed) {
+      color: var(--#{$prefix}accordion-active-color);
+      background-color: var(--#{$prefix}accordion-active-bg);
+      box-shadow: none; // stylelint-disable-line function-disallowed-list
+
+      &::before {
+        background-image: var(--#{$prefix}accordion-btn-active-icon);
+        transform: var(--#{$prefix}accordion-btn-icon-transform);
+      }
+      &::after {
+        background-image: none;
+        transform: none;
+      }
+    }
+    &::before {
+      flex-shrink: 0;
+      width: var(--#{$prefix}accordion-btn-icon-width);
+      height: var(--#{$prefix}accordion-btn-icon-width);
+      margin-left: 0;
+      margin-right: 1.1rem;
+      content: '';
+      background-image: var(--#{$prefix}accordion-btn-icon);
+      background-repeat: no-repeat;
+      background-size: var(--#{$prefix}accordion-btn-icon-width);
+      @include transition(var(--#{$prefix}accordion-btn-icon-transition));
+    }
+  }
+}
+
 .accordion-header + .accordion-collapse .accordion-body {
   padding-top: 0;
 }
@@ -66,6 +112,14 @@
 // *******************************************************************************
 
 @include rtl-only {
+  .accordion-arrow-left {
+    .accordion-button {
+      &::before {
+        margin-left: 1.1rem;
+        margin-right: 0;
+      }
+    }
+  }
   .accordion-button {
     text-align: right;
     &::after {

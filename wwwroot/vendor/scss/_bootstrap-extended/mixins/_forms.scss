@@ -5,7 +5,7 @@
 @mixin template-form-control-theme($color) {
   .form-control:focus,
   .form-select:focus {
-    border-color: $color;
+    border-color: $color !important;
   }
 
   // Using :focus-within to apply focus border color to default and merged input-group
@@ -13,7 +13,7 @@
     &:focus-within {
       .form-control,
       .input-group-text {
-        border-color: $color;
+        border-color: $color !important;
       }
     }
   }
@@ -123,7 +123,8 @@
   $icon: null,
   $tooltip-color: null,
   $tooltip-bg-color: null,
-  $focus-box-shadow: null
+  $focus-box-shadow: null,
+  $border-color: null
 ) {
 }
 
@@ -133,7 +134,8 @@
   $icon,
   $tooltip-color: color-contrast($color),
   $tooltip-bg-color: rgba($color, $form-feedback-tooltip-opacity),
-  $focus-box-shadow: 0 0 $input-btn-focus-blur $input-focus-width rgba($color, $input-btn-focus-color-opacity)
+  $focus-box-shadow: 0 0 $input-btn-focus-blur $input-focus-width rgba($color, $input-btn-focus-color-opacity),
+  $border-color: $color
 ) {
   .#{$state}-feedback {
     display: none;
@@ -168,7 +170,7 @@
 
   .form-control {
     @include form-validation-state-selector($state) {
-      border-color: $color;
+      border-color: $color !important;
 
       .dark-style & {
         border-color: $color !important;
@@ -190,7 +192,7 @@
       }
 
       &:focus {
-        border-color: $color;
+        border-color: $color !important;
         box-shadow: $focus-box-shadow;
       }
     }
@@ -214,7 +216,7 @@
 
   .form-select {
     @include form-validation-state-selector($state) {
-      border-color: $color;
+      border-color: $color !important;
       @if $enable-validation-icons {
         background-size: $form-select-bg-size, $form-select-feedback-icon-size;
         @include ltr-style {
@@ -270,10 +272,10 @@
     .form-control {
       @include form-validation-state-selector($state) {
         ~ .input-group-text {
-          border-color: $color;
+          border-color: $color !important;
         }
         &:focus {
-          border-color: $color;
+          border-color: $color !important;
           box-shadow: none;
           // ? .input-group has .input-group-text last/sibling
           ~ .input-group-text {

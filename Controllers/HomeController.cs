@@ -7,6 +7,7 @@ using TawtheefTest.ViewModels;
 using TawtheefTest.DTOs.ExamModels;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace TawtheefTest.Controllers
 {
@@ -23,27 +24,72 @@ namespace TawtheefTest.Controllers
 
     public async Task<IActionResult> Index()
     {
-      // Get counts for dashboard
+      // الحصول على إحصائيات للوحة المعلومات
       ViewData["JobsCount"] = await _context.Jobs.CountAsync();
       ViewData["CandidatesCount"] = await _context.Candidates.CountAsync();
       ViewData["ExamsCount"] = await _context.Exams.CountAsync();
+      ViewData["QuestionSetsCount"] = await _context.QuestionSets.CountAsync();
+      ViewData["CompletedExamsCount"] = await _context.CandidateExams.Where(ce => ce.Status == "Completed").CountAsync();
 
-      // Example of using the layer separation
-
-      // 1. Get data from database (Data.Structure models)
+      // الحصول على آخر 5 اختبارات
       var recentExams = await _context.Exams
           .Include(e => e.Job)
           .OrderByDescending(e => e.CreatedAt)
           .Take(5)
           .ToListAsync();
 
-      // 2. Map to DTOs (for service layer operations if needed)
+      // تحويل البيانات إلى DTOs
       var examDTOs = _mapper.Map<List<ExamDTO>>(recentExams);
 
-      // 3. Map to ViewModels (for the view)
-      var examViewModels = _mapper.Map<List<ExamViewModel>>(examDTOs);
+      // تحويل DTOs إلى ViewModels للعرض
+      var examViewModels = examDTOs.Select(dto => new ExamViewModel
+      {
+        Exam = dto
+      }).ToList();
 
       return View(examViewModels);
+    }
+
+    public async Task<IActionResult> Dashboard()
+    {
+      // الحصول على إحصائيات مفصلة
+      var dashboardModel = new DashboardViewModel
+      {
+        JobsCount = await _context.Jobs.CountAsync(),
+        CandidatesCount = await _context.Candidates.CountAsync(),
+        ExamsCount = await _context.Exams.CountAsync(),
+        QuestionSetsCount = await _context.QuestionSets.CountAsync(),
+        CompletedExamsCount = await _context.CandidateExams.Where(ce => ce.Status == "Completed").CountAsync(),
+
+        // أحدث الوظائف
+        RecentJobs = await _context.Jobs
+              .OrderByDescending(j => j.CreatedAt)
+              .Take(5)
+              .Select(j => new JobViewModel
+              {
+                Id = j.Id,
+                Name = j.Title,
+                CreatedDate = j.CreatedAt
+              })
+              .ToListAsync(),
+
+        // أحدث المرشحين
+        RecentCandidates = await _context.Candidates
+              .OrderByDescending(c => c.CreatedAt)
+              .Take(5)
+              .Select(c => new CandidateViewModel
+              {
+                Candidate = new CandidateDTO
+                {
+                  Id = c.Id,
+                  Name = c.Name,
+                  JobId = c.JobId
+                }
+              })
+              .ToListAsync()
+      };
+
+      return View(dashboardModel);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

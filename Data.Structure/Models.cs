@@ -44,9 +44,6 @@ namespace TawtheefTest.Data.Structure
     [StringLength(8)]
     public int Phone { get; set; }
 
-    [StringLength(100)]
-    public string? Email { get; set; }
-
     [Required]
     public int JobId { get; set; }
 

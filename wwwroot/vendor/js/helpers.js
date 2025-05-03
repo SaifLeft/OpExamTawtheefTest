@@ -158,12 +158,14 @@ const Helpers = {
   // ---
   // Add classes
   _addClass(cls, el = this.ROOT_EL) {
-    if (el.length !== undefined) {
+    if (el && el.length !== undefined) {
       // Add classes to multiple elements
       el.forEach(e => {
-        cls.split(' ').forEach(c => e.classList.add(c))
+        if (e) {
+          cls.split(' ').forEach(c => e.classList.add(c))
+        }
       })
-    } else {
+    } else if (el) {
       // Add classes to single element
       cls.split(' ').forEach(c => el.classList.add(c))
     }
@@ -172,12 +174,14 @@ const Helpers = {
   // ---
   // Remove classes
   _removeClass(cls, el = this.ROOT_EL) {
-    if (el.length !== undefined) {
+    if (el && el.length !== undefined) {
       // Remove classes to multiple elements
       el.forEach(e => {
-        cls.split(' ').forEach(c => e.classList.remove(c))
+        if (e) {
+          cls.split(' ').forEach(c => e.classList.remove(c))
+        }
       })
-    } else {
+    } else if (el) {
       // Remove classes to single element
       cls.split(' ').forEach(c => el.classList.remove(c))
     }
@@ -693,13 +697,78 @@ const Helpers = {
     this.update()
   },
 
+  setNavbar(type) {
+    if (type === 'sticky') {
+      this._addClass('layout-navbar-fixed')
+      this._removeClass('layout-navbar-hidden')
+    } else if (type === 'hidden') {
+      this._addClass('layout-navbar-hidden')
+      this._removeClass('layout-navbar-fixed')
+    } else {
+      this._removeClass('layout-navbar-hidden')
+      this._removeClass('layout-navbar-fixed')
+    }
+    this.update()
+  },
+
   setFooterFixed(fixed = requiredParam('fixed')) {
     this[fixed ? '_addClass' : '_removeClass']('layout-footer-fixed')
     this.update()
   },
 
-  setFlipped(reversed = requiredParam('reversed')) {
-    this[reversed ? '_addClass' : '_removeClass']('layout-menu-flipped')
+  setContentLayout(contentLayout = requiredParam('contentLayout')) {
+    setTimeout(() => {
+      const contentArea = document.querySelector('.content-wrapper > div') // For content area
+      const navbarArea = document.querySelector('.layout-navbar > div') // For navbar area
+      const navbarSearchInputWrapper = document.querySelector('.layout-navbar .search-input-wrapper') // For navbar search input wrapper
+      const navbarSearchInput = document.querySelector('.layout-navbar .search-input-wrapper .search-input') // For navbar search input
+      const footerArea = document.querySelector('.content-footer > div') // For footer area
+      const containerFluid = [].slice.call(document.querySelectorAll('.container-fluid')) // To get container-fluid
+      const containerXxl = [].slice.call(document.querySelectorAll('.container-xxl')) // To get container-xxl
+      let horizontalMenu = false // For horizontal menu
+      let horizontalMenuArea // For horizontal menu area
+      // Condition to check if layout is horizontal menu
+      if (document.querySelector('.content-wrapper > .menu-horizontal > div')) {
+        horizontalMenu = true
+        horizontalMenuArea = document.querySelector('.content-wrapper > .menu-horizontal > div')
+      }
+      //  If compact mode layout
+      if (contentLayout === 'compact') {
+        // Remove container fluid class from content area, navbar area and footer area
+        if (containerFluid.some(el => [contentArea, navbarArea, footerArea].includes(el))) {
+          this._removeClass('container-fluid', [contentArea, navbarArea, footerArea])
+          this._addClass('container-xxl', [contentArea, navbarArea, footerArea])
+        }
+        // Navbar search input container condition is separated because it is not in starter kit
+        if (navbarSearchInputWrapper && navbarSearchInput) {
+          this._removeClass('container-fluid', [navbarSearchInputWrapper, navbarSearchInput])
+          this._addClass('container-xxl', [navbarSearchInputWrapper, navbarSearchInput])
+        }
+        // For horizontal menu only
+        if (horizontalMenu) {
+          this._removeClass('container-fluid', horizontalMenuArea)
+          this._addClass('container-xxl', horizontalMenuArea)
+        }
+      } else {
+        //  If wide mode layout
+
+        // Remove container xxl class from content area, navbar area and footer area
+        if (containerXxl.some(el => [contentArea, navbarArea, footerArea].includes(el))) {
+          this._removeClass('container-xxl', [contentArea, navbarArea, footerArea])
+          this._addClass('container-fluid', [contentArea, navbarArea, footerArea])
+        }
+        // Navbar search input container condition is separated because it is not in starter kit
+        if (navbarSearchInputWrapper && navbarSearchInput) {
+          this._removeClass('container-xxl', [navbarSearchInputWrapper, navbarSearchInput])
+          this._addClass('container-fluid', [navbarSearchInputWrapper, navbarSearchInput])
+        }
+        // For horizontal menu only
+        if (horizontalMenu) {
+          this._removeClass('container-xxl', horizontalMenuArea)
+          this._addClass('container-fluid', horizontalMenuArea)
+        }
+      }
+    }, 100)
   },
 
   // *******************************************************************************
@@ -790,10 +859,6 @@ const Helpers = {
 
   isFooterFixed() {
     return this._hasClass('layout-footer-fixed')
-  },
-
-  isFlipped() {
-    return this._hasClass('layout-menu-flipped')
   },
 
   isLightStyle() {

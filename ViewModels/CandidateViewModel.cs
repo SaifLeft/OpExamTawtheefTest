@@ -15,7 +15,6 @@ namespace TawtheefTest.ViewModels
     public string Name => Candidate?.Name;
     public string JobName => Candidate?.JobName;
     public int? JobId => Candidate?.JobId;
-    public string Email => Candidate?.Email;
   }
 
   public class CandidateListViewModel

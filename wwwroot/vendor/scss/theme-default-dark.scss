@@ -38,7 +38,7 @@ body {
   $border: transparent,
   $active-bg: $primary-color
 );
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   .layout-menu {
     box-shadow: 0 0 0 1px $border-color;
   }

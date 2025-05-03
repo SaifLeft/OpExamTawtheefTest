@@ -5,6 +5,8 @@
   @include text-variant('.text-primary', $background);
   @include bg-variant('.bg-primary', $background);
   @include bg-label-variant('.bg-label-primary', $background);
+  @include border-label-variant('.border-label-primary', $background);
+  @include bg-gradient-variant('.bg-gradient-primary', $background);
   @include template-pagination-theme($background, $color);
   @include template-progress-bar-theme($background, $color);
   @include template-modal-onboarding-theme($background, $color);
@@ -52,6 +54,8 @@
   @include template-float-label-theme($primary-color);
   @include template-svg-color($primary-color);
   @include template-treeview-clicked-bg($primary-color);
+  @include template-card-border-shadow-variant('.card-border-shadow-primary', $background);
+  @include template-card-hover-border-variant('.card-hover-border-primary', $background);
 
   html:not([dir='rtl']) .border-primary,
   html[dir='rtl'] .border-primary {

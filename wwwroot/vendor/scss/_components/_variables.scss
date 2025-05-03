@@ -28,6 +28,7 @@ $app-brand-spacer: 1.25rem !default;
 
 $menu-width: 16.25rem !default;
 $menu-collapsed-width: 5rem !default;
+$menu-collapsed-layout-breakpoint: xl !default;
 
 $menu-font-size: $font-size-base !default;
 
@@ -81,7 +82,7 @@ $custom-option-cursor: pointer !default;
 $custom-option-border-color: $border-color !default;
 $custom-option-border-width: 1px !default;
 $custom-option-image-border-width: 2px !default;
-$custom-option-border-hover-color: rgba-to-hex($gray-300, $rgba-to-hex-bg) !default;
+$custom-option-border-hover-color: $input-border-hover-color !default;
 
 // Switches
 // *******************************************************************************
@@ -156,6 +157,7 @@ $timeline-indicator-size: 1.5rem !default;
 $timeline-point-size: 0.75rem !default;
 $timeline-point-indicator-color: $primary !default;
 $timeline-end-indicator-font-size: 1.5rem !default;
+$timeline-point-indicator-bg-scale: 88% !default;
 
 $timeline-item-icon-font-size: 0.85rem !default;
 $timeline-item-min-height: 4rem !default;

@@ -80,7 +80,8 @@ namespace TawtheefTest.Controllers
         OptionsCount = questionSet.OptionsCount ?? 4,
         Status = questionSet.Status.ToString(),
         CreatedDate = questionSet.CreatedAt,
-        CompletedDate = questionSet.ProcessedAt
+        CompletedDate = questionSet.ProcessedAt,
+        ContentType = questionSet.ContentSources.FirstOrDefault()?.ContentSourceType.ToString(),
       };
 
       ViewBag.Questions = questionSet.Questions.ToList();
@@ -88,9 +89,9 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: QuestionSets/Create
-    public IActionResult Create()
+    public IActionResult Create(int examId)
     {
-      ViewBag.Exams = _context.Exams.ToList();
+      ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name");
       return View();
     }
 
@@ -106,9 +107,12 @@ namespace TawtheefTest.Controllers
           Name = model.Name,
           Description = model.Description,
           QuestionType = model.QuestionType.ToString(),
+          Language = model.Language,
           Difficulty = model.Difficulty,
           QuestionCount = model.QuestionCount,
           OptionsCount = model.OptionsCount,
+          NumberOfRows = model.NumberOfRows,
+          NumberOfCorrectOptions = model.NumberOfCorrectOptions,
           Status = QuestionSetStatus.Pending,
           CreatedAt = DateTime.UtcNow
         };
@@ -129,11 +133,78 @@ namespace TawtheefTest.Controllers
           await _context.SaveChangesAsync();
         }
 
+        ContentSource contentSource = null;
+
+        if (!string.IsNullOrEmpty(model.Topic))
+        {
+          contentSource = new ContentSource
+          {
+            ContentSourceType = ContentSourceType.Topic.ToString(),
+            Content = model.Topic,
+            QuestionSetId = questionSet.Id
+          };
+        }
+        else if (!string.IsNullOrEmpty(model.TextContent))
+        {
+          contentSource = new ContentSource
+          {
+            ContentSourceType = ContentSourceType.Text.ToString(),
+            Content = model.TextContent,
+            QuestionSetId = questionSet.Id
+          };
+        }
+        else if (!string.IsNullOrEmpty(model.LinkUrl))
+        {
+          contentSource = new ContentSource
+          {
+            ContentSourceType = ContentSourceType.Link.ToString(),
+            Url = model.LinkUrl,
+            QuestionSetId = questionSet.Id
+          };
+        }
+        else if (!string.IsNullOrEmpty(model.YoutubeUrl))
+        {
+          contentSource = new ContentSource
+          {
+            ContentSourceType = ContentSourceType.Youtube.ToString(),
+            Url = model.YoutubeUrl,
+            QuestionSetId = questionSet.Id
+          };
+        }
+        else if (!string.IsNullOrEmpty(model.FileReference))
+        {
+          ContentSourceType contentType = ContentSourceType.Document;
+          var contentTypeStr = Request.Form["ContentType"].ToString();
+
+          if (System.Enum.TryParse(contentTypeStr, true, out ContentSourceType parsedType))
+          {
+            contentType = parsedType;
+          }
+
+          contentSource = new ContentSource
+          {
+            ContentSourceType = contentType.ToString(),
+            QuestionSetId = questionSet.Id
+          };
+
+          if (!string.IsNullOrEmpty(model.FileReference))
+          {
+            // هنا يمكن إضافة معالجة للملف المحمل
+            // على سبيل المثال الحصول على معرّف الملف من المرجع وإضافته إلى مصدر المحتوى
+          }
+        }
+
+        if (contentSource != null)
+        {
+          _context.Add(contentSource);
+          await _context.SaveChangesAsync();
+        }
+
         TempData["SuccessMessage"] = "تم إنشاء مجموعة الأسئلة بنجاح";
         return RedirectToAction(nameof(Index));
       }
 
-      ViewBag.Exams = _context.Exams.ToList();
+      ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name");
       return View(model);
     }
 
@@ -145,14 +216,73 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var questionSet = await _context.QuestionSets.FindAsync(id);
+      var questionSet = await _context.QuestionSets
+          .Include(qs => qs.ContentSources)
+          .Include(qs => qs.ExamQuestionSets)
+          .FirstOrDefaultAsync(qs => qs.Id == id);
+
       if (questionSet == null)
       {
         return NotFound();
       }
 
-      ViewBag.Exams = _context.Exams.ToList();
-      return View(questionSet);
+      var model = new CreateQuestionSetViewModel
+      {
+        Name = questionSet.Name,
+        Description = questionSet.Description,
+        QuestionType = System.Enum.TryParse<QuestionTypeEnum>(questionSet.QuestionType, out var questionType) ? questionType : QuestionTypeEnum.MCQ,
+        Language = questionSet.Language,
+        Difficulty = questionSet.Difficulty,
+        QuestionCount = questionSet.QuestionCount,
+        OptionsCount = questionSet.OptionsCount ?? 4,
+        NumberOfRows = questionSet.NumberOfRows,
+        NumberOfCorrectOptions = questionSet.NumberOfCorrectOptions
+      };
+
+      // استرجاع الاختبار المرتبط بمجموعة الأسئلة إذا وجد
+      var examQuestionSet = questionSet.ExamQuestionSets?.FirstOrDefault();
+      if (examQuestionSet != null)
+      {
+        model.ExamId = examQuestionSet.ExamId;
+      }
+
+      // استرجاع مصدر المحتوى إذا وجد
+      var contentSource = questionSet.ContentSources?.FirstOrDefault();
+      if (contentSource != null)
+      {
+        string contentType = contentSource.ContentSourceType?.ToLower() ?? "";
+        if (contentType == "topic")
+        {
+          model.Topic = contentSource.Content;
+        }
+        else if (contentType == "text")
+        {
+          model.TextContent = contentSource.Content;
+        }
+        else if (contentType == "link")
+        {
+          model.LinkUrl = contentSource.Url;
+        }
+        else if (contentType == "youtube")
+        {
+          model.YoutubeUrl = contentSource.Url;
+        }
+        else if (new[] { "document", "image", "audio", "video" }.Contains(contentType))
+        {
+          // الحصول على معرف الملف من UploadedFileId ومعالجته وفقًا لذلك
+          if (contentSource.UploadedFileId.HasValue)
+          {
+            model.FileReference = contentSource.UploadedFileId.ToString();
+          }
+        }
+
+        ViewBag.CurrentContentType = contentType;
+        ViewBag.CurrentFileReference = contentSource.UploadedFileId?.ToString();
+      }
+
+      ViewBag.QuestionSetId = questionSet.Id;
+      ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name");
+      return View(model);
     }
 
     // POST: QuestionSets/Edit/5
@@ -189,7 +319,7 @@ namespace TawtheefTest.Controllers
         return RedirectToAction(nameof(Index));
       }
 
-      ViewBag.Exams = _context.Exams.ToList();
+      ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name");
       return View(questionSet);
     }
 

@@ -20,15 +20,8 @@
       padding: 0.435rem;
       font-size: 0.7rem;
       background-color: $white;
-
-      @include ltr-style {
-        margin-left: $toast-padding-x * 0.5;
-      }
-
-      @include rtl-style {
-        margin-left: $toast-padding-x * -0.5;
-        margin-right: $toast-padding-x * 0.5;
-      }
+      margin-left: $toast-padding-x * -0.5;
+      margin-right: $toast-padding-x;
     }
   }
   .toast-body {

@@ -52,22 +52,22 @@ namespace TawtheefTest.ViewModels
 
     [Display(Name = "الموضوع")]
     [StringLength(1000)]
-    public string Topic { get; set; }
+    public string? Topic { get; set; }
 
     [Display(Name = "النص")]
     [StringLength(10000)]
-    public string TextContent { get; set; }
+    public string? TextContent { get; set; }
 
     [Display(Name = "الرابط")]
     [StringLength(1000)]
-    public string LinkUrl { get; set; }
+    public string? LinkUrl { get; set; }
 
     [Display(Name = "رابط يوتيوب")]
     [StringLength(1000)]
-    public string YoutubeUrl { get; set; }
+    public string? YoutubeUrl { get; set; }
 
     [Display(Name = "مرجع الملف")]
     [StringLength(1000)]
-    public string FileReference { get; set; }
+    public string? FileReference { get; set; }
   }
 }

@@ -45,6 +45,9 @@ div.dt-button-collection .dt-button:not(.dt-btn-split-drop) {
     .dt-button-collection {
       .dropdown-item {
         padding: light.$dropdown-item-padding-y light.$dropdown-item-padding-x;
+        &:hover {
+          background-color: light.$dropdown-link-hover-bg;
+        }
       }
     }
   }
@@ -68,6 +71,9 @@ div.dt-button-collection .dt-button:not(.dt-btn-split-drop) {
     .dt-button-collection {
       .dropdown-item {
         padding: dark.$dropdown-item-padding-y dark.$dropdown-item-padding-x;
+        &:hover {
+          background-color: dark.$dropdown-link-hover-bg;
+        }
       }
     }
   }

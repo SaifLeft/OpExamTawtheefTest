@@ -11,6 +11,6 @@ namespace TawtheefTest.DTOs.ExamModels
     public int JobId { get; set; }
     public string JobName { get; set; }
     public string Email { get; set; }
-    public DateTime RegisteredDate { get; set; }
+    public DateTime CreatedAt { get; set; }
   }
 }

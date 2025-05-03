@@ -10,7 +10,6 @@ $.fn.daterangepicker = function (options, callback) {
   if (options && (options.showWeekNumbers || options.showISOWeekNumbers)) {
     this.each(function () {
       const instance = $(this).data('daterangepicker');
-      console.log(instance);
       if (instance && instance.container) instance.container.addClass('with-week-numbers');
     });
   }

@@ -14,8 +14,7 @@ namespace TawtheefTest.Infrastructure
       // Map from Data Models to DTOs
       CreateMap<Job, JobDTO>();
       CreateMap<Exam, ExamDTO>();
-      CreateMap<Candidate, CandidateDTO>()
-          .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? string.Empty));
+      CreateMap<Candidate, CandidateDTO>();
       CreateMap<Question, QuestionDTO>();
       CreateMap<QuestionOption, OptionDTO>();
       CreateMap<OTPVerification, OTPVerificationDto>();

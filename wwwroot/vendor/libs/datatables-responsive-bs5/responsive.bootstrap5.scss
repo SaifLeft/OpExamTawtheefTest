@@ -6,8 +6,8 @@
 // Responsive table area '+' icon position
 table.dataTable.dtr-column > tbody > tr > td.control:before,
 table.dataTable.dtr-column > tbody > tr > th.control:before {
-  line-height: 0.8em;
-  font-weight: bold;
+  line-height: 0.9em;
+  font-weight: light.$font-weight-medium;
 }
 
 // To scroll within datatable area

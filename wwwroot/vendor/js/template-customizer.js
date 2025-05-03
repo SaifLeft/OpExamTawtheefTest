@@ -5,38 +5,44 @@ const CSS_FILENAME_PATTERN = '%name%.dist.css'
 const CONTROLS = [
   'rtl',
   'style',
-  'layoutType',
-  'layoutMenuFlipped',
+  'headerType',
+  'contentLayout',
+  'layoutCollapsed',
   'showDropdownOnHover',
-  'layoutNavbarFixed',
+  'layoutNavbarOptions',
   'layoutFooterFixed',
   'themes'
 ]
-const STYLES = ['light', 'dark']
-
+const STYLES = ['light', 'dark', 'system']
+const NAVBAR_OPTIONS = ['sticky', 'static', 'hidden']
+let layoutNavbarVar
 const cl = document.documentElement.classList
+
+if (cl.contains('layout-navbar-fixed')) layoutNavbarVar = 'sticky'
+else if (cl.contains('layout-navbar-hidden')) layoutNavbarVar = 'hidden'
+else layoutNavbarVar = 'static'
 
 const DISPLAY_CUSTOMIZER = true
 const DEFAULT_THEME = document.getElementsByTagName('HTML')[0].getAttribute('data-theme') || 0
 const DEFAULT_STYLE = cl.contains('dark-style') ? 'dark' : 'light'
 const DEFAULT_TEXT_DIR = document.documentElement.getAttribute('dir') === 'rtl'
 const DEFAULT_MENU_COLLAPSED = !!cl.contains('layout-menu-collapsed')
-const DEFAULT_MENU_FLIPPED = !!cl.contains('layout-menu-flipped')
-const DEFAULT_SHOW_DROPDOWN_ON_HOVER = undefined
-const DEFAULT_NAVBAR_FIXED = !!cl.contains('layout-navbar-fixed')
+const DEFAULT_SHOW_DROPDOWN_ON_HOVER = true
+const DEFAULT_NAVBAR_FIXED = layoutNavbarVar
+const DEFAULT_CONTENT_LAYOUT = cl.contains('layout-wide') ? 'wide' : 'compact'
 const DEFAULT_FOOTER_FIXED = !!cl.contains('layout-footer-fixed')
 
-let layoutType
+let headerType
 if (cl.contains('layout-menu-offcanvas')) {
-  layoutType = 'static-offcanvas'
+  headerType = 'static-offcanvas'
 } else if (cl.contains('layout-menu-fixed')) {
-  layoutType = 'fixed'
+  headerType = 'fixed'
 } else if (cl.contains('layout-menu-fixed-offcanvas')) {
-  layoutType = 'fixed-offcanvas'
+  headerType = 'fixed-offcanvas'
 } else {
-  layoutType = 'static'
+  headerType = 'static'
 }
-const DEFAULT_LAYOUT_TYPE = layoutType
+const DEFAULT_LAYOUT_TYPE = headerType
 
 class TemplateCustomizer {
   constructor({
@@ -46,15 +52,22 @@ class TemplateCustomizer {
     displayCustomizer,
     controls,
     defaultTextDir,
-    defaultLayoutType,
+    defaultHeaderType,
+    defaultContentLayout,
     defaultMenuCollapsed,
-    defaultMenuFlipped,
     defaultShowDropdownOnHover,
-    defaultNavbarFixed,
+    defaultNavbarType,
     defaultFooterFixed,
     styles,
+    navbarOptions,
     defaultStyle,
+    availableContentLayouts,
+    availableDirections,
+    availableStyles,
     availableThemes,
+    availableLayouts,
+    availableHeaderTypes,
+    availableNavbarOptions,
     defaultTheme,
     pathResolver,
     onSettingsChange,
@@ -62,7 +75,6 @@ class TemplateCustomizer {
   }) {
     if (this._ssr) return
     if (!window.Helpers) throw new Error('window.Helpers required.')
-
     this.settings = {}
     this.settings.cssPath = cssPath
     this.settings.themesPath = themesPath
@@ -71,24 +83,31 @@ class TemplateCustomizer {
 
     this.settings.controls = controls || CONTROLS
     this.settings.defaultTextDir = defaultTextDir === 'rtl' ? true : false || DEFAULT_TEXT_DIR
-    this.settings.defaultLayoutType = defaultLayoutType || DEFAULT_LAYOUT_TYPE
+    this.settings.defaultHeaderType = defaultHeaderType || DEFAULT_LAYOUT_TYPE
     this.settings.defaultMenuCollapsed =
       typeof defaultMenuCollapsed !== 'undefined' ? defaultMenuCollapsed : DEFAULT_MENU_COLLAPSED
-    this.settings.defaultMenuFlipped =
-      typeof defaultMenuFlipped !== 'undefined' ? defaultMenuFlipped : DEFAULT_MENU_FLIPPED
+    this.settings.defaultContentLayout =
+      typeof defaultContentLayout !== 'undefined' ? defaultContentLayout : DEFAULT_CONTENT_LAYOUT
     this.settings.defaultShowDropdownOnHover =
       typeof defaultShowDropdownOnHover !== 'undefined' ? defaultShowDropdownOnHover : DEFAULT_SHOW_DROPDOWN_ON_HOVER
-    this.settings.defaultNavbarFixed =
-      typeof defaultNavbarFixed !== 'undefined' ? defaultNavbarFixed : DEFAULT_NAVBAR_FIXED
+    this.settings.defaultNavbarType =
+      typeof defaultNavbarType !== 'undefined' ? defaultNavbarType : DEFAULT_NAVBAR_FIXED
     this.settings.defaultFooterFixed =
       typeof defaultFooterFixed !== 'undefined' ? defaultFooterFixed : DEFAULT_FOOTER_FIXED
 
+    this.settings.availableDirections = availableDirections || TemplateCustomizer.DIRECTIONS
+    this.settings.availableStyles = availableStyles || TemplateCustomizer.STYLES
     this.settings.availableThemes = availableThemes || TemplateCustomizer.THEMES
+    this.settings.availableHeaderTypes = availableHeaderTypes || TemplateCustomizer.HEADER_TYPES
+    this.settings.availableContentLayouts = availableContentLayouts || TemplateCustomizer.CONTENT
+    this.settings.availableLayouts = availableLayouts || TemplateCustomizer.LAYOUTS
+    this.settings.availableNavbarOptions = availableNavbarOptions || TemplateCustomizer.NAVBAR_OPTIONS
     this.settings.defaultTheme = this._getDefaultTheme(
       typeof defaultTheme !== 'undefined' ? defaultTheme : DEFAULT_THEME
     )
 
     this.settings.styles = styles || STYLES
+    this.settings.navbarOptions = navbarOptions || NAVBAR_OPTIONS
     this.settings.defaultStyle = defaultStyle || DEFAULT_STYLE
     this.settings.lang = lang || 'en'
     this.pathResolver = pathResolver || (p => p)
@@ -99,7 +118,6 @@ class TemplateCustomizer {
         this.settings.controls = this.settings.controls.slice(0, i).concat(this.settings.controls.slice(i + 1))
       }
     }
-
     this.settings.onSettingsChange = typeof onSettingsChange === 'function' ? onSettingsChange : () => {}
 
     this._loadSettings()
@@ -110,10 +128,10 @@ class TemplateCustomizer {
     this._initDirection()
     this._initStyle()
     this._initTheme()
-    this.setLayoutType(this.settings.layoutType, false)
-    this.setLayoutMenuFlipped(this.settings.layoutMenuFlipped, false)
+    this.setLayoutType(this.settings.headerType, false)
+    this.setContentLayout(this.settings.contentLayout, false)
     this.setDropdownOnHover(this.settings.showDropdownOnHover, false)
-    this.setLayoutNavbarFixed(this.settings.layoutNavbarFixed, false)
+    this.setLayoutNavbarOption(this.settings.layoutNavbarOptions, false)
     this.setLayoutFooterFixed(this.settings.layoutFooterFixed, false)
     this._setup()
   }
@@ -124,9 +142,18 @@ class TemplateCustomizer {
     window.location.reload()
   }
 
+  setContentLayout(contentLayout, updateStorage = true) {
+    if (!this._hasControls('contentLayout')) return
+    this.settings.contentLayout = contentLayout
+    if (updateStorage) this._setSetting('contentLayout', contentLayout)
+
+    window.Helpers.setContentLayout(contentLayout)
+
+    if (updateStorage) this.settings.onSettingsChange.call(this, this.settings)
+  }
+
   setStyle(style) {
-    if (!this._hasControls('style')) return
-    this._setSetting('Style', ['dark'].indexOf(style) === -1 ? 'light' : style)
+    this._setSetting('Style', style)
 
     window.location.reload()
   }
@@ -155,10 +182,10 @@ class TemplateCustomizer {
   }
 
   setLayoutType(pos, updateStorage = true) {
-    if (!this._hasControls('layoutType')) return
+    if (!this._hasControls('headerType')) return
     if (pos !== 'static' && pos !== 'static-offcanvas' && pos !== 'fixed' && pos !== 'fixed-offcanvas') return
 
-    this.settings.layoutType = pos
+    this.settings.headerType = pos
     if (updateStorage) this._setSetting('LayoutType', pos)
 
     window.Helpers.setPosition(
@@ -172,7 +199,7 @@ class TemplateCustomizer {
     let menuScroll = window.Helpers.menuPsScroll
     const PerfectScrollbarLib = window.PerfectScrollbar
 
-    if (this.settings.layoutType === 'fixed' || this.settings.layoutType === 'fixed-offcanvas') {
+    if (this.settings.headerType === 'fixed' || this.settings.headerType === 'fixed-offcanvas') {
       // Set perfectscrollbar wheelPropagation false for fixed layout
       if (PerfectScrollbarLib && menuScroll) {
         window.Helpers.menuPsScroll.destroy()
@@ -186,16 +213,6 @@ class TemplateCustomizer {
       // Destroy perfectscrollbar for static layout
       window.Helpers.menuPsScroll.destroy()
     }
-  }
-
-  setLayoutMenuFlipped(flipped, updateStorage = true) {
-    if (!this._hasControls('layoutMenuFlipped')) return
-    this.settings.layoutMenuFlipped = flipped
-    if (updateStorage) this._setSetting('MenuFlipped', flipped)
-
-    window.Helpers.setFlipped(flipped)
-
-    if (updateStorage) this.settings.onSettingsChange.call(this, this.settings)
   }
 
   setDropdownOnHover(open, updateStorage = true) {
@@ -219,18 +236,18 @@ class TemplateCustomizer {
     if (updateStorage) this.settings.onSettingsChange.call(this, this.settings)
   }
 
-  setLayoutNavbarFixed(fixed, updateStorage = true) {
-    if (!this._hasControls('layoutNavbarFixed')) return
-    this.settings.layoutNavbarFixed = fixed
-    if (updateStorage) this._setSetting('FixedNavbar', fixed)
+  setLayoutNavbarOption(navbarType, updateStorage = true) {
+    if (!this._hasControls('layoutNavbarOptions')) return
+    this.settings.layoutNavbarOptions = navbarType
+    if (updateStorage) this._setSetting('FixedNavbarOption', navbarType)
 
-    window.Helpers.setNavbarFixed(fixed)
+    window.Helpers.setNavbar(navbarType)
 
     if (updateStorage) this.settings.onSettingsChange.call(this, this.settings)
   }
 
   setLayoutFooterFixed(fixed, updateStorage = true) {
-    if (!this._hasControls('layoutFooterFixed')) return
+    // if (!this._hasControls('layoutFooterFixed')) return
     this.settings.layoutFooterFixed = fixed
     if (updateStorage) this._setSetting('FixedFooter', fixed)
 
@@ -239,7 +256,7 @@ class TemplateCustomizer {
     if (updateStorage) this.settings.onSettingsChange.call(this, this.settings)
   }
 
-  setLang(lang, force = false) {
+  setLang(lang, updateStorage = true, force = false) {
     if (lang === this.settings.lang && !force) return
     if (!TemplateCustomizer.LANGUAGES[lang]) throw new Error(`Language "${lang}" not found!`)
 
@@ -249,23 +266,23 @@ class TemplateCustomizer {
       'panel_header',
       'panel_sub_header',
       'theming_header',
-      'theme_header',
       'style_label',
       'style_switch_light',
       'style_switch_dark',
       'layout_header',
       'layout_label',
+      'layout_header_label',
+      'content_label',
       'layout_static',
       'layout_offcanvas',
       'layout_fixed',
       'layout_fixed_offcanvas',
-      'layout_flipped_label',
       'layout_dd_open_label',
       'layout_navbar_label',
       'layout_footer_label',
       'misc_header',
       'theme_label',
-      'rtl_label'
+      'direction_label'
     ].forEach(key => {
       const el = this.container.querySelector(`.template-customizer-t-${key}`)
       // eslint-disable-next-line no-unused-expressions
@@ -282,6 +299,10 @@ class TemplateCustomizer {
     }
 
     this.settings.lang = lang
+
+    if (updateStorage) this._setSetting('Lang', lang)
+
+    if (updateStorage) this.settings.onSettingsChange.call(this, this.settings)
   }
 
   // Update theme settings control
@@ -294,16 +315,6 @@ class TemplateCustomizer {
     const isLayout1 = !!document.querySelector('.layout-wrapper.layout-navbar-full')
     const hasFooter = !!document.querySelector('.content-footer')
 
-    if (this._controls.layoutMenuFlipped) {
-      if (!hasMenu) {
-        this._controls.layoutMenuFlipped.setAttribute('disabled', 'disabled')
-        this._controls.layoutMenuFlipped.classList.add('disabled')
-      } else {
-        this._controls.layoutMenuFlipped.removeAttribute('disabled')
-        this._controls.layoutMenuFlipped.classList.remove('disabled')
-      }
-    }
-
     if (this._controls.showDropdownOnHover) {
       if (hasMenu) {
         this._controls.showDropdownOnHover.setAttribute('disabled', 'disabled')
@@ -314,19 +325,19 @@ class TemplateCustomizer {
       }
     }
 
-    if (this._controls.layoutNavbarFixed) {
+    if (this._controls.layoutNavbarOptions) {
       if (!hasNavbar) {
-        this._controls.layoutNavbarFixed.setAttribute('disabled', 'disabled')
-        this._controls.layoutNavbarFixedW.classList.add('disabled')
+        this._controls.layoutNavbarOptions.setAttribute('disabled', 'disabled')
+        this._controls.layoutNavbarOptionsW.classList.add('disabled')
       } else {
-        this._controls.layoutNavbarFixed.removeAttribute('disabled')
-        this._controls.layoutNavbarFixedW.classList.remove('disabled')
+        this._controls.layoutNavbarOptions.removeAttribute('disabled')
+        this._controls.layoutNavbarOptionsW.classList.remove('disabled')
       }
 
       //  Horizontal menu fixed layout - disabled fixed navbar switch
-      if (hasHorizontalMenu && hasNavbar && this.settings.layoutType == 'fixed') {
-        this._controls.layoutNavbarFixed.setAttribute('disabled', 'disabled')
-        this._controls.layoutNavbarFixedW.classList.add('disabled')
+      if (hasHorizontalMenu && hasNavbar && this.settings.headerType === 'fixed') {
+        this._controls.layoutNavbarOptions.setAttribute('disabled', 'disabled')
+        this._controls.layoutNavbarOptionsW.classList.add('disabled')
       }
     }
 
@@ -340,15 +351,15 @@ class TemplateCustomizer {
       }
     }
 
-    if (this._controls.layoutType) {
+    if (this._controls.headerType) {
       // ? Uncomment If using offcanvas layout
       /*
       if (!hasMenu) {
-        this._controls.layoutType.querySelector('[value="static-offcanvas"]').setAttribute('disabled', 'disabled')
-        this._controls.layoutType.querySelector('[value="fixed-offcanvas"]').setAttribute('disabled', 'disabled')
+        this._controls.headerType.querySelector('[value="static-offcanvas"]').setAttribute('disabled', 'disabled')
+        this._controls.headerType.querySelector('[value="fixed-offcanvas"]').setAttribute('disabled', 'disabled')
       } else {
-        this._controls.layoutType.querySelector('[value="static-offcanvas"]').removeAttribute('disabled')
-        this._controls.layoutType.querySelector('[value="fixed-offcanvas"]').removeAttribute('disabled')
+        this._controls.headerType.querySelector('[value="static-offcanvas"]').removeAttribute('disabled')
+        this._controls.headerType.querySelector('[value="fixed-offcanvas"]').removeAttribute('disabled')
       }
       */
 
@@ -356,9 +367,9 @@ class TemplateCustomizer {
       // if ((!hasNavbar && !hasMenu) || (!hasMenu && !isLayout1)) {
       if (hasMenu || hasHorizontalMenu) {
         // (Updated condition)
-        this._controls.layoutType.removeAttribute('disabled')
+        this._controls.headerType.removeAttribute('disabled')
       } else {
-        this._controls.layoutType.setAttribute('disabled', 'disabled')
+        this._controls.headerType.setAttribute('disabled', 'disabled')
       }
     }
   }
@@ -366,14 +377,24 @@ class TemplateCustomizer {
   // Clear local storage
   clearLocalStorage() {
     if (this._ssr) return
+    const layoutName = this._getLayoutName()
+    const keysToRemove = [
+      'Theme',
+      'Style',
+      'LayoutCollapsed',
+      'FixedNavbarOption',
+      'LayoutType',
+      'contentLayout',
+      'Rtl',
+      'Lang'
+    ]
 
-    this._setSetting('Theme', '')
-    this._setSetting('Rtl', '')
-    this._setSetting('Style', '')
-    this._setSetting('MenuFlipped', '')
-    this._setSetting('FixedNavbar', '')
-    this._setSetting('FixedFooter', '')
-    this._setSetting('LayoutType', '')
+    keysToRemove.forEach(key => {
+      const localStorageKey = `templateCustomizer-${layoutName}--${key}`
+      localStorage.removeItem(localStorageKey)
+    })
+
+    this._showResetBtnNotification(false)
   }
 
   // Clear local storage
@@ -393,35 +414,64 @@ class TemplateCustomizer {
     // const cl = document.documentElement.classList;
     const rtl = this._getSetting('Rtl')
     const style = this._getSetting('Style')
+    const theme = this._getSetting('Theme')
+    const contentLayout = this._getSetting('contentLayout')
     const collapsedMenu = this._getSetting('LayoutCollapsed') // Value will be set from main.js
-    const flippedMenu = this._getSetting('LayoutMenuFlipped')
     const dropdownOnHover = this._getSetting('ShowDropdownOnHover') // Value will be set from main.js
-    const fixedNavbar = this._getSetting('FixedNavbar')
+    const navbarOption = this._getSetting('FixedNavbarOption')
     const fixedFooter = this._getSetting('FixedFooter')
     const lType = this._getSetting('LayoutType')
+
+    if (
+      rtl !== '' ||
+      style !== '' ||
+      theme !== '' ||
+      contentLayout !== '' ||
+      collapsedMenu !== '' ||
+      navbarOption !== '' ||
+      lType !== ''
+    ) {
+      this._showResetBtnNotification(true)
+    } else {
+      this._showResetBtnNotification(false)
+    }
     let type
 
     if (lType !== '' && ['static', 'static-offcanvas', 'fixed', 'fixed-offcanvas'].indexOf(lType) !== -1) {
       type = lType
     } else {
-      type = this.settings.defaultLayoutType
+      type = this.settings.defaultHeaderType
     }
-    this.settings.layoutType = type
+    this.settings.headerType = type
 
     // ! Set settings by following priority: Local Storage, Theme Config, HTML Classes
     this.settings.rtl = rtl !== '' ? rtl === 'true' : this.settings.defaultTextDir
-
-    this.settings.style = this.settings.styles.indexOf(style) !== -1 ? style : this.settings.defaultStyle
+    this.settings.stylesOpt = this.settings.styles.indexOf(style) !== -1 ? style : this.settings.defaultStyle
+    if (this.settings.stylesOpt === 'system') {
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        this.settings.style = 'dark'
+      } else {
+        this.settings.style = 'light'
+      }
+    } else {
+      this.settings.style = this.settings.styles.indexOf(style) !== -1 ? style : this.settings.defaultStyle
+    }
     if (this.settings.styles.indexOf(this.settings.style) === -1) {
       // eslint-disable-next-line prefer-destructuring
       this.settings.style = this.settings.styles[0]
     }
-
-    this.settings.layoutMenu = collapsedMenu !== '' ? collapsedMenu === 'true' : this.settings.defaultMenuCollapsed
-    this.settings.layoutMenuFlipped = flippedMenu !== '' ? flippedMenu === 'true' : this.settings.defaultMenuFlipped
+    this.settings.contentLayout = contentLayout !== '' ? contentLayout : this.settings.defaultContentLayout
+    this.settings.layoutCollapsed = collapsedMenu !== '' ? collapsedMenu === 'true' : this.settings.defaultMenuCollapsed
     this.settings.showDropdownOnHover =
       dropdownOnHover !== '' ? dropdownOnHover === 'true' : this.settings.defaultShowDropdownOnHover
-    this.settings.layoutNavbarFixed = fixedNavbar !== '' ? fixedNavbar === 'true' : this.settings.defaultNavbarFixed
+    let navType
+    if (navbarOption !== '' && ['static', 'sticky', 'hidden'].indexOf(navbarOption) !== -1) {
+      navType = navbarOption
+    } else {
+      navType = this.settings.defaultNavbarType
+    }
+
+    this.settings.layoutNavbarOptions = navType
     this.settings.layoutFooterFixed = fixedFooter !== '' ? fixedFooter === 'true' : this.settings.defaultFooterFixed
 
     this.settings.theme = this._getThemeByName(this._getSetting('Theme'), true)
@@ -429,16 +479,39 @@ class TemplateCustomizer {
     // Filter options depending on available controls
     if (!this._hasControls('rtl')) this.settings.rtl = document.documentElement.getAttribute('dir') === 'rtl'
     if (!this._hasControls('style')) this.settings.style = cl.contains('dark-style') ? 'dark' : 'light'
-    if (!this._hasControls('layoutType')) this.settings.layoutType = null
-    if (!this._hasControls('layoutMenuFlipped')) this.settings.layoutMenuFlipped = null
-    if (!this._hasControls('showDropdownOnHover')) this.settings.showDropdownOnHover = null
-    if (!this._hasControls('layoutNavbarFixed')) this.settings.layoutNavbarFixed = null
-    if (!this._hasControls('layoutFooterFixed')) this.settings.layoutFooterFixed = null
+    if (!this._hasControls('contentLayout')) this.settings.contentLayout = null
+    if (!this._hasControls('headerType')) this.settings.headerType = null
+    if (!this._hasControls('layoutCollapsed')) this.settings.layoutCollapsed = null
+    if (!this._hasControls('layoutNavbarOptions')) this.settings.layoutNavbarOptions = null
     if (!this._hasControls('themes')) this.settings.theme = null
   }
 
   // Setup theme settings controls and events
   _setup(_container = document) {
+    // Function to create customizer elements
+    const createOptionElement = (nameVal, title, inputName, isDarkStyle, image) => {
+      image = image || nameVal
+
+      return this._getElementFromString(`<div class="col-4 px-2">
+      <div class="form-check custom-option custom-option-icon mb-0">
+        <label class="form-check-label custom-option-content p-0" for="${inputName}${nameVal}">
+          <span class="custom-option-body mb-0">
+            <img src="${assetsPath}img/customizer/${image}${
+        isDarkStyle ? '-dark' : ''
+      }.svg" alt="${title}" class="img-fluid scaleX-n1-rtl" />
+          </span>
+          <input
+            name="${inputName}"
+            class="form-check-input d-none"
+            type="radio"
+            value="${nameVal}"
+            id="${inputName}${nameVal}" />
+        </label>
+      </div>
+      <label class="form-check-label small text-nowrap" for="${inputName}${nameVal}">${title}</label>
+    </div>`)
+    }
+
     this._cleanup()
     this.container = this._getElementFromString(customizerMarkup)
 
@@ -463,6 +536,17 @@ class TemplateCustomizer {
     openBtn.addEventListener('click', openBtnCb)
     this._listeners.push([openBtn, 'click', openBtnCb])
 
+    // Reset btn
+    //
+
+    const resetBtn = this.container.querySelector('.template-customizer-reset-btn')
+    const resetBtnCb = () => {
+      this.clearLocalStorage()
+      window.location.reload()
+    }
+    resetBtn.addEventListener('click', resetBtnCb)
+    this._listeners.push([resetBtn, 'click', resetBtnCb])
+
     // Close btn
     //
 
@@ -478,73 +562,54 @@ class TemplateCustomizer {
     closeBtn.addEventListener('click', closeBtnCb)
     this._listeners.push([closeBtn, 'click', closeBtnCb])
 
-    // RTL
-    //
-
-    const rtlW = this.container.querySelector('.template-customizer-misc')
-    // ? Hide RTL control in following 2 case
-    if (!this._hasControls('rtl') || !rtlSupport) {
-      rtlW.parentNode.removeChild(rtlW)
-    } else {
-      const rtl = rtlW.querySelector('input')
-
-      if (this.settings.rtl) rtl.setAttribute('checked', 'checked')
-
-      const rtlCb = e => {
-        this._loadingState(true)
-        this.setRtl(e.target.checked)
-      }
-
-      rtl.addEventListener('change', rtlCb)
-      this._listeners.push([rtl, 'change', rtlCb])
-    }
-
     // Style
-
-    //
-
     const styleW = this.container.querySelector('.template-customizer-style')
+    const styleOpt = styleW.querySelector('.template-customizer-styles-options')
 
     if (!this._hasControls('style')) {
       styleW.parentNode.removeChild(styleW)
     } else {
-      const style = styleW.querySelector('input')
+      this.settings.availableStyles.forEach(style => {
+        const styleEl = createOptionElement(style.name, style.title, 'customRadioIcon', cl.contains('dark-style'))
+        styleOpt.appendChild(styleEl)
+      })
+      styleOpt.querySelector(`input[value="${this.settings.stylesOpt}"]`).setAttribute('checked', 'checked')
 
-      if (this.settings.style === 'dark') style.setAttribute('checked', 'checked')
-
+      // styleCb
       const styleCb = e => {
         this._loadingState(true)
-        if (e.target.checked) {
-          this.setStyle('dark')
-        } else {
-          this.setStyle('light')
-        }
+        this.setStyle(e.target.value, true, () => {
+          this._loadingState(false)
+        })
       }
 
-      style.addEventListener('change', styleCb)
-      this._listeners.push([style, 'change', styleCb])
+      styleOpt.addEventListener('change', styleCb)
+      this._listeners.push([styleOpt, 'change', styleCb])
     }
 
     // Theme
-
     const themesW = this.container.querySelector('.template-customizer-themes')
+    const themesWInner = themesW.querySelector('.template-customizer-themes-options')
 
     if (!this._hasControls('themes')) {
       themesW.parentNode.removeChild(themesW)
     } else {
-      const themesWInner = themesW.querySelector('.template-customizer-themes-options')
       this.settings.availableThemes.forEach(theme => {
-        const themeEl = this._getElementFromString(
-          `<div class="col-12"><div class="form-check"><input class="form-check-input" type="radio" name="themeRadios" id="themeRadios${theme.name}" value="${theme.name}"><label class="form-check-label" for="themeRadios${theme.name}">${theme.title}</label></div></div>`
-        )
+        let image = ''
+        if (theme.name === 'theme-semi-dark') {
+          image = `semi-dark`
+        } else if (theme.name === 'theme-bordered') {
+          image = `border`
+        } else {
+          image = `default`
+        }
+        const themeEl = createOptionElement(theme.name, theme.title, 'themeRadios', cl.contains('dark-style'), image)
         themesWInner.appendChild(themeEl)
       })
 
       themesWInner.querySelector(`input[value="${this.settings.theme.name}"]`).setAttribute('checked', 'checked')
 
       const themeCb = e => {
-        if (this._loading) return
-
         this._loading = true
         this._loadingState(true, true)
 
@@ -564,106 +629,200 @@ class TemplateCustomizer {
     }
 
     // Layout wrapper
-    //
-
     const layoutW = this.container.querySelector('.template-customizer-layout')
 
-    if (
-      !this._hasControls('layoutType layoutNavbarFixed layoutFooterFixed layoutMenuFlipped showDropdownOnHover', true)
-    ) {
+    if (!this._hasControls('rtl headerType contentLayout layoutCollapsed layoutNavbarOptions', true)) {
       layoutW.parentNode.removeChild(layoutW)
     } else {
-      // Position
+      // RTL
       //
 
-      const layoutTypeW = this.container.querySelector('.template-customizer-layoutType')
-
-      if (!this._hasControls('layoutType')) {
-        layoutTypeW.parentNode.removeChild(layoutTypeW)
+      const directionW = this.container.querySelector('.template-customizer-directions')
+      // ? Hide RTL control in following 2 case
+      if (!this._hasControls('rtl') || !rtlSupport) {
+        directionW.parentNode.removeChild(directionW)
       } else {
-        this._controls.layoutType = layoutTypeW.querySelector('.template-customizer-layouts-options')
-
-        // this._controls.layoutType.value = this.settings.layoutType
-        this._controls.layoutType
-          .querySelector(`input[value="${this.settings.layoutType}"]`)
+        const directionOpt = directionW.querySelector('.template-customizer-directions-options')
+        this.settings.availableDirections.forEach(dir => {
+          const dirEl = createOptionElement(dir.name, dir.title, 'directionRadioIcon', cl.contains('dark-style'))
+          directionOpt.appendChild(dirEl)
+        })
+        directionOpt
+          .querySelector(`input[value="${this.settings.rtl ? 'rtl' : 'ltr'}"]`)
           .setAttribute('checked', 'checked')
 
-        const layoutTypeCb = e => this.setLayoutType(e.target.value)
-        this._controls.layoutType.addEventListener('change', layoutTypeCb)
-        this._listeners.push([this._controls.layoutType, 'change', layoutTypeCb])
+        const rtlCb = e => {
+          this._loadingState(true)
+          this._setSetting('Lang', this.settings.lang)
+          // For demo purpose, we will use EN as LTR and AR as RTL Language
+          this._getSetting('Lang') === 'ar' ? this._setSetting('Lang', 'en') : this._setSetting('Lang', 'ar')
+          this.setRtl(e.target.value === 'rtl', true, () => {
+            this._loadingState(false)
+          })
+        }
+
+        directionOpt.addEventListener('change', rtlCb)
+        this._listeners.push([directionOpt, 'change', rtlCb])
       }
 
-      // Menu flipped
-      // ? Uncomment If needed
-
-      /* this._controls.layoutMenuFlipped = this.container.querySelector('.template-customizer-layoutMenuFlipped')
-
-      if (!this._hasControls('layoutMenuFlipped')) {
-        this._controls.layoutMenuFlipped.parentNode.removeChild(this._controls.layoutMenuFlipped)
+      // Header Layout Type
+      const headerTypeW = this.container.querySelector('.template-customizer-headerOptions')
+      const templateName = document.documentElement.getAttribute('data-template').split('-')
+      if (!this._hasControls('headerType')) {
+        headerTypeW.parentNode.removeChild(headerTypeW)
       } else {
-        this._controls.layoutMenuFlipped = this._controls.layoutMenuFlipped.querySelector('input')
+        const headerOpt = headerTypeW.querySelector('.template-customizer-header-options')
+        setTimeout(() => {
+          if (templateName.includes('vertical')) {
+            headerTypeW.parentNode.removeChild(headerTypeW)
+          }
+        }, 100)
+        this.settings.availableHeaderTypes.forEach(header => {
+          const headerEl = createOptionElement(
+            header.name,
+            header.title,
+            'headerRadioIcon',
+            cl.contains('dark-style'),
+            `horizontal-${header.name}`
+          )
+          headerOpt.appendChild(headerEl)
+        })
+        headerOpt.querySelector(`input[value="${this.settings.headerType}"]`).setAttribute('checked', 'checked')
 
-        if (this.settings.layoutMenuFlipped) this._controls.layoutMenuFlipped.setAttribute('checked', 'checked')
+        const headerTypeCb = e => {
+          this.setLayoutType(e.target.value)
+        }
 
-        const layoutMenuFlipped = e => this.setLayoutMenuFlipped(e.target.checked)
-        this._controls.layoutMenuFlipped.addEventListener('change', layoutMenuFlipped)
-        this._listeners.push([this._controls.layoutMenuFlipped, 'change', layoutMenuFlipped])
-      } */
-
-      // Menu open
-      //
-
-      this._controls.showDropdownOnHover = this.container.querySelector('.template-customizer-showDropdownOnHover')
-
-      if (!this._hasControls('showDropdownOnHover')) {
-        this._controls.showDropdownOnHover.parentNode.removeChild(this._controls.showDropdownOnHover)
-      } else {
-        this._controls.showDropdownOnHover = this._controls.showDropdownOnHover.querySelector('input')
-
-        if (this.settings.showDropdownOnHover) this._controls.showDropdownOnHover.setAttribute('checked', 'checked')
-
-        const showDropdownOnHover = e => this.setDropdownOnHover(e.target.checked)
-        this._controls.showDropdownOnHover.addEventListener('change', showDropdownOnHover)
-        this._listeners.push([this._controls.showDropdownOnHover, 'change', showDropdownOnHover])
+        headerOpt.addEventListener('change', headerTypeCb)
+        this._listeners.push([headerOpt, 'change', headerTypeCb])
       }
 
-      // Navbar
+      // CONTENT
       //
 
-      this._controls.layoutNavbarFixedW = this.container.querySelector('.template-customizer-layoutNavbarFixed')
-
-      if (!this._hasControls('layoutNavbarFixed')) {
-        this._controls.layoutNavbarFixedW.parentNode.removeChild(this._controls.layoutNavbarFixedW)
+      const contentWrapper = this.container.querySelector('.template-customizer-content')
+      // ? Hide RTL control in following 2 case
+      if (!this._hasControls('contentLayout')) {
+        contentWrapper.parentNode.removeChild(contentWrapper)
       } else {
-        this._controls.layoutNavbarFixed = this._controls.layoutNavbarFixedW.querySelector('input')
+        const contentOpt = contentWrapper.querySelector('.template-customizer-content-options')
+        this.settings.availableContentLayouts.forEach(content => {
+          const contentEl = createOptionElement(
+            content.name,
+            content.title,
+            'contentRadioIcon',
+            cl.contains('dark-style')
+          )
+          contentOpt.appendChild(contentEl)
+        })
+        contentOpt.querySelector(`input[value="${this.settings.contentLayout}"]`).setAttribute('checked', 'checked')
 
-        if (this.settings.layoutNavbarFixed) this._controls.layoutNavbarFixed.setAttribute('checked', 'checked')
+        const contentCb = e => {
+          this._loading = true
+          this._loadingState(true, true)
+          this.setContentLayout(e.target.value, true, () => {
+            this._loading = false
+            this._loadingState(false, true)
+          })
+        }
 
-        const layoutNavbarFixedCb = e => this.setLayoutNavbarFixed(e.target.checked)
-        this._controls.layoutNavbarFixed.addEventListener('change', layoutNavbarFixedCb)
-        this._listeners.push([this._controls.layoutNavbarFixed, 'change', layoutNavbarFixedCb])
+        contentOpt.addEventListener('change', contentCb)
+        this._listeners.push([contentOpt, 'change', contentCb])
       }
 
-      // Footer
-      //
+      // Layouts Collapsed: Expanded, Collapsed
+      const layoutCollapsedW = this.container.querySelector('.template-customizer-layouts')
 
-      this._controls.layoutFooterFixedW = this.container.querySelector('.template-customizer-layoutFooterFixed')
-
-      if (!this._hasControls('layoutFooterFixed')) {
-        this._controls.layoutFooterFixedW.parentNode.removeChild(this._controls.layoutFooterFixedW)
+      if (!this._hasControls('layoutCollapsed')) {
+        layoutCollapsedW.parentNode.removeChild(layoutCollapsedW)
       } else {
-        this._controls.layoutFooterFixed = this._controls.layoutFooterFixedW.querySelector('input')
+        setTimeout(() => {
+          if (document.querySelector('.layout-menu-horizontal')) {
+            layoutCollapsedW.parentNode.removeChild(layoutCollapsedW)
+          }
+        }, 100)
+        const layoutCollapsedOpt = layoutCollapsedW.querySelector('.template-customizer-layouts-options')
+        this.settings.availableLayouts.forEach(layoutOpt => {
+          const layoutsEl = createOptionElement(
+            layoutOpt.name,
+            layoutOpt.title,
+            'layoutsRadios',
+            cl.contains('dark-style')
+          )
+          layoutCollapsedOpt.appendChild(layoutsEl)
+        })
+        layoutCollapsedOpt
+          .querySelector(`input[value="${this.settings.layoutCollapsed ? 'collapsed' : 'expanded'}"]`)
+          .setAttribute('checked', 'checked')
 
-        if (this.settings.layoutFooterFixed) this._controls.layoutFooterFixed.setAttribute('checked', 'checked')
+        const layoutCb = e => {
+          window.Helpers.setCollapsed(e.target.value === 'collapsed', true)
 
-        const layoutFooterFixedCb = e => this.setLayoutFooterFixed(e.target.checked)
-        this._controls.layoutFooterFixed.addEventListener('change', layoutFooterFixedCb)
-        this._listeners.push([this._controls.layoutFooterFixed, 'change', layoutFooterFixedCb])
+          this._setSetting('LayoutCollapsed', e.target.value === 'collapsed')
+        }
+
+        layoutCollapsedOpt.addEventListener('change', layoutCb)
+        this._listeners.push([layoutCollapsedOpt, 'change', layoutCb])
+      }
+
+      // Layout Navbar Options
+      const navbarOption = this.container.querySelector('.template-customizer-layoutNavbarOptions')
+
+      if (!this._hasControls('layoutNavbarOptions')) {
+        navbarOption.parentNode.removeChild(navbarOption)
+      } else {
+        setTimeout(() => {
+          if (templateName.includes('horizontal')) {
+            navbarOption.parentNode.removeChild(navbarOption)
+          }
+        }, 100)
+        const navbarTypeOpt = navbarOption.querySelector('.template-customizer-navbar-options')
+        this.settings.availableNavbarOptions.forEach(navbarOpt => {
+          const navbarEl = createOptionElement(
+            navbarOpt.name,
+            navbarOpt.title,
+            'navbarOptionRadios',
+            cl.contains('dark-style')
+          )
+          navbarTypeOpt.appendChild(navbarEl)
+        })
+        // check navbar option from settings
+        navbarTypeOpt
+          .querySelector(`input[value="${this.settings.layoutNavbarOptions}"]`)
+          .setAttribute('checked', 'checked')
+        const navbarCb = e => {
+          this._loading = true
+          this._loadingState(true, true)
+          this.setLayoutNavbarOption(e.target.value, true, () => {
+            this._loading = false
+            this._loadingState(false, true)
+          })
+        }
+
+        navbarTypeOpt.addEventListener('change', navbarCb)
+        this._listeners.push([navbarTypeOpt, 'change', navbarCb])
       }
     }
 
+    setTimeout(() => {
+      const layoutCustom = this.container.querySelector('.template-customizer-layout')
+      if (document.querySelector('.menu-vertical')) {
+        if (!this._hasControls('rtl contentLayout layoutCollapsed layoutNavbarOptions', true)) {
+          if (layoutCustom) {
+            layoutCustom.parentNode.removeChild(layoutCustom)
+          }
+        }
+      } else if (document.querySelector('.menu-horizontal')) {
+        if (!this._hasControls('rtl contentLayout headerType', true)) {
+          if (layoutCustom) {
+            layoutCustom.parentNode.removeChild(layoutCustom)
+          }
+        }
+      }
+    }, 100)
+
     // Set language
-    this.setLang(this.settings.lang, true)
+    this.setLang(this.settings.lang, false, true)
 
     // Append container
     if (_container === document) {
@@ -861,11 +1020,23 @@ class TemplateCustomizer {
     return String(result || '')
   }
 
+  _showResetBtnNotification(show = true) {
+    setTimeout(() => {
+      const resetBtnAttr = this.container.querySelector('.template-customizer-reset-btn .badge')
+      if (show) {
+        resetBtnAttr.classList.remove('d-none')
+      } else {
+        resetBtnAttr.classList.add('d-none')
+      }
+    }, 200)
+  }
+
   // Set settings in LocalStorage with layout & key
   _setSetting(key, val) {
     const layoutName = this._getLayoutName()
     try {
       localStorage.setItem(`templateCustomizer-${layoutName}--${key}`, String(val))
+      this._showResetBtnNotification()
     } catch (e) {
       // Catch Error
     }
@@ -941,6 +1112,22 @@ class TemplateCustomizer {
   }
 }
 
+// Styles
+TemplateCustomizer.STYLES = [
+  {
+    name: 'light',
+    title: 'Light'
+  },
+  {
+    name: 'dark',
+    title: 'Dark'
+  },
+  {
+    name: 'system',
+    title: 'System'
+  }
+]
+
 // Themes
 TemplateCustomizer.THEMES = [
   {
@@ -948,104 +1135,132 @@ TemplateCustomizer.THEMES = [
     title: 'Default'
   },
   {
-    name: 'theme-semi-dark',
-    title: 'Semi Dark'
-  },
-  {
     name: 'theme-bordered',
     title: 'Bordered'
+  },
+  {
+    name: 'theme-semi-dark',
+    title: 'Semi Dark'
+  }
+]
+
+// Layouts
+TemplateCustomizer.LAYOUTS = [
+  {
+    name: 'expanded',
+    title: 'Expanded'
+  },
+  {
+    name: 'collapsed',
+    title: 'Collapsed'
+  }
+]
+
+// Navbar Options
+TemplateCustomizer.NAVBAR_OPTIONS = [
+  {
+    name: 'sticky',
+    title: 'Sticky'
+  },
+  {
+    name: 'static',
+    title: 'Static'
+  },
+  {
+    name: 'hidden',
+    title: 'Hidden'
+  }
+]
+
+// Header Types
+TemplateCustomizer.HEADER_TYPES = [
+  {
+    name: 'fixed',
+    title: 'Fixed'
+  },
+  {
+    name: 'static',
+    title: 'Static'
+  }
+]
+
+// Content Types
+TemplateCustomizer.CONTENT = [
+  {
+    name: 'compact',
+    title: 'Compact'
+  },
+  {
+    name: 'wide',
+    title: 'Wide'
+  }
+]
+
+// Directions
+TemplateCustomizer.DIRECTIONS = [
+  {
+    name: 'ltr',
+    title: 'Left to Right (En)'
+  },
+  {
+    name: 'rtl',
+    title: 'Right to Left (Ar)'
   }
 ]
 
 // Theme setting language
 TemplateCustomizer.LANGUAGES = {
   en: {
-    panel_header: 'TEMPLATE CUSTOMIZER',
+    panel_header: 'Template Customizer',
     panel_sub_header: 'Customize and preview in real time',
-    theming_header: 'THEMING',
-    theme_header: 'THEME',
-    theme_label: 'Themes',
+    theming_header: 'Theming',
     style_label: 'Style (Mode)',
-    style_switch_light: 'Light',
-    style_switch_dark: 'Dark',
-    layout_header: 'LAYOUT',
-    layout_label: 'Layout (Menu)',
-    layout_static: 'Static',
-    layout_offcanvas: 'Offcanvas',
-    layout_fixed: 'Fixed',
-    layout_fixed_offcanvas: 'Fixed offcanvas',
-    layout_flipped_label: 'Menu flipped',
-    layout_dd_open_label: 'Dropdown on hover',
-    layout_navbar_label: 'Fixed navbar',
-    layout_footer_label: 'Fixed footer',
-    misc_header: 'MISC',
-    rtl_label: 'RTL direction'
+    theme_label: 'Themes',
+    layout_header: 'Layout',
+    layout_label: 'Menu (Navigation)',
+    layout_header_label: 'Header Types',
+    content_label: 'Content',
+    layout_navbar_label: 'Navbar Type',
+    direction_label: 'Direction'
   },
   fr: {
-    panel_header: 'MODÈLE DE PERSONNALISATION',
+    panel_header: 'Modèle De Personnalisation',
     panel_sub_header: 'Personnalisez et prévisualisez en temps réel',
-    theming_header: 'THÉMATISATION',
-    theme_header: 'THÈME',
-    theme_label: 'Thèmes',
+    theming_header: 'Thématisation',
     style_label: 'Style (Mode)',
-    style_switch_light: 'Léger',
-    style_switch_dark: 'Sombre',
-    layout_header: 'DISPOSITION',
-    layout_label: 'Mise en page (Menu)',
-    layout_static: 'Statique',
-    layout_offcanvas: 'Hors toile',
-    layout_fixed: 'Fixé',
-    layout_fixed_offcanvas: 'Fixe hors toile',
-    layout_flipped_label: 'Menu inversé',
-    layout_dd_open_label: 'Liste déroulante au survol',
-    layout_navbar_label: 'Barre de navigation fixe',
-    layout_footer_label: 'Pied de page fixe',
-    misc_header: 'DIVERS',
-    rtl_label: 'Sens RTL'
+    theme_label: 'Thèmes',
+    layout_header: 'Disposition',
+    layout_label: 'Menu (Navigation)',
+    layout_header_label: "Types d'en-tête",
+    content_label: 'Contenu',
+    layout_navbar_label: 'Type de barre de navigation',
+    direction_label: 'Direction'
+  },
+  ar: {
+    panel_header: 'أداة تخصيص القالب',
+    panel_sub_header: 'تخصيص ومعاينة في الوقت الحقيقي',
+    theming_header: 'السمات',
+    style_label: 'النمط (الوضع)',
+    theme_label: 'المواضيع',
+    layout_header: 'تَخطِيط',
+    layout_label: 'القائمة (الملاحة)',
+    layout_header_label: 'أنواع الرأس',
+    content_label: 'محتوى',
+    layout_navbar_label: 'نوع شريط التنقل',
+    direction_label: 'اتجاه'
   },
   de: {
-    panel_header: 'VORLAGEN-ANPASSER',
+    panel_header: 'Vorlagen-Anpasser',
     panel_sub_header: 'Anpassen und Vorschau in Echtzeit',
-    theming_header: 'THEMEN',
-    theme_header: 'THEMA',
-    theme_label: 'Themen',
+    theming_header: 'Themen',
     style_label: 'Stil (Modus)',
-    style_switch_light: 'Hell',
-    style_switch_dark: 'Dunkel',
-    layout_header: 'LAYOUT',
-    layout_label: 'Layout (Speisekarte)',
-    layout_static: 'Statisch',
-    layout_offcanvas: 'Leinwand',
-    layout_fixed: 'Fest',
-    layout_fixed_offcanvas: 'Außerhalb der Leinwand behoben',
-    layout_flipped_label: 'Menü umgedreht',
-    layout_dd_open_label: 'Dropdown beim Hover',
-    layout_navbar_label: 'Navigationsleiste behoben',
-    layout_footer_label: 'Feste Fußzeile',
-    misc_header: 'VERSCHIEDENES',
-    rtl_label: 'RTL-Regie'
-  },
-  pt: {
-    panel_header: 'PERSONALIZADOR DE MODELO',
-    panel_sub_header: 'Personalize e visualize em tempo real',
-    theming_header: 'TEMAS',
-    theme_header: 'TEMA',
-    theme_label: 'Temas',
-    style_label: 'Estilo (Modo)',
-    style_switch_light: 'Luz',
-    style_switch_dark: 'Escuro',
-    layout_header: 'ESQUEMA',
-    layout_label: 'Esquema (Cardápio)',
-    layout_static: 'Estático',
-    layout_offcanvas: 'Offcanvas',
-    layout_fixed: 'Fixo',
-    layout_fixed_offcanvas: 'Offscreen fixo',
-    layout_flipped_label: 'Menu invertido',
-    layout_dd_open_label: 'Suspensão ao passar o mouse',
-    layout_navbar_label: 'Barra de navegação fixa',
-    layout_footer_label: 'Rodapé fixo',
-    misc_header: 'DIVERSOS',
-    rtl_label: 'Direção RTL'
+    theme_label: 'Themen',
+    layout_header: 'Layout',
+    layout_label: 'Menü (Navigation)',
+    layout_header_label: 'Header-Typen',
+    content_label: 'Inhalt',
+    layout_navbar_label: 'Art der Navigationsleiste',
+    direction_label: 'Richtung'
   }
 }
 

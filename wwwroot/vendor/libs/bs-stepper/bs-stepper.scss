@@ -40,7 +40,6 @@ $bs-stepper-circle-height: 2.375rem !default;
       .step-trigger {
         padding: 0 $bs-stepper-trigger-padding;
         flex-wrap: nowrap;
-
         .bs-stepper-label {
           margin: 0;
           max-width: $bs-stepper-label-max-width;

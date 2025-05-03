@@ -1,67 +1,182 @@
+@model List<ExamViewModel>
 @{
-    ViewData["Title"] = "الصفحة الرئيسية";
+  ViewData["Title"] = "الصفحة الرئيسية";
 }
 
-<div class="text-center">
-    <h1 class="display-4">مرحباً بك في نظام توليد الأسئلة</h1>
-    <p>تطبيق تجريبي لتوليد الأسئلة باستخدام الذكاء الاصطناعي</p>
+<div class="jumbotron bg-light rounded p-4 mb-4">
+  <div class="container">
+    <h1 class="display-4 mb-3">مرحباً بك في نظام توظيف الاختبارات</h1>
+    <p class="lead">منصة متكاملة لإدارة الاختبارات وتوليد الأسئلة باستخدام الذكاء الاصطناعي</p>
+    <hr class="my-4">
+    <p>ابدأ الآن بإنشاء اختبارات مخصصة أو إدارة المرشحين</p>
+    <div class="d-flex gap-2">
+      <a class="btn btn-primary btn-lg" asp-controller="Exams" asp-action="Create" role="button">إنشاء اختبار جديد</a>
+      <a class="btn btn-outline-primary btn-lg" asp-controller="Candidates" asp-action="Index" role="button">عرض
+        المرشحين</a>
+    </div>
+  </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">الوظائف</h5>
-                <p class="card-text display-4">@ViewData["JobsCount"]</p>
-                <a asp-controller="Jobs" asp-action="Index" class="btn btn-primary">عرض الوظائف</a>
-            </div>
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card text-center border-0 shadow-sm h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="icon-box text-primary mb-3">
+          <i class="fas fa-briefcase fa-3x"></i>
         </div>
+        <h5 class="card-title">الوظائف</h5>
+        <p class="card-text display-4 my-3">@ViewData["JobsCount"]</p>
+        <p class="card-text text-muted">إدارة الوظائف المتاحة في النظام</p>
+        <a asp-controller="Jobs" asp-action="Index" class="btn btn-primary mt-auto">عرض الوظائف</a>
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">المرشحون</h5>
-                <p class="card-text display-4">@ViewData["CandidatesCount"]</p>
-                <a asp-controller="Candidates" asp-action="Index" class="btn btn-primary">عرض المرشحين</a>
-            </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center border-0 shadow-sm h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="icon-box text-success mb-3">
+          <i class="fas fa-users fa-3x"></i>
         </div>
+        <h5 class="card-title">المرشحون</h5>
+        <p class="card-text display-4 my-3">@ViewData["CandidatesCount"]</p>
+        <p class="card-text text-muted">إدارة المرشحين والمتقدمين للوظائف</p>
+        <a asp-controller="Candidates" asp-action="Index" class="btn btn-success mt-auto">عرض المرشحين</a>
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <h5 class="card-title">الاختبارات</h5>
-                <p class="card-text display-4">@ViewData["ExamsCount"]</p>
-                <a asp-controller="Exams" asp-action="Index" class="btn btn-primary">عرض الاختبارات</a>
-            </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center border-0 shadow-sm h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="icon-box text-info mb-3">
+          <i class="fas fa-file-alt fa-3x"></i>
         </div>
+        <h5 class="card-title">الاختبارات</h5>
+        <p class="card-text display-4 my-3">@ViewData["ExamsCount"]</p>
+        <p class="card-text text-muted">إدارة الاختبارات ومجموعات الأسئلة</p>
+        <a asp-controller="Exams" asp-action="Index" class="btn btn-info mt-auto">عرض الاختبارات</a>
+      </div>
     </div>
+  </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">للإدارة</h5>
-                <p class="card-text">إدارة الوظائف والمرشحين وإنشاء الاختبارات</p>
-                <div class="d-grid gap-2">
-                    <a asp-controller="Jobs" asp-action="Create" class="btn btn-outline-primary">إضافة وظيفة جديدة</a>
-                    <a asp-controller="Candidates" asp-action="Create" class="btn btn-outline-primary">إضافة مرشح
-                        جديد</a>
-                    <a asp-controller="Exams" asp-action="Create" class="btn btn-outline-primary">إنشاء اختبار جديد</a>
-                </div>
-            </div>
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">أحدث الاختبارات</h5>
+        <a asp-controller="Exams" asp-action="Index" class="btn btn-sm btn-outline-primary">عرض الكل</a>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>اسم الاختبار</th>
+                <th>الوظيفة</th>
+                <th>نوع الأسئلة</th>
+                <th>الصعوبة</th>
+                <th>المدة</th>
+                <th>تاريخ الإنشاء</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (Model != null && Model.Any())
+              {
+                @foreach (var examVM in Model)
+                {
+                  <tr>
+                    <td>@examVM.Exam.Name</td>
+                    <td>@examVM.Exam.JobName</td>
+                    <td>@examVM.Exam.QuestionType</td>
+                    <td>@examVM.Exam.Difficulty</td>
+                    <td>@examVM.Exam.Duration دقيقة</td>
+                    <td>@examVM.Exam.CreatedDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                      <div class="btn-group">
+                        <a asp-controller="Exams" asp-action="Details" asp-route-id="@examVM.Exam.Id"
+                          class="btn btn-sm btn-outline-info">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        <a asp-controller="Exams" asp-action="Edit" asp-route-id="@examVM.Exam.Id"
+                          class="btn btn-sm btn-outline-primary">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+              else
+              {
+                <tr>
+                  <td colspan="7" class="text-center">لا توجد اختبارات حتى الآن</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">للمرشحين</h5>
-                <p class="card-text">تسجيل الدخول وأداء الاختبارات</p>
-                <div class="d-grid gap-2">
-                    <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-success">تسجيل الدخول
-                        للمرشحين</a>
-                </div>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title border-bottom pb-3">للإدارة</h5>
+        <p class="card-text mb-4">إدارة الوظائف والمرشحين وإنشاء الاختبارات</p>
+        <div class="d-grid gap-2">
+          <a asp-controller="Jobs" asp-action="Create" class="btn btn-outline-primary">
+            <i class="fas fa-plus-circle me-2"></i>إضافة وظيفة جديدة
+          </a>
+          <a asp-controller="Candidates" asp-action="Create" class="btn btn-outline-success">
+            <i class="fas fa-user-plus me-2"></i>إضافة مرشح جديد
+          </a>
+          <a asp-controller="Exams" asp-action="Create" class="btn btn-outline-info">
+            <i class="fas fa-file-medical me-2"></i>إنشاء اختبار جديد
+          </a>
+          <a asp-controller="QuestionSets" asp-action="Create" class="btn btn-outline-secondary">
+            <i class="fas fa-question-circle me-2"></i>إنشاء مجموعة أسئلة
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title border-bottom pb-3">للمرشحين</h5>
+        <p class="card-text mb-4">تسجيل الدخول وأداء الاختبارات</p>
+        <div class="card bg-light mb-3">
+          <div class="card-body">
+            <p>بمجرد أن تقوم بتسجيل الدخول، يمكنك:</p>
+            <ul>
+              <li>عرض الاختبارات المتاحة لك</li>
+              <li>أداء الاختبارات عبر الإنترنت</li>
+              <li>مراجعة نتائجك وتقييماتك</li>
+            </ul>
+          </div>
+        </div>
+        <div class="d-grid gap-2">
+          <a asp-controller="Auth" asp-action="Login" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt me-2"></i>تسجيل الدخول للمرشحين
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+  <script>
+    $(document).ready(function () {
+      // إضافة تأثيرات بسيطة للبطاقات
+      $('.card').hover(
+        function () { $(this).addClass('shadow-md').removeClass('shadow-sm'); },
+        function () { $(this).removeClass('shadow-md').addClass('shadow-sm'); }
+      );
+    });
+  </script>
+}

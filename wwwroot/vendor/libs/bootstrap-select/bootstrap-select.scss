@@ -148,7 +148,7 @@ html[class] .bootstrap-select.form-select {
         border-radius: light.$border-radius;
         border: light.$input-border-width solid light.$input-border-color;
         &:not(.show):hover {
-          border-color: light.$input-border-color;
+          border-color: light.$input-border-hover-color;
         }
       }
       .dropdown-menu {
@@ -194,7 +194,7 @@ html[class] .bootstrap-select.form-select {
         border: dark.$input-border-width solid dark.$input-border-color;
         border-radius: dark.$border-radius;
         &:not(.show):hover {
-          border-color: dark.$input-border-color;
+          border-color: dark.$input-border-hover-color;
         }
       }
       .dropdown-menu {

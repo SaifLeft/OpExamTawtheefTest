@@ -33,7 +33,7 @@
 
 // * Hide menu close icon from large screen for .layout-menu-offcanvas, .layout-menu-fixed-offcanvas
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   .layout-menu-offcanvas .layout-menu .layout-menu-toggle,
   .layout-menu-fixed-offcanvas .layout-menu .layout-menu-toggle {
     display: none;
@@ -98,6 +98,24 @@
 
 // * Layout Navbar
 // *******************************************************************************
+// Layout navbar search input
+@mixin searchInputContainer {
+  left: calc(calc(100% - map-get($container-max-widths, 'xxl')) * 0.5);
+  @include rtl-style() {
+    right: calc(calc(100% - map-get($container-max-widths, 'xxl')) * 0.5);
+    left: inherit;
+  }
+}
+
+// Layout navbar search close icon
+@mixin searchInputIconToggler {
+  right: calc(calc(100% - map-get($container-max-widths, 'xxl') + 5rem) * 0.5);
+  @include rtl-style() {
+    left: calc(calc(100% - map-get($container-max-widths, 'xxl') + 5rem) * 0.5);
+    right: inherit;
+  }
+}
+
 .layout-navbar {
   position: relative;
   padding-top: 0.25rem;
@@ -140,7 +158,7 @@
       }
 
       .suggestions-header {
-        font-weight: 700;
+        font-weight: $font-weight-medium;
       }
     }
   }
@@ -165,17 +183,47 @@
       // ! FIX: Horizontal layout search container layout left spacing
       @include media-breakpoint-up('xxl') {
         &.container-xxl {
-          left: calc(calc(100% - map-get($container-max-widths, 'xxl')) * 0.5);
-          @include rtl-style() {
-            right: calc(calc(100% - map-get($container-max-widths, 'xxl')) * 0.5);
-            left: inherit;
+          .layout-horizontal & {
+            @include searchInputContainer();
           }
-
           + .search-toggler {
-            right: calc(calc(100% - map-get($container-max-widths, 'xxl') + 5rem) * 0.5);
-            @include rtl-style() {
-              left: calc(calc(100% - map-get($container-max-widths, 'xxl') + 5rem) * 0.5);
-              right: inherit;
+            .layout-horizontal & {
+              @include searchInputIconToggler();
+            }
+          }
+        }
+      }
+
+      // ! FIX: Vertical layout search container layout for expanded menu
+      $expanded-min-width: calc(
+        map-get($container-max-widths, 'xxl') + rem-to-px($menu-width) + (rem-to-px($container-padding-x))
+      );
+
+      @media (min-width: $expanded-min-width) {
+        &.container-xxl {
+          .layout-wrapper:not(.layout-horizontal) & {
+            @include searchInputContainer();
+          }
+          + .search-toggler {
+            .layout-wrapper:not(.layout-horizontal) & {
+              @include searchInputIconToggler();
+            }
+          }
+        }
+      }
+
+      // ! FIX: Vertical layout search container layout for collapsed menu
+      $collapsed-min-width: calc(
+        map-get($container-max-widths, 'xxl') + rem-to-px($menu-collapsed-width) + (rem-to-px($container-padding-x))
+      );
+      @media (min-width: $collapsed-min-width) {
+        &.container-xxl {
+          .layout-menu-collapsed .layout-wrapper:not(.layout-horizontal) & {
+            @include searchInputContainer();
+          }
+          + .search-toggler {
+            .layout-menu-collapsed .layout-wrapper:not(.layout-horizontal) & {
+              @include searchInputIconToggler();
             }
           }
         }
@@ -285,7 +333,7 @@
           display: block;
           margin-bottom: 0;
           color: $body-color !important;
-          font-weight: $font-weight-semibold;
+          font-weight: $font-weight-medium;
         }
       }
     }
@@ -305,7 +353,7 @@
     }
   }
 
-  @include media-breakpoint-down(xl) {
+  @include media-breakpoint-down($menu-collapsed-layout-breakpoint) {
     .navbar-nav {
       .nav-item.dropdown {
         .dropdown-menu {
@@ -337,7 +385,7 @@
 }
 
 // * Navbar require high z-index as we use z-index for menu slide-out for below large screen
-@include media-breakpoint-down(xl) {
+@include media-breakpoint-down($menu-collapsed-layout-breakpoint) {
   .layout-navbar {
     z-index: $zindex-menu-fixed;
   }
@@ -394,7 +442,7 @@
   .layout-container {
     flex-direction: column;
   }
-  @include media-breakpoint-up(xl) {
+  @include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
     &:not(.layout-horizontal) .menu-inner {
       margin-top: 0.75rem;
     }
@@ -452,7 +500,7 @@
 // * Collapsed layout (Default static and static off-canvasmenu)
 // *******************************************************************************
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   // Menu style
 
   .layout-menu-collapsed:not(.layout-menu-hover):not(.layout-menu-offcanvas):not(.layout-menu-fixed-offcanvas) {
@@ -502,7 +550,7 @@
 // * Off-canvas layout (Layout Collapsed)
 // *******************************************************************************
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   .layout-menu-collapsed.layout-menu-offcanvas {
     .layout-menu {
       margin-right: -$menu-width;
@@ -536,7 +584,7 @@
 // * Fixed and fixed off-canvas layout (Layout Fixed)
 // *******************************************************************************
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   // Menu
 
   .layout-menu-fixed,
@@ -662,7 +710,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
   padding-bottom: 0 !important;
 }
 
-@include media-breakpoint-down(xl) {
+@include media-breakpoint-down($menu-collapsed-layout-breakpoint) {
   .layout-menu-fixed .layout-wrapper.layout-navbar-full .layout-menu,
   .layout-menu-fixed-offcanvas .layout-wrapper.layout-navbar-full .layout-menu {
     top: 0 !important;
@@ -670,6 +718,14 @@ html:not(.layout-footer-fixed) .content-wrapper {
 
   html:not(.layout-navbar-fixed) .layout-navbar-full .layout-page {
     padding-top: 0 !important;
+  }
+}
+
+// * Hidden navbar layout
+// *******************************************************************************
+.layout-navbar-hidden {
+  .layout-navbar {
+    display: none;
   }
 }
 
@@ -693,7 +749,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
   }
 }
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   // Fix navbar within Navbar Full layout in fixed mode
   .layout-menu-fixed .layout-navbar-full .layout-navbar,
   .layout-menu-fixed-offcanvas .layout-navbar-full .layout-navbar {
@@ -721,11 +777,12 @@ html:not(.layout-footer-fixed) .content-wrapper {
   .layout-menu-fixed .layout-horizontal .layout-page .menu-horizontal,
   .layout-menu-fixed-offcanvas .layout-horizontal .layout-page .menu-horizontal {
     position: fixed;
+    top: $navbar-height;
   }
 
   .layout-menu-fixed .layout-horizontal .layout-page .menu-horizontal + [class*='container-'],
   .layout-menu-fixed-offcanvas .layout-horizontal .layout-page .menu-horizontal + [class*='container-'] {
-    padding-top: 4.8rem !important;
+    padding-top: calc($container-padding-y + 2.925rem) !important;
   }
 
   @include rtl-only {
@@ -784,7 +841,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
   right: 0;
 }
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   // Fixed footer - Menu expanded
   .layout-footer-fixed:not(.layout-menu-collapsed) {
     .layout-wrapper:not(.layout-without-menu) .content-footer {
@@ -841,7 +898,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
 // * Small screens layout
 // *******************************************************************************
 
-@include media-breakpoint-down(xl) {
+@include media-breakpoint-down($menu-collapsed-layout-breakpoint) {
   .layout-menu {
     position: fixed !important;
     top: 0 !important;
@@ -939,7 +996,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
   z-index: 9;
 }
 
-@include media-breakpoint-down(xl) {
+@include media-breakpoint-down($menu-collapsed-layout-breakpoint) {
   .layout-menu {
     z-index: $zindex-layout-mobile;
   }
@@ -949,7 +1006,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
   }
 }
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   // Default expanded
 
   // Navbar full layout
@@ -1023,7 +1080,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
   }
 }
 
-@include media-breakpoint-down(xl) {
+@include media-breakpoint-down($menu-collapsed-layout-breakpoint) {
   .layout-transitioning {
     .layout-overlay {
       animation: menuAnimation $menu-animation-duration;
@@ -1036,7 +1093,7 @@ html:not(.layout-footer-fixed) .content-wrapper {
   }
 }
 
-@include media-breakpoint-up(xl) {
+@include media-breakpoint-up($menu-collapsed-layout-breakpoint) {
   .layout-menu-collapsed:not(.layout-transitioning):not(.layout-menu-offcanvas):not(.layout-menu-fixed):not(
       .layout-menu-fixed-offcanvas
     )

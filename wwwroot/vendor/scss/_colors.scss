@@ -31,9 +31,18 @@ $custom-colors: (
   'vimeo': $vimeo
 ) !default;
 
+:root {
+  @each $color, $value in $custom-colors {
+    --#{$prefix}#{$color}: #{$value};
+  }
+}
+
 @each $color-name, $color-value in $custom-colors {
   @include bg-variant('.bg-#{$color-name}', $color-value);
   @include bg-label-variant('.bg-label-#{$color-name}', $color-value);
+  @include bg-label-hover-variant('.bg-label-hover-#{$color-name}', $color-value);
+
+  @include border-label-variant('.border-label-#{$color-name}', $color-value);
 
   @include template-button-variant('.btn-#{$color-name}', $color-value);
   @include template-button-label-variant('.btn-label-#{$color-name}', $color-value);
@@ -55,6 +64,9 @@ $bootstrap-colors: (
 @each $color-name, $color-value in $bootstrap-colors {
   @include bg-variant('.bg-#{$color-name}', $color-value);
   @include bg-label-variant('.bg-label-#{$color-name}', $color-value);
+  @include border-label-variant('.border-label-#{$color-name}', $color-value);
+  @include bg-label-hover-variant('.bg-label-hover-#{$color-name}', $color-value);
+  @include bg-gradient-variant('.bg-gradient-#{$color-name}', $color-value);
 
   .border-#{$color-name} {
     border-color: $color-value !important;

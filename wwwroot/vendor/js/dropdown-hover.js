@@ -41,7 +41,6 @@
   $(function () {
     $('body')
       .on('mouseenter', `${SELECTOR}, ${SELECTOR} ~ .dropdown-menu`, function () {
-        const $toggle = $(this).hasClass('dropdown-toggle') ? $(this) : $(this).prev('.dropdown-toggle')
         const $dropdown = $(this).hasClass('dropdown-menu') ? $(this) : $(this).next('.dropdown-menu')
 
         if (window.getComputedStyle($dropdown[0], null).getPropertyValue('position') === 'static') return
@@ -54,7 +53,6 @@
         openDropdown($(this).hasClass('dropdown-toggle') ? $(this) : $(this).prev('.dropdown-toggle'))
       })
       .on('mouseleave', `${SELECTOR}, ${SELECTOR} ~ .dropdown-menu`, function () {
-        const $toggle = $(this).hasClass('dropdown-toggle') ? $(this) : $(this).prev('.dropdown-toggle')
         const $dropdown = $(this).hasClass('dropdown-menu') ? $(this) : $(this).next('.dropdown-menu')
 
         if (window.getComputedStyle($dropdown[0], null).getPropertyValue('position') === 'static') return

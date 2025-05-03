@@ -83,7 +83,7 @@ $dz-icon-block-size: 3.75rem !default;
 .dz-preview {
   position: relative;
   vertical-align: top;
-  margin: $dz-box-padding 0 0 $dz-box-padding;
+  margin: $dz-box-padding - 1;
   background: #fff;
   font-size: 0.8125rem;
   box-sizing: content-box;
@@ -155,7 +155,7 @@ $dz-icon-block-size: 3.75rem !default;
 }
 
 .dz-nopreview {
-  font-weight: 600;
+  font-weight: light.$font-weight-medium;
   text-transform: uppercase;
   font-size: 0.6875rem;
 }
@@ -216,7 +216,7 @@ $dz-icon-block-size: 3.75rem !default;
   padding: 0.75rem;
   text-align: left;
   overflow: auto;
-  font-weight: 600;
+  font-weight: light.$font-weight-medium;
 
   @include app-rtl {
     text-align: right;

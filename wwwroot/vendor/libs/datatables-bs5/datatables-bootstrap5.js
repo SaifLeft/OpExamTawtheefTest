@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import pdfMake from 'pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
-import DataTable from 'datatables.net-bs5';
+import 'datatables.net-bs5';
 import 'datatables.net-fixedcolumns-bs5';
 import 'datatables.net-fixedheader-bs5';
 import 'datatables.net-select-bs5';
@@ -14,6 +14,6 @@ import 'datatables.net-responsive-bs5';
 import 'datatables.net-rowgroup-bs5';
 import 'jquery-datatables-checkboxes';
 
-DataTable.Buttons.jszip(JSZip);
-DataTable.Buttons.pdfMake(pdfMake);
+$.fn.dataTable.ext.buttons.jszip = JSZip;
+$.fn.dataTable.ext.buttons.pdfMake = pdfMake;
 pdfMake.vfs = pdfFonts.pdfMake.vfs;

@@ -57,11 +57,13 @@ form {
   }
 }
 
-// ! Fix: Formvalidation: Set border color to .form-control in touch devices for HTML5 inputs i.e date picker
+// ! Fix: Formvalidation: Set border color to .form-control in touch devices for HTML5 inputs of FlatPicker (FlatPicker converts to native for touch screen, refresh in touch screen to check)
 @media (hover: none) {
   .fv-plugins-bootstrap5-row-invalid {
     .form-control {
-      border-color: $form-feedback-invalid-color;
+      &.flatpickr-mobile {
+        border-color: $form-feedback-invalid-color;
+      }
     }
   }
 }

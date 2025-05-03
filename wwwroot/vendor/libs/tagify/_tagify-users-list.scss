@@ -1,6 +1,9 @@
 /* Suggestions items */
 .tagify__dropdown.users-list {
   font-size: 1rem;
+  .addAll {
+    display: block !important;
+  }
 
   .tagify__dropdown__item {
     padding: 0.5em 0.7em;

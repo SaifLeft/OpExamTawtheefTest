@@ -169,6 +169,7 @@ $input-disabled-bg: rgba-to-hex($gray-800, $rgba-to-hex-bg) !default;
 
 $input-border-color: rgba-to-hex($gray-700, $rgba-to-hex-bg) !default;
 $input-placeholder-color: $text-muted !default;
+$input-border-hover-color: rgba-to-hex($gray-400, $rgba-to-hex-bg) !default; // (C)
 
 $form-check-input-border: 1px solid $input-border-color !default;
 $form-check-input-focus-box-shadow: 0 0 0 0.12rem rgba(rgba-to-hex($gray-500, $rgba-to-hex-bg), 30%) !default;

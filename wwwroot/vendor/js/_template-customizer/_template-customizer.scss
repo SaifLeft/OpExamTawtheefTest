@@ -2,7 +2,9 @@
 * Template Customizer Style
 **/
 
-$customizer-width: 360px;
+$customizer-width: 400px;
+$customizer-width-sm: 300px;
+$customizer-hide-width: 1200px;
 $customizer-spacer: 20px;
 $customizer-font-size: inherit;
 
@@ -12,13 +14,14 @@ $open-btn-font-size: 18px;
 $open-btn-top: 180px;
 $open-btn-top-md: 145px;
 
-$open-btn-bg: #333;
-$open-btn-bg-dark: #555;
+$open-btn-bg: var(--bs-primary);
+$open-btn-bg-dark: var(--bs-primary);
 $open-btn-color: #fff;
 $open-btn-border-radius: 15%;
+$open-customizer-primary-color: var(--bs-primary);
 
 #template-customizer {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
+  font-family: 'Open Sans', BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol' !important;
   font-size: $customizer-font-size !important;
   position: fixed;
@@ -47,7 +50,6 @@ $open-btn-border-radius: 15%;
   h5 {
     position: relative;
     font-size: 11px;
-    font-weight: 600;
   }
 
   > h5 {
@@ -57,6 +59,16 @@ $open-btn-border-radius: 15%;
   .disabled {
     color: #d1d2d3 !important;
   }
+  .form-label {
+    font-size: 0.9375rem;
+  }
+  .form-check-label {
+    font-size: 0.8125rem;
+  }
+
+  .template-customizer-t-panel_header {
+    font-size: 1.125rem;
+  }
 
   &.template-customizer-open {
     -webkit-transition-delay: 0.1s;
@@ -65,8 +77,26 @@ $open-btn-border-radius: 15%;
     -webkit-transform: none !important;
     -ms-transform: none !important;
     transform: none !important;
+
+    .custom-option.checked {
+      color: $open-customizer-primary-color;
+      border-width: 2px;
+      .custom-option-content {
+        border: none;
+      }
+    }
+    .custom-option {
+      .custom-option-content {
+        border: 1px solid transparent;
+      }
+    }
   }
 
+  .template-customizer-header {
+    a:hover {
+      color: inherit !important;
+    }
+  }
   // Customizer button
 
   .template-customizer-open-btn {
@@ -134,17 +164,6 @@ $open-btn-border-radius: 15%;
     -webkit-transform: none !important;
     -ms-transform: none !important;
     transform: none !important;
-  }
-
-  .template-customizer-close-btn {
-    position: absolute;
-    top: 32px;
-    right: 0;
-    display: block;
-    font-size: 20px;
-    -webkit-transform: translateY(-50%);
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
   }
 
   // Customizer inner
@@ -268,6 +287,20 @@ $open-btn-border-radius: 15%;
       z-index: 999;
       display: block;
     }
+  }
+}
+@media (max-width: $customizer-hide-width) {
+  #template-customizer {
+    display: none;
+    visibility: hidden !important;
+  }
+}
+@media (max-width: 575.98px) {
+  #template-customizer {
+    width: $customizer-width-sm;
+    -webkit-transform: translateX($customizer-width-sm + $customizer-spacer);
+    -ms-transform: translateX($customizer-width-sm + $customizer-spacer);
+    transform: translateX($customizer-width-sm + $customizer-spacer);
   }
 }
 

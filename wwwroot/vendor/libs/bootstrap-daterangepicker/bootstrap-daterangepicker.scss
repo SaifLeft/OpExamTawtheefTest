@@ -418,7 +418,7 @@ $daterangepicker-width-with-weeks: $daterangepicker-width + $daterangepicker-cel
       &.minuteselect,
       &.secondselect,
       &.ampmselect {
-        background: light.$gray-100;
+        background: light.rgba-to-hex(light.$gray-100, light.$rgba-to-hex-bg);
         font-size: light.$font-size-sm;
         color: light.$body-color;
         border: 1px solid transparent;

@@ -6,6 +6,12 @@
 @import '../../../../node_modules/rateyo/src/jquery.rateyo';
 @import '../../scss/_custom-variables/libs';
 
+// For Horizontal menu-item, z-index overrides
+.jq-ry-container > .jq-ry-group-wrapper > .jq-ry-group,
+.jq-ry-container > .jq-ry-group-wrapper > .jq-ry-group.jq-ry-rated-group {
+  z-index: 8;
+}
+
 // Light Style
 @if $enable-light-style {
   .light-style {

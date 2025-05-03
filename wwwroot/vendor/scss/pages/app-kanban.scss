@@ -3,12 +3,13 @@
 
 @use '../_bootstrap-extended/include' as light;
 @use '../_bootstrap-extended/include-dark' as dark;
+@import '../_components/include';
 @import '../_custom-variables/pages';
 
 $kanban-wrapper-height: calc(100vh - 12rem);
 $kanban-app-horizontal-height-diff: 3.5rem;
 $kanban-title-font-size: light.$h5-font-size;
-$kanban-title-font-weight: light.$font-weight-semibold;
+$kanban-title-font-weight: light.$font-weight-medium;
 $kanban-title-max-width: 13rem;
 
 $kanban-drag-min-height: 1rem;
@@ -29,7 +30,7 @@ $kanban-add-new-board-padding: 0.9375rem;
     height: $kanban-wrapper-height;
     overflow-x: auto;
     overflow-y: auto;
-    @include light.media-breakpoint-up(xl) {
+    @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
       .layout-horizontal & {
         height: calc($kanban-wrapper-height - $kanban-app-horizontal-height-diff);
       }
@@ -56,6 +57,7 @@ $kanban-add-new-board-padding: 0.9375rem;
             font-size: $kanban-title-font-size;
             font-weight: $kanban-title-font-weight;
             max-width: $kanban-title-max-width;
+            font-weight: $kanban-title-font-weight;
             white-space: nowrap;
             overflow: hidden;
             &:focus {

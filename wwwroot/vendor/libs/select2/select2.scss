@@ -64,7 +64,7 @@ $select2-multiple-selection-line-height: 1.5rem !default;
 
     .select2-selection__clear {
       cursor: pointer;
-      font-weight: bold;
+      font-weight: light.$font-weight-medium;
       float: right;
       font-size: 1.2rem;
     }
@@ -148,7 +148,7 @@ $select2-multiple-selection-line-height: 1.5rem !default;
 
     .select2-selection__clear {
       cursor: pointer;
-      font-weight: bold;
+      font-weight: light.$font-weight-medium;
       float: right;
       margin-right: 0.625rem;
     }
@@ -177,7 +177,7 @@ $select2-multiple-selection-line-height: 1.5rem !default;
 
     .select2-selection__choice__remove {
       position: absolute;
-      font-weight: bold;
+      font-weight: light.$font-weight-medium;
       color: inherit;
       display: inline-block;
       cursor: pointer;
@@ -261,6 +261,7 @@ $select2-multiple-selection-line-height: 1.5rem !default;
     font-size: $font-size-base;
     cursor: default;
     display: block;
+    font-weight: light.$font-weight-medium;
   }
 }
 
@@ -313,6 +314,9 @@ $select2-multiple-selection-line-height: 1.5rem !default;
         border: 1px solid light.$input-border-color;
 
         @include light.border-radius(light.$border-radius);
+        &:hover {
+          border-color: light.$input-border-hover-color;
+        }
       }
 
       .select2-results__option--highlighted[aria-selected] {
@@ -538,6 +542,9 @@ $select2-multiple-selection-line-height: 1.5rem !default;
         border: 1px solid dark.$input-border-color;
 
         @include dark.border-radius(dark.$border-radius);
+        &:hover {
+          border-color: dark.$input-border-hover-color;
+        }
       }
 
       .select2-results__option--highlighted[aria-selected] {

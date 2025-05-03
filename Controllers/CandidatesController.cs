@@ -81,7 +81,6 @@ namespace TawtheefTest.Controllers
         {
           Name = model.Name,
           Phone = model.Phone,
-          Email = model.Email,
           JobId = model.JobId,
           IsActive = true,
           CreatedAt = DateTime.UtcNow
@@ -117,7 +116,6 @@ namespace TawtheefTest.Controllers
         Id = candidate.Id,
         Name = candidate.Name,
         PhoneNumber = candidate.Phone.ToString(),
-        Email = candidate.Email ?? string.Empty,
         JobId = candidate.JobId
       };
 
@@ -147,7 +145,6 @@ namespace TawtheefTest.Controllers
 
           candidate.Name = model.Name;
           candidate.Phone = int.Parse(model.PhoneNumber);
-          candidate.Email = model.Email;
           candidate.JobId = model.JobId;
           candidate.UpdatedAt = DateTime.UtcNow;
 

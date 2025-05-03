@@ -42,6 +42,7 @@ $calender-sidebar-width: 18.25rem !default;
   }
   .app-calendar-content {
     position: relative;
+    overflow: hidden;
   }
 
   .fc-toolbar {
@@ -68,7 +69,7 @@ $calender-sidebar-width: 18.25rem !default;
     }
   }
   .fc-header-toolbar {
-    margin-bottom: 1.7rem !important;
+    margin-bottom: 1.65rem !important;
   }
   .fc-view-container {
     margin: 0 -1.6rem;

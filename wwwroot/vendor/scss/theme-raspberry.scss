@@ -183,6 +183,9 @@ body {
 .bs-stepper:not(.wizard-modern) {
   border: 1px solid $border-color;
   border-radius: $card-border-radius;
+  .modal .modal-body & {
+    border-width: 0;
+  }
 }
 
 // modern form wizard style

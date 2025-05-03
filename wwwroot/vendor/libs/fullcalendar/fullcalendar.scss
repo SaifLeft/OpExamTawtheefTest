@@ -5,9 +5,10 @@
 
 $fullcalendar-event-padding-y: 0.25rem !default;
 $fullcalendar-event-padding-x: 0.5rem !default;
+$fullcalendar-event-margin-top: 0.2rem !default;
 $fullcalendar-day-padding: 0.25rem !default;
 $fullcalendar-event-font-size: 0.8rem !default;
-$fullcalendar-event-font-weight: 600 !default;
+$fullcalendar-event-font-weight: 500 !default;
 $fullcalendar-toolbar-btn-padding: 0.438rem 1.125rem !default;
 $fullcalendar-fc-popover-z-index: 1090 !default;
 $fullcalendar-event-border-radius: 3px !default;
@@ -79,6 +80,11 @@ $fullcalendar-event-border-radius: 3px !default;
     border-radius: light.$border-radius;
   }
 
+  // To fix firefox thead border issue
+  .fc-day-today {
+    background-clip: padding-box;
+  }
+
   //! Fix: white color issue of event text
   .fc-h-event .fc-event-main,
   .fc-v-event .fc-event-main {
@@ -111,6 +117,9 @@ $fullcalendar-event-border-radius: 3px !default;
       font-weight: $fullcalendar-event-font-weight;
       padding: $fullcalendar-event-padding-y $fullcalendar-event-padding-x;
       border-radius: $fullcalendar-event-border-radius;
+      .fc-event-title {
+        font-weight: light.$font-weight-medium;
+      }
     }
     .fc-daygrid-event-harness {
       .fc-event {
@@ -124,14 +133,13 @@ $fullcalendar-event-border-radius: 3px !default;
       display: none;
     }
   }
+  .fc-daygrid-event-harness + .fc-daygrid-event-harness .fc-daygrid-event {
+    margin-top: $fullcalendar-event-margin-top !important;
+  }
   .fc-timegrid {
     .fc-timegrid-divider {
       display: none;
     }
-  }
-
-  .fc-daygrid-event-harness + .fc-daygrid-event-harness {
-    margin-top: 0.3rem !important;
   }
   .fc-popover {
     z-index: $fullcalendar-fc-popover-z-index !important;

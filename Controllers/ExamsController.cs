@@ -8,6 +8,7 @@ using TawtheefTest.DTOs;
 using System.Threading.Tasks;
 using System.Linq;
 using TawtheefTest.Enum;
+using TawtheefTest.DTOs.ExamModels;
 
 namespace TawtheefTest.Controllers
 {
@@ -74,12 +75,13 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var examDetailsDto = new DTOs.ExamModels.ExamDetailsDTO
+      var examDetailsDto = new ExamDetailsDTO
       {
         Id = exam.Id,
         Name = exam.Name,
         Description = exam.Description,
         JobId = exam.JobId,
+        JobName = exam.Job.Title,
         Duration = exam.Duration ?? 60,
         CreatedDate = exam.CreatedAt,
         ExamStartDate = exam.StartDate ?? DateTime.Now,
@@ -96,14 +98,13 @@ namespace TawtheefTest.Controllers
         }).ToList()
       };
 
-      ViewBag.JobName = exam.Job.Title;
       return View(examDetailsDto);
     }
 
     // GET: Exams/Create
     public IActionResult Create()
     {
-      ViewData["JobId"] = new SelectList(_context.Jobs, "Id", "Title");
+      ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title");
       return View();
     }
 

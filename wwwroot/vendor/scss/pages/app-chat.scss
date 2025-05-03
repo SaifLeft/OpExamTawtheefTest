@@ -3,10 +3,12 @@
 
 @use '../_bootstrap-extended/include' as light;
 @use '../_bootstrap-extended/include-dark' as dark;
+@import '../_components/include';
 @import '../_custom-variables/pages';
 
 // Variables
 $chat-app-height: calc(100vh - 11rem);
+$chat-app-height-with-no-navbar: calc(100vh - 7rem);
 $chat-app-horizontal-height-diff: 2rem;
 
 $chat-contact-width: 21rem;
@@ -20,6 +22,7 @@ $chat-contact-list-margin-y: 0.25rem;
 $chat-history-padding-x: 1.5rem;
 $chat-history-padding-y: 1.5rem;
 $chat-history-height: calc(100vh - 20.8rem);
+$chat-history-height-with-no-nabvar: calc(100vh - 16.7rem);
 
 $chat-history-header-padding-x: 1.5rem;
 $chat-history-header-padding-y: 1.01rem;
@@ -36,7 +39,10 @@ $chat-list-margin: 1rem;
 .app-chat {
   position: relative;
   height: $chat-app-height;
-  @include light.media-breakpoint-up(xl) {
+  .layout-navbar-hidden & {
+    height: $chat-app-height-with-no-navbar;
+  }
+  @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
     .layout-horizontal & {
       height: calc($chat-app-height - $chat-app-horizontal-height-diff);
     }
@@ -65,7 +71,10 @@ $chat-list-margin: 1rem;
     width: $chat-contact-width;
     flex-basis: $chat-contact-width;
     transition: all 0.25s ease;
-    @include light.media-breakpoint-up(xl) {
+    .layout-navbar-hidden & {
+      height: $chat-app-height-with-no-navbar;
+    }
+    @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
       .layout-horizontal & {
         height: calc($chat-app-height - $chat-app-horizontal-height-diff);
       }
@@ -81,8 +90,10 @@ $chat-list-margin: 1rem;
 
     .sidebar-body {
       height: calc(#{$chat-app-height} - 4.5rem);
-
-      @include light.media-breakpoint-up(xl) {
+      .layout-navbar-hidden & {
+        height: calc(#{$chat-app-height-with-no-navbar} - 4.5rem);
+      }
+      @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
         .layout-horizontal & {
           height: calc(#{$chat-app-height} - 4.55rem - #{$chat-app-horizontal-height-diff});
         }
@@ -126,7 +137,10 @@ $chat-list-margin: 1rem;
     opacity: 0;
     z-index: 5;
     transition: all 0.25s ease;
-    @include light.media-breakpoint-up(xl) {
+    .layout-navbar-hidden & {
+      height: $chat-app-height-with-no-navbar;
+    }
+    @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
       .layout-horizontal & {
         height: calc($chat-app-height - $chat-app-horizontal-height-diff);
       }
@@ -139,7 +153,10 @@ $chat-list-margin: 1rem;
 
     .sidebar-body {
       height: calc(#{$chat-app-height} - 10.4rem);
-      @include light.media-breakpoint-up(xl) {
+      .layout-navbar-hidden & {
+        height: calc(#{$chat-app-height-with-no-navbar} - 10.4rem);
+      }
+      @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
         .layout-horizontal & {
           height: calc(#{$chat-app-height} - 10.4rem - #{$chat-app-horizontal-height-diff});
         }
@@ -151,7 +168,10 @@ $chat-list-margin: 1rem;
     position: relative;
     height: $chat-app-height;
     transition: all 0.25s ease;
-    @include light.media-breakpoint-up(xl) {
+    .layout-navbar-hidden & {
+      height: $chat-app-height-with-no-navbar;
+    }
+    @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
       .layout-horizontal & {
         height: calc($chat-app-height - $chat-app-horizontal-height-diff);
       }
@@ -169,7 +189,10 @@ $chat-list-margin: 1rem;
       height: $chat-history-height;
       padding: $chat-history-padding-y $chat-history-padding-x;
       overflow: hidden;
-      @include light.media-breakpoint-up(xl) {
+      .layout-navbar-hidden & {
+        height: $chat-history-height-with-no-nabvar;
+      }
+      @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
         .layout-horizontal & {
           height: calc($chat-history-height - $chat-app-horizontal-height-diff);
         }
@@ -230,7 +253,10 @@ $chat-list-margin: 1rem;
     opacity: 0;
     z-index: 5;
     transition: all 0.25s ease;
-    @include light.media-breakpoint-up(xl) {
+    .layout-navbar-hidden & {
+      height: $chat-app-height-with-no-navbar;
+    }
+    @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
       .layout-horizontal & {
         height: calc($chat-app-height - $chat-app-horizontal-height-diff);
       }
@@ -243,7 +269,10 @@ $chat-list-margin: 1rem;
 
     .sidebar-body {
       height: calc(#{$chat-app-height} - 10.5rem);
-      @include light.media-breakpoint-up(xl) {
+      .layout-navbar-hidden & {
+        height: calc(#{$chat-app-height-with-no-navbar} - 10.5rem);
+      }
+      @include light.media-breakpoint-up($menu-collapsed-layout-breakpoint) {
         .layout-horizontal & {
           height: calc(#{$chat-app-height} - 10.1rem - #{$chat-app-horizontal-height-diff});
         }

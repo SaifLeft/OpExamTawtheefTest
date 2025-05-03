@@ -14,10 +14,6 @@ namespace TawtheefTest.ViewModels
     [Display(Name = "رقم الهاتف")]
     public int Phone { get; set; }
 
-    [EmailAddress(ErrorMessage = "البريد الإلكتروني غير صالح")]
-    [Display(Name = "البريد الإلكتروني")]
-    public string Email { get; set; }
-
     [Required(ErrorMessage = "الوظيفة مطلوبة")]
     [Display(Name = "الوظيفة")]
     public int JobId { get; set; }
