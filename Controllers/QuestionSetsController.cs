@@ -19,13 +19,13 @@ namespace TawtheefTest.Controllers
   {
     private readonly ApplicationDbContext _context;
     private readonly IOpExamsService _opExamsService;
-    private readonly IQuestionGenerationService _questionGenerationService;
+    private readonly IOpExamQuestionGenerationService _questionGenerationService;
     private readonly IMapper _mapper;
 
     public QuestionSetsController(
         ApplicationDbContext context,
         IOpExamsService opExamsService,
-        IQuestionGenerationService questionGenerationService,
+        IOpExamQuestionGenerationService questionGenerationService,
         IMapper mapper)
     {
       _context = context;
@@ -78,89 +78,103 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: QuestionSets/Create
-    public async Task<IActionResult> Create(int examId = 0)
+    public IActionResult Create(int? examId)
     {
-      if (examId > 0)
+      var viewModel = new OpExamQuestionSetViewModel
       {
-        var exam = await _context.Exams
-            .Include(e => e.Job)
-            .FirstOrDefaultAsync(e => e.Id == examId);
+        ExamId = examId ?? 0,
+        QuestionCount = 10,
+        Difficulty = "auto",
+        Language = "Arabic"
+      };
 
-        if (exam == null)
-        {
-          return NotFound();
-        }
+      ViewBag.QuestionTypes = GetQuestionTypes();
+      ViewBag.ContentSourceTypes = GetContentSourceTypes();
+      ViewBag.DifficultyLevels = GetDifficultyLevels();
 
-        var viewModel = new CreateQuestionSetViewModel
-        {
-          ExamId = examId,
-          Name = $"مجموعة أسئلة لاختبار {exam.Name}",
-          Language = "Arabic",
-          Difficulty = "Medium",
-          QuestionCount = 10,
-          OptionsCount = 4
-        };
-
-        ViewBag.ExamName = exam.Name;
-        ViewBag.Exams = new SelectList(new[] { exam }, "Id", "Name");
-
-        return View(viewModel);
-      }
-      else
-      {
-        ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name");
-        return View(new CreateQuestionSetViewModel());
-      }
+      return View(viewModel);
     }
 
     // POST: QuestionSets/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateQuestionSetViewModel viewModel, IFormFile uploadedFile)
+    public async Task<IActionResult> Create(OpExamQuestionSetViewModel model)
     {
       if (ModelState.IsValid)
       {
-        // تحويل ViewModel إلى DTO
-        var questionSetDto = _mapper.Map<CreateQuestionSetDto>(viewModel);
-
-        // معالجة الملف المرفوع إذا كان موجودًا
-        if (uploadedFile != null && uploadedFile.Length > 0)
+        // إنشاء مجموعة الأسئلة
+        var questionSet = new QuestionSet
         {
-          using (var stream = uploadedFile.OpenReadStream())
-          {
-            var fileId = await _opExamsService.UploadFile(stream, uploadedFile.FileName);
-            if (!string.IsNullOrEmpty(fileId))
-            {
-              // تخزين الملف في قاعدة البيانات
-              var file = new UploadedFile
-              {
-                FileName = uploadedFile.FileName,
-                FileId = fileId,
-                FileType = DetermineFileType(uploadedFile.ContentType),
-                ContentType = uploadedFile.ContentType,
-                FileSize = uploadedFile.Length,
-                CreatedAt = DateTime.UtcNow
-              };
+          Name = model.Name,
+          Description = model.Description,
+          QuestionType = model.QuestionType,
+          Difficulty = model.Difficulty,
+          QuestionCount = model.QuestionCount,
+          Status = QuestionSetStatus.Pending,
+          CreatedAt = DateTime.UtcNow
+        };
 
-              _context.UploadedFiles.Add(file);
-              await _context.SaveChangesAsync();
+        _context.Add(questionSet);
+        await _context.SaveChangesAsync();
 
-              // تحديث معرف الملف في DTO
-              questionSetDto.UploadedFileId = file.Id;
-              questionSetDto.FileReference = file.Id.ToString();
-            }
-          }
+        // إنشاء مصدر المحتوى
+        var contentSource = new ContentSource
+        {
+          QuestionSetId = questionSet.Id,
+          ContentSourceType = model.ContentSourceType,
+          Content = model.TextContent, // قد يكون هذا نصًا أو رابطًا أو موضوعًا
+          CreatedAt = DateTime.UtcNow
+        };
+
+        // معالجة الملف إذا كان موجودًا
+        if (model.File != null && model.File.Length > 0)
+        {
+          using var memoryStream = new MemoryStream();
+          await model.File.CopyToAsync(memoryStream);
+          var fileBytes = memoryStream.ToArray();
+
+          var fileUrl = await _questionGenerationService.UploadFileAsync(fileBytes, model.File.FileName);
+          contentSource.Content = fileUrl;
         }
 
-        // إنشاء مجموعة الأسئلة
-        var questionSetId = await _questionGenerationService.CreateQuestionSetAsync(questionSetDto);
+        _context.ContentSources.Add(contentSource);
+        await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "تم بدء عملية توليد الأسئلة بنجاح.";
-        return RedirectToAction("Details", new { id = questionSetId });
+        // ربط مجموعة الأسئلة بالامتحان
+        if (model.ExamId > 0)
+        {
+          var examQuestionSet = new ExamQuestionSet
+          {
+            ExamId = model.ExamId,
+            QuestionSetId = questionSet.Id,
+            DisplayOrder = 1 // يمكن تحديد ترتيب العرض لاحقًا
+          };
+
+          _context.ExamQuestionSets.Add(examQuestionSet);
+          await _context.SaveChangesAsync();
+        }
+
+        // بدء عملية إنشاء الأسئلة
+        await _opExamsService.GenerateQuestionsAsync(questionSet.Id);
+
+        TempData["SuccessMessage"] = "تم إنشاء مجموعة الأسئلة بنجاح وبدء عملية توليد الأسئلة.";
+
+        if (model.ExamId > 0)
+        {
+          return RedirectToAction("Details", "Exams", new { id = model.ExamId });
+        }
+        else
+        {
+          return RedirectToAction(nameof(Index));
+        }
       }
 
-      ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name", viewModel.ExamId);
-      return View(viewModel);
+      // إعادة تعبئة القوائم المنسدلة إذا كان النموذج غير صالح
+      ViewBag.QuestionTypes = GetQuestionTypes();
+      ViewBag.ContentSourceTypes = GetContentSourceTypes();
+      ViewBag.DifficultyLevels = GetDifficultyLevels();
+
+      return View(model);
     }
 
     // GET: QuestionSets/Edit/5
@@ -188,11 +202,11 @@ namespace TawtheefTest.Controllers
         return RedirectToAction(nameof(Details), new { id });
       }
 
-      var model = new CreateQuestionSetViewModel
+      var model = new OpExamQuestionSetViewModel
       {
         Name = questionSet.Name,
         Description = questionSet.Description,
-        QuestionType = System.Enum.TryParse<QuestionTypeEnum>(questionSet.QuestionType, out var questionType) ? questionType : QuestionTypeEnum.MCQ,
+        QuestionType = System.Enum.TryParse<QuestionTypeEnum>(questionSet.QuestionType, out var questionType) ? questionType.ToString() : "MCQ",
         Language = questionSet.Language,
         Difficulty = questionSet.Difficulty,
         QuestionCount = questionSet.QuestionCount,
@@ -250,7 +264,7 @@ namespace TawtheefTest.Controllers
     // POST: QuestionSets/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, CreateQuestionSetViewModel model, IFormFile uploadedFile)
+    public async Task<IActionResult> Edit(int id, OpExamQuestionSetViewModel model, IFormFile uploadedFile)
     {
       var questionSet = await _context.QuestionSets
           .Include(qs => qs.ContentSources)
@@ -275,7 +289,7 @@ namespace TawtheefTest.Controllers
           // تحديث خصائص QuestionSet
           questionSet.Name = model.Name;
           questionSet.Description = model.Description;
-          questionSet.QuestionType = model.QuestionType.ToString();
+          questionSet.QuestionType = model.QuestionType;
           questionSet.Language = model.Language;
           questionSet.Difficulty = model.Difficulty;
           questionSet.QuestionCount = model.QuestionCount;
@@ -577,6 +591,36 @@ namespace TawtheefTest.Controllers
       return RedirectToAction("Details", "Exams", new { id = examId });
     }
 
+    // POST: QuestionSets/GenerateAgain/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateAgain(int id)
+    {
+      var questionSet = await _context.QuestionSets
+          .Include(qs => qs.Questions)
+          .FirstOrDefaultAsync(qs => qs.Id == id);
+
+      if (questionSet == null)
+      {
+        return NotFound();
+      }
+
+      // حذف الأسئلة الموجودة
+      _context.Questions.RemoveRange(questionSet.Questions);
+      await _context.SaveChangesAsync();
+
+      // إعادة تعيين حالة مجموعة الأسئلة
+      questionSet.Status = QuestionSetStatus.Pending;
+      questionSet.ErrorMessage = null;
+      await _context.SaveChangesAsync();
+
+      // بدء عملية إنشاء الأسئلة مرة أخرى
+      await _opExamsService.GenerateQuestionsAsync(questionSet.Id);
+
+      TempData["SuccessMessage"] = "تم بدء عملية توليد الأسئلة مرة أخرى.";
+      return RedirectToAction(nameof(Details), new { id });
+    }
+
     private bool QuestionSetExists(int id)
     {
       return _context.QuestionSets.Any(e => e.Id == id);
@@ -627,6 +671,48 @@ namespace TawtheefTest.Controllers
       {
         return ContentSourceType.Document.ToString();
       }
+    }
+
+    // Helpers for dropdown lists
+    private IEnumerable<SelectListItem> GetQuestionTypes()
+    {
+      return new List<SelectListItem>
+      {
+        new SelectListItem { Value = "MCQ", Text = "اختيار من متعدد" },
+        new SelectListItem { Value = "TF", Text = "صح / خطأ" },
+        new SelectListItem { Value = "open", Text = "إجابة مفتوحة" },
+        new SelectListItem { Value = "fillInTheBlank", Text = "ملء الفراغات" },
+        new SelectListItem { Value = "ordering", Text = "ترتيب" },
+        new SelectListItem { Value = "matching", Text = "مطابقة" },
+        new SelectListItem { Value = "multiSelect", Text = "اختيار متعدد" },
+        new SelectListItem { Value = "shortAnswer", Text = "إجابة قصيرة" }
+      };
+    }
+
+    private IEnumerable<SelectListItem> GetContentSourceTypes()
+    {
+      return new List<SelectListItem>
+      {
+        new SelectListItem { Value = "topic", Text = "موضوع" },
+        new SelectListItem { Value = "text", Text = "نص" },
+        new SelectListItem { Value = "link", Text = "رابط" },
+        new SelectListItem { Value = "youtube", Text = "يوتيوب" },
+        new SelectListItem { Value = "document", Text = "مستند" },
+        new SelectListItem { Value = "image", Text = "صورة" },
+        new SelectListItem { Value = "audio", Text = "صوت" },
+        new SelectListItem { Value = "video", Text = "فيديو" }
+      };
+    }
+
+    private IEnumerable<SelectListItem> GetDifficultyLevels()
+    {
+      return new List<SelectListItem>
+      {
+        new SelectListItem { Value = "easy", Text = "سهل" },
+        new SelectListItem { Value = "medium", Text = "متوسط" },
+        new SelectListItem { Value = "hard", Text = "صعب" },
+        new SelectListItem { Value = "auto", Text = "تلقائي" }
+      };
     }
   }
 }

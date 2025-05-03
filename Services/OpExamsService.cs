@@ -23,14 +23,16 @@ namespace TawtheefTest.Services
     private readonly string _serverUrl;
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IOpExamQuestionGenerationService _questionGenerationService;
 
-    public OpExamsService(HttpClient httpClient, IConfiguration configuration, ApplicationDbContext context, IMapper mapper)
+    public OpExamsService(HttpClient httpClient, IConfiguration configuration, ApplicationDbContext context, IMapper mapper, IOpExamQuestionGenerationService questionGenerationService)
     {
       _httpClient = httpClient;
       _apiKey = configuration["OpExams:ApiKey"];
       _serverUrl = configuration["OpExams:ServerUrl"];
       _context = context;
       _mapper = mapper;
+      _questionGenerationService = questionGenerationService;
 
       _httpClient.DefaultRequestHeaders.Add("api-key", _apiKey);
     }
@@ -112,86 +114,84 @@ namespace TawtheefTest.Services
       return new List<QuestionDTO>();
     }
 
-    public async Task<bool> GenerateQuestionsAsync(int questionSetId)
+    public async Task GenerateQuestionsAsync(int questionSetId)
     {
-      // Get the question set details
       var questionSet = await _context.QuestionSets
           .Include(qs => qs.ContentSources)
-          .Include(qs => qs.ExamQuestionSets)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
       if (questionSet == null)
       {
-        return false;
+        throw new Exception($"مجموعة الأسئلة بالمعرف {questionSetId} غير موجودة");
       }
 
-      // Update status to processing
-      questionSet.Status = QuestionSetStatus.Processing;
-      await _context.SaveChangesAsync();
+      if (questionSet.ContentSources == null || !questionSet.ContentSources.Any())
+      {
+        throw new Exception("لا توجد مصادر محتوى لمجموعة الأسئلة");
+      }
+
+      var contentSource = questionSet.ContentSources.First();
+      string contentType = contentSource.ContentSourceType.ToLower();
+      string content = contentSource.Content;
 
       try
       {
-        // Get the content source (assuming there's at least one)
-        var contentSource = questionSet.ContentSources.FirstOrDefault();
-        if (contentSource == null)
-        {
-          questionSet.Status = QuestionSetStatus.Failed;
-          questionSet.ErrorMessage = "No content source found";
-          await _context.SaveChangesAsync();
-          return false;
-        }
-
-        // Create dummy questions (for demonstration purposes)
-        for (int i = 0; i < questionSet.QuestionCount; i++)
-        {
-          // Always use Data.Structure models when working with EF Core
-          var question = new Question
-          {
-            QuestionSetId = questionSet.Id,
-            ExamId = questionSet.ExamQuestionSets.FirstOrDefault()?.ExamId ?? 0,
-            Index = i + 1,
-            QuestionText = $"Sample question {i + 1} from {contentSource.Content ?? "content"}",
-            QuestionType = questionSet.QuestionType,
-            CreatedAt = DateTime.UtcNow
-          };
-
-          _context.Questions.Add(question);
-
-          // Add options for multiple choice questions
-          if (questionSet.QuestionType == QuestionTypeEnum.MCQ.ToString() || questionSet.QuestionType == QuestionTypeEnum.TF.ToString())
-          {
-            int optionsCount = questionSet.OptionsCount ?? 4;
-            for (int j = 0; j < optionsCount; j++)
-            {
-              var option = new QuestionOption
-              {
-                QuestionId = question.Id,
-                Index = j + 1,
-                Text = $"Option {j + 1}",
-                IsCorrect = j == 0 // Make the first option correct
-              };
-
-              _context.QuestionOptions.Add(option);
-            }
-          }
-        }
-
+        questionSet.Status = QuestionSetStatus.Processing;
         await _context.SaveChangesAsync();
 
-        // Update status to completed
-        questionSet.Status = QuestionSetStatus.Completed;
-        questionSet.ProcessedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        return true;
+        switch (contentType)
+        {
+          case "topic":
+            await _questionGenerationService.GenerateQuestionsFromTopicAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          case "text":
+            await _questionGenerationService.GenerateQuestionsFromTextAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          case "link":
+            await _questionGenerationService.GenerateQuestionsFromLinkAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          case "youtube":
+            await _questionGenerationService.GenerateQuestionsFromYoutubeAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          case "document":
+          case "pdf":
+            await _questionGenerationService.GenerateQuestionsFromDocumentAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          case "image":
+            await _questionGenerationService.GenerateQuestionsFromImageAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          case "audio":
+            await _questionGenerationService.GenerateQuestionsFromAudioAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          case "video":
+            await _questionGenerationService.GenerateQuestionsFromVideoAsync(
+                questionSetId, content, questionSet.QuestionType,
+                questionSet.QuestionCount, questionSet.Difficulty);
+            break;
+          default:
+            throw new Exception($"نوع المحتوى غير مدعوم: {contentType}");
+        }
       }
       catch (Exception ex)
       {
-        // Update status to failed
         questionSet.Status = QuestionSetStatus.Failed;
         questionSet.ErrorMessage = ex.Message;
         await _context.SaveChangesAsync();
-        return false;
+        throw;
       }
     }
 

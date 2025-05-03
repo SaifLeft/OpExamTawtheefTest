@@ -21,6 +21,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOTPService, OTPService>();
 builder.Services.AddScoped<IOpExamsService, OpExamsService>();
+builder.Services.AddScoped<IOpExamQuestionGenerationService, OpExamQuestionGenerationService>();
 builder.Services.AddScoped<IQuestionGenerationService, QuestionGenerationService>();
 
 // Register background service

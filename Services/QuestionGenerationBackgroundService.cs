@@ -70,18 +70,8 @@ namespace TawtheefTest.Services
       try
       {
         // استدعاء خدمة توليد الأسئلة
-        bool success = await opExamsService.GenerateQuestionsAsync(pendingQuestionSet.Id);
+        await opExamsService.GenerateQuestionsAsync(pendingQuestionSet.Id);
 
-        if (!success)
-        {
-          _logger.LogWarning("فشل توليد الأسئلة لمجموعة الأسئلة: {QuestionSetId}", pendingQuestionSet.Id);
-
-          // تم تحديث الحالة بالفعل داخل GenerateQuestionsAsync
-        }
-        else
-        {
-          _logger.LogInformation("تم توليد الأسئلة بنجاح لمجموعة الأسئلة: {QuestionSetId}", pendingQuestionSet.Id);
-        }
       }
       catch (Exception ex)
       {

@@ -18,6 +18,6 @@ namespace TawtheefTest.Services
     Task<List<QuestionDTO>> GenerateQuestionsFromVideo(string videoId, string questionType, string language, string difficulty, int questionCount, int optionsCount);
     Task<List<QuestionDTO>> GenerateQuestionsWithOrderingOrMatching(string topic, string questionType, string language, string difficulty, int questionCount, int numberOfRows);
     Task<List<QuestionDTO>> GenerateQuestionsWithMultiSelect(string topic, string questionType, string language, string difficulty, int questionCount, int optionsCount, int numberOfCorrectOptions);
-    Task<bool> GenerateQuestionsAsync(int questionSetId);
+    Task GenerateQuestionsAsync(int questionSetId);
   }
 }
