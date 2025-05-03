@@ -26,11 +26,11 @@ namespace TawtheefTest.ViewModels
     public string QuestionType { get; set; }
     public string Answer { get; set; }
     public bool? IsCorrect { get; set; }
-    public List<QuestionOptionViewModel> Options { get; set; }
+    public List<CandidateQuestionOptionViewModel> Options { get; set; }
     public string CorrectAnswer { get; set; }
   }
 
-  public class QuestionOptionViewModel
+  public class CandidateQuestionOptionViewModel
   {
     public int Id { get; set; }
     public string Text { get; set; }

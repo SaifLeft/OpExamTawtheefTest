@@ -1,4 +1,4 @@
-@model IEnumerable<QuestionSetDto>
+@model IEnumerable<TawtheefTest.DTOs.QuestionSetDto>
 @{
   ViewData["title"] = "مجموعات الأسئلة";
 }
@@ -18,6 +18,22 @@
     </div>
 
     <div class="card-body">
+      @if (TempData["SuccessMessage"] != null)
+      {
+        <div class="alert alert-success alert-dismissible mb-3" role="alert">
+          @TempData["SuccessMessage"]
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      }
+
+      @if (TempData["ErrorMessage"] != null)
+      {
+        <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+          @TempData["ErrorMessage"]
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      }
+
       @if (!Model.Any())
       {
         <div class="alert alert-info text-center">
@@ -33,7 +49,6 @@
               <tr>
                 <th>الاسم</th>
                 <th>نوع الأسئلة</th>
-                <th>مصدر المحتوى</th>
                 <th>عدد الأسئلة</th>
                 <th>الحالة</th>
                 <th>تاريخ الإنشاء</th>
@@ -52,16 +67,19 @@
                     @GetQuestionTypeDisplay(item.QuestionType)
                   </td>
                   <td>
-                    @GetContentTypeDisplay(item.ContentType, item)
-                  </td>
-                  <td>@item.QuestionCount</td>
-                  <td>
-                    @{
-                      var (statusBadge, statusText) = GetStatusDisplay(item.Status);
+                    @if (item.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
+                    {
+                      <span>@item.QuestionsGenerated / @item.QuestionCount</span>
                     }
-                    <span class="badge rounded-pill bg-@statusBadge">@statusText</span>
+                    else
+                    {
+                      <span>@item.QuestionCount</span>
+                    }
                   </td>
-                  <td>@item.CreatedDate.ToString("yyyy/MM/dd HH:mm")</td>
+                  <td>
+                    <span class="badge rounded-pill bg-@GetStatusBadge(item.Status)">@item.StatusDescription</span>
+                  </td>
+                  <td>@item.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
                   <td>
                     <div class="dropdown">
                       <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -71,12 +89,25 @@
                         <a class="dropdown-item" href="@Url.Action("Details", new { id = item.Id })">
                           <i class="bx bx-show-alt me-1"></i> عرض
                         </a>
-                        <a class="dropdown-item" href="@Url.Action("Edit", new { id = item.Id })">
-                          <i class="bx bx-edit-alt me-1"></i> تعديل
-                        </a>
-                        <a class="dropdown-item text-danger" href="@Url.Action("Delete", new { id = item.Id })">
-                          <i class="bx bx-trash me-1"></i> حذف
-                        </a>
+                        @if (item.Status != TawtheefTest.Enum.QuestionSetStatus.Processing)
+                        {
+                          <a class="dropdown-item" href="@Url.Action("Edit", new { id = item.Id })">
+                            <i class="bx bx-edit-alt me-1"></i> تعديل
+                          </a>
+                          <a class="dropdown-item text-danger" href="@Url.Action("Delete", new { id = item.Id })">
+                            <i class="bx bx-trash me-1"></i> حذف
+                          </a>
+                        }
+                        @if (item.Status == TawtheefTest.Enum.QuestionSetStatus.Failed)
+                        {
+                          <form asp-action="Retry" method="post"
+                            onsubmit="return confirm('هل أنت متأكد من إعادة المحاولة؟');">
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button type="submit" class="dropdown-item">
+                              <i class="bx bx-refresh me-1"></i> إعادة المحاولة
+                            </button>
+                          </form>
+                        }
                       </div>
                     </div>
                   </td>
@@ -107,32 +138,15 @@
     };
   }
 
-  string GetContentTypeDisplay(string contentType, QuestionSetDto item)
+  string GetStatusBadge(TawtheefTest.Enum.QuestionSetStatus status)
   {
-    string display = contentType?.ToLower() switch
+    return status switch
     {
-      "topic" => $"موضوع: {item.Topic}",
-      "text" => "نص",
-      "link" => $"رابط: {item.LinkUrl}",
-      "youtube" => $"يوتيوب: {item.YoutubeUrl}",
-      "document" => "مستند",
-      "image" => "صورة",
-      "audio" => "صوت",
-      "video" => "فيديو",
-      _ => contentType
-    };
-    return display;
-  }
-
-  (string badgeClass, string text) GetStatusDisplay(string status)
-  {
-    return status?.ToLower() switch
-    {
-      "pending" => ("warning", "في الانتظار"),
-      "processing" => ("info", "قيد المعالجة"),
-      "completed" => ("success", "مكتمل"),
-      "failed" => ("danger", "فشل"),
-      _ => ("secondary", status)
+      TawtheefTest.Enum.QuestionSetStatus.Pending => "warning",
+      TawtheefTest.Enum.QuestionSetStatus.Processing => "info",
+      TawtheefTest.Enum.QuestionSetStatus.Completed => "success",
+      TawtheefTest.Enum.QuestionSetStatus.Failed => "danger",
+      _ => "secondary"
     };
   }
 }

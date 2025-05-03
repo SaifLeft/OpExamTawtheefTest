@@ -1,99 +1,99 @@
-@model QuestionSetDto
+@model TawtheefTest.DTOs.QuestionSetDto
 @{
-    ViewData["title"] = "حذف مجموعة الأسئلة";
+  ViewData["title"] = "حذف مجموعة الأسئلة";
 }
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">إدارة الأسئلة /</span> حذف مجموعة الأسئلة
-    </h4>
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light">إدارة الأسئلة /</span> حذف مجموعة الأسئلة
+  </h4>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">تأكيد الحذف</h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-danger mb-4">
-                        <div class="d-flex">
-                            <i class="bx bx-error-circle fs-3 me-2"></i>
-                            <div>
-                                <h6 class="alert-heading mb-1">هل أنت متأكد من رغبتك في حذف مجموعة الأسئلة هذه؟</h6>
-                                <p class="mb-0">سيتم حذف جميع الأسئلة المرتبطة بهذه المجموعة. لا يمكن التراجع عن هذا
-                                    الإجراء.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-3 mb-4 border rounded bg-light">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-3">الاسم:</dt>
-                            <dd class="col-sm-9">@Model.Name</dd>
-
-                            <dt class="col-sm-3">الوصف:</dt>
-                            <dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Description) ? "- بدون وصف -" :
-                                Model.Description)</ dd >
-
-                            <dt class="col-sm-3">نوع الأسئلة:</dt>
-                            <dd class="col-sm-9">@GetQuestionTypeDisplay(Model.QuestionType)</dd>
-
-                            <dt class="col-sm-3">عدد الأسئلة:</dt>
-                            <dd class="col-sm-9">@Model.QuestionCount</dd>
-
-                            <dt class="col-sm-3">الحالة:</dt>
-                            <dd class="col-sm-9">
-                                @{
-                                    var (statusClass, statusText) = GetStatusDisplay(Model.Status);
-                                }
-                                <span class="badge rounded-pill bg-@statusClass">@statusText</span>
-                            </dd>
-                        </dl>
-                    </div>
-
-                    <form asp-action="Delete" method="post">
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <div class="d-flex justify-content-between">
-                            <button type="submit" class="btn btn-danger">
-                                <i class="bx bx-trash me-1"></i> تأكيد الحذف
-                            </button>
-                            <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary">
-                                <i class="bx bx-arrow-back me-1"></i> إلغاء
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">تأكيد الحذف</h5>
         </div>
+        <div class="card-body">
+          <div class="alert alert-danger mb-4">
+            <div class="d-flex">
+              <i class="bx bx-error-circle fs-3 me-2"></i>
+              <div>
+                <h6 class="alert-heading mb-1">هل أنت متأكد من رغبتك في حذف مجموعة الأسئلة هذه؟</h6>
+                <p class="mb-0">سيتم حذف جميع الأسئلة المرتبطة بهذه المجموعة. لا يمكن التراجع عن هذا
+                  الإجراء.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 mb-4 border rounded bg-light">
+            <dl class="row mb-0">
+              <dt class="col-sm-3">الاسم:</dt>
+              <dd class="col-sm-9">@Model.Name</dd>
+
+              <dt class="col-sm-3">الوصف:</dt>
+              <dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Description) ? "- بدون وصف -" :
+                Model.Description)</ dd >
+
+              <dt class="col-sm-3">نوع الأسئلة:</dt>
+              <dd class="col-sm-9">@GetQuestionTypeDisplay(Model.QuestionType)</dd>
+
+              <dt class="col-sm-3">عدد الأسئلة:</dt>
+              <dd class="col-sm-9">@Model.QuestionCount</dd>
+
+              <dt class="col-sm-3">الحالة:</dt>
+              <dd class="col-sm-9">
+                @{
+                  var (statusClass, statusText) = GetStatusDisplay(Model.Status);
+                }
+                <span class="badge rounded-pill bg-@statusClass">@statusText</span>
+              </dd>
+            </dl>
+          </div>
+
+          <form asp-action="Delete" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="d-flex justify-content-between">
+              <button type="submit" class="btn btn-danger">
+                <i class="bx bx-trash me-1"></i> تأكيد الحذف
+              </button>
+              <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary">
+                <i class="bx bx-arrow-back me-1"></i> إلغاء
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 @functions {
-    string GetQuestionTypeDisplay(string questionType)
+  string GetQuestionTypeDisplay(string questionType)
+  {
+    return questionType?.ToLower() switch
     {
-        return questionType?.ToLower() switch
-        {
-            "mcq" => "اختيار من متعدد",
-            "tf" => "صح / خطأ",
-            "open" => "إجابة مفتوحة",
-            "fillintheblank" => "ملء الفراغات",
-            "ordering" => "ترتيب",
-            "matching" => "مطابقة",
-            "multiselect" => "اختيار متعدد",
-            "shortanswer" => "إجابة قصيرة",
-            _ => questionType
-        };
-    }
+      "mcq" => "اختيار من متعدد",
+      "tf" => "صح / خطأ",
+      "open" => "إجابة مفتوحة",
+      "fillintheblank" => "ملء الفراغات",
+      "ordering" => "ترتيب",
+      "matching" => "مطابقة",
+      "multiselect" => "اختيار متعدد",
+      "shortanswer" => "إجابة قصيرة",
+      _ => questionType
+    };
+  }
 
-    (string badgeClass, string text) GetStatusDisplay(string status)
+  (string badgeClass, string text) GetStatusDisplay(TawtheefTest.Enum.QuestionSetStatus status)
+  {
+    return status switch
     {
-        return status?.ToLower() switch
-        {
-            "pending" => ("warning", "في الانتظار"),
-            "processing" => ("info", "قيد المعالجة"),
-            "completed" => ("success", "مكتمل"),
-            "failed" => ("danger", "فشل"),
-            _ => ("secondary", status)
-        };
-    }
+      TawtheefTest.Enum.QuestionSetStatus.Pending => ("warning", "في الانتظار"),
+      TawtheefTest.Enum.QuestionSetStatus.Processing => ("info", "قيد المعالجة"),
+      TawtheefTest.Enum.QuestionSetStatus.Completed => ("success", "مكتمل"),
+      TawtheefTest.Enum.QuestionSetStatus.Failed => ("danger", "فشل"),
+      _ => ("secondary", status.ToString())
+    };
+  }
 }

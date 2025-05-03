@@ -8,7 +8,7 @@ namespace TawtheefTest.ViewModels
 {
   // Base model classes for Views removed to avoid conflicts with existing definitions
 
-  public class QuestionViewModel
+  public class QuestionExamViewModel
   {
     public int Id { get; set; }
     public int QuestionSetId { get; set; }

@@ -1,4 +1,4 @@
-@model IEnumerable<QuestionSetDto>
+@model IEnumerable<TawtheefTest.DTOs.QuestionSetDto>
 @{
     ViewData["title"] = "مجموعات الأسئلة في الاختبار";
 }
@@ -54,16 +54,16 @@
                                     </div>
 
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge bg-label-secondary">@GetContentTypeDisplay(questionSet.ContentType)</span>
+                                        <span class="badge bg-label-secondary">@(questionSet.ContentSources?.FirstOrDefault()?.ContentSourceType != null ? GetContentTypeDisplay(questionSet.ContentSources.First().ContentSourceType) : "غير محدد")</span>
                                         <span class="badge bg-label-warning">@GetDifficultyDisplay(questionSet.Difficulty)</span>
                                     </div>
 
-                                    @if (questionSet.Status == "Completed")
+                                    @if (questionSet.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
                                     {
                                         <div class="d-flex justify-content-end">
                                             <small class="text-muted">
                                                 <i class="bx bx-time me-1"></i>
-                                                @questionSet.CompletedDate?.ToString("yyyy/MM/dd HH:mm")
+                                                @questionSet.ProcessedAt?.ToString("yyyy/MM/dd HH:mm")
                                             </small>
                                         </div>
                                     }
@@ -133,15 +133,15 @@
         };
     }
 
-    (string badge, string text) GetStatusDisplay(string status)
+    (string badge, string text) GetStatusDisplay(TawtheefTest.Enum.QuestionSetStatus status)
     {
-        return status?.ToLower() switch
+        return status switch
         {
-            "pending" => ("warning", "في الانتظار"),
-            "processing" => ("info", "قيد المعالجة"),
-            "completed" => ("success", "مكتمل"),
-            "failed" => ("danger", "فشل"),
-            _ => ("secondary", status)
+            TawtheefTest.Enum.QuestionSetStatus.Pending => ("warning", "في الانتظار"),
+            TawtheefTest.Enum.QuestionSetStatus.Processing => ("info", "قيد المعالجة"),
+            TawtheefTest.Enum.QuestionSetStatus.Completed => ("success", "مكتمل"),
+            TawtheefTest.Enum.QuestionSetStatus.Failed => ("danger", "فشل"),
+            _ => ("secondary", status.ToString())
         };
     }
 }

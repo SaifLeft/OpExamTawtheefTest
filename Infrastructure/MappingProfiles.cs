@@ -4,6 +4,7 @@ using TawtheefTest.DTOs;
 using TawtheefTest.DTOs.ExamModels;
 using TawtheefTest.ViewModels;
 using System.Linq;
+using System;
 
 namespace TawtheefTest.Infrastructure
 {
@@ -35,7 +36,20 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.QuestionType, opt => opt.MapFrom(src => src.Question.QuestionType))
           .ForMember(dest => dest.CorrectAnswer, opt => opt.MapFrom(src => src.Question.Answer))
           .ForMember(dest => dest.Answer, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty));
+      CreateMap<QuestionOption, CandidateQuestionOptionViewModel>();
+
+      // للتعامل مع نماذج توليد الأسئلة
+      CreateMap<QuestionSet, QuestionSetDto>()
+          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
+          .ForMember(dest => dest.QuestionsGenerated, opt => opt.MapFrom(src => src.Questions.Count))
+          .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSets.FirstOrDefault().ExamId));
+
+      CreateMap<ContentSource, ContentSourceViewModel>();
+      CreateMap<UploadedFile, UploadedFileViewModel>();
+      CreateMap<Question, QuestionViewModel>();
       CreateMap<QuestionOption, QuestionOptionViewModel>();
+      CreateMap<MatchingPair, MatchingPairViewModel>();
+      CreateMap<OrderingItem, OrderingItemViewModel>();
 
       // Map from DTOs to Data Models
       CreateMap<JobDTO, Job>();
@@ -53,6 +67,12 @@ namespace TawtheefTest.Infrastructure
 
       // Map from Data Models to ViewModels
       CreateMap<Candidate, CandidateViewModel>();
+      CreateMap<QuestionSet, QuestionSetDetailsViewModel>()
+          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
+          .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSets.FirstOrDefault().ExamId));
+      CreateMap<QuestionSet, QuestionSetStatusViewModel>()
+          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
+          .ForMember(dest => dest.QuestionsGenerated, opt => opt.MapFrom(src => src.Questions.Count));
 
       // Map from DTOs to ViewModels
       CreateMap<ExamDTO, ExamViewModel>();
@@ -68,6 +88,9 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.Answer, opt => opt.MapFrom(src => src.AnswerText));
       CreateMap<OTPVerificationDto, OTPVerificationViewModel>();
 
+      CreateMap<QuestionSetDto, QuestionSetDetailsViewModel>();
+      CreateMap<QuestionSetDto, QuestionSetStatusViewModel>();
+
       // Map from ViewModels to DTOs
       CreateMap<ExamViewModel, ExamDTO>();
       CreateMap<JobViewModel, JobDTO>();
@@ -79,6 +102,20 @@ namespace TawtheefTest.Infrastructure
       CreateMap<CreateExamViewModel, CreateExamDTO>();
       CreateMap<OTPVerificationViewModel, OTPVerificationDto>();
       CreateMap<OTPRequestViewModel, OTPRequestDto>();
+
+      CreateMap<CreateQuestionSetViewModel, CreateQuestionSetDto>();
+    }
+
+    private string GetStatusDescription(Enum.QuestionSetStatus status)
+    {
+      return status switch
+      {
+        Enum.QuestionSetStatus.Pending => "في الانتظار",
+        Enum.QuestionSetStatus.Processing => "قيد المعالجة",
+        Enum.QuestionSetStatus.Completed => "مكتمل",
+        Enum.QuestionSetStatus.Failed => "فشل",
+        _ => "غير معروف"
+      };
     }
   }
 }

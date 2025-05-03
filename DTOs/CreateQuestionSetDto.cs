@@ -57,6 +57,9 @@ namespace TawtheefTest.DTOs
         [Display(Name = "مرجع الملف")]
         public string FileReference { get; set; }
 
+        [Display(Name = "معرف الملف المرفوع")]
+        public int? UploadedFileId { get; set; }
+
         [Display(Name = "عدد العناصر")]
         [Range(2, 10, ErrorMessage = "عدد العناصر يجب أن يكون بين 2 و 10")]
         public int? NumberOfRows { get; set; }

@@ -46,7 +46,7 @@ namespace TawtheefTest.Controllers
             {
               Id = eqs.QuestionSet.Id,
               Name = eqs.QuestionSet.Name,
-              Status = eqs.QuestionSet.Status.ToString(),
+              Status = eqs.QuestionSet.Status,
               QuestionCount = eqs.QuestionSet.QuestionCount
             }).ToList()
           })
@@ -91,10 +91,10 @@ namespace TawtheefTest.Controllers
           Id = eqs.QuestionSet.Id,
           Name = eqs.QuestionSet.Name,
           Description = eqs.QuestionSet.Description,
-          QuestionType = eqs.QuestionSet.QuestionType.ToString(),
+          QuestionType = eqs.QuestionSet.QuestionType,
           QuestionCount = eqs.QuestionSet.QuestionCount,
-          Status = eqs.QuestionSet.Status.ToString(),
-          CreatedDate = eqs.QuestionSet.CreatedAt
+          Status = eqs.QuestionSet.Status,
+          CreatedAt = eqs.QuestionSet.CreatedAt
         }).ToList()
       };
 

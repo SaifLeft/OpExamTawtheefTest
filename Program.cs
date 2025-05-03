@@ -21,6 +21,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOTPService, OTPService>();
 builder.Services.AddScoped<IOpExamsService, OpExamsService>();
+builder.Services.AddScoped<IQuestionGenerationService, QuestionGenerationService>();
+
+// Register background service
+builder.Services.AddHostedService<QuestionGenerationBackgroundService>();
 
 // Register AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfiles));
