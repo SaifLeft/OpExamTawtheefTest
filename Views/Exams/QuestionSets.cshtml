@@ -1,4 +1,4 @@
-@model IEnumerable<TawtheefTest.DTOs.QuestionSetDto>
+@model IEnumerable<QuestionSetDto>
 @{
     ViewData["title"] = "مجموعات الأسئلة في الاختبار";
 }
@@ -47,17 +47,17 @@
                                         <span class="badge rounded-pill bg-@statusClass">@statusText</span>
                                     </div>
                                     <p class="card-text small text-muted mb-3">@(string.IsNullOrEmpty(questionSet.Description) ? "بدون وصف" : questionSet.Description)</p>
-                                    
+
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="badge bg-label-primary">@GetQuestionTypeDisplay(questionSet.QuestionType)</span>
                                         <span class="badge bg-label-info">@questionSet.QuestionCount سؤال</span>
                                     </div>
-                                    
+
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="badge bg-label-secondary">@GetContentTypeDisplay(questionSet.ContentType)</span>
                                         <span class="badge bg-label-warning">@GetDifficultyDisplay(questionSet.Difficulty)</span>
                                     </div>
-                                    
+
                                     @if (questionSet.Status == "Completed")
                                     {
                                         <div class="d-flex justify-content-end">
@@ -144,4 +144,4 @@
             _ => ("secondary", status)
         };
     }
-} 
+}

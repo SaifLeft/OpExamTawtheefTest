@@ -3,20 +3,25 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.ViewModels;
+using TawtheefTest.DTOs;
 using TawtheefTest.DTOs.ExamModels;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using AutoMapper;
 
 namespace TawtheefTest.Controllers
 {
   public class CandidatesController : Controller
   {
     private readonly ApplicationDbContext _context;
+    private readonly IMapper _mapper;
 
-    public CandidatesController(ApplicationDbContext context)
+    public CandidatesController(ApplicationDbContext context, IMapper mapper)
     {
       _context = context;
+      _mapper = mapper;
     }
 
     // GET: Candidates
@@ -24,20 +29,13 @@ namespace TawtheefTest.Controllers
     {
       var candidates = await _context.Candidates
           .Include(c => c.Job)
-          .Select(c => new CandidateDTO
-          {
-            Id = c.Id,
-            Name = c.Name,
-            PhoneNumber = c.Phone,
-            JobId = c.JobId,
-            JobName = c.Job.Title,
-            RegisteredDate = c.CreatedAt
-          })
           .ToListAsync();
+
+      var candidateDTOs = _mapper.Map<List<CandidateDTO>>(candidates);
 
       var viewModel = new CandidateListViewModel
       {
-        Candidates = candidates
+        Candidates = candidateDTOs
       };
 
       return View(viewModel);
@@ -60,15 +58,7 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var candidateDto = new CandidateDTO
-      {
-        Id = candidate.Id,
-        Name = candidate.Name,
-        PhoneNumber = candidate.Phone,
-        JobId = candidate.JobId,
-        JobName = candidate.Job.Title,
-        RegisteredDate = candidate.CreatedAt
-      };
+      var candidateDto = _mapper.Map<CandidateDTO>(candidate);
 
       return View(candidateDto);
     }
@@ -90,8 +80,8 @@ namespace TawtheefTest.Controllers
         var candidate = new Candidate
         {
           Name = model.Name,
-          Phone = model.PhoneNumber,
-          Email = $"{model.PhoneNumber}@temp.com", // Temporary email
+          Phone = model.Phone,
+          Email = model.Email,
           JobId = model.JobId,
           IsActive = true,
           CreatedAt = DateTime.UtcNow
@@ -126,7 +116,8 @@ namespace TawtheefTest.Controllers
       {
         Id = candidate.Id,
         Name = candidate.Name,
-        PhoneNumber = candidate.Phone,
+        PhoneNumber = candidate.Phone.ToString(),
+        Email = candidate.Email ?? string.Empty,
         JobId = candidate.JobId
       };
 
@@ -155,7 +146,8 @@ namespace TawtheefTest.Controllers
           }
 
           candidate.Name = model.Name;
-          candidate.Phone = model.PhoneNumber;
+          candidate.Phone = int.Parse(model.PhoneNumber);
+          candidate.Email = model.Email;
           candidate.JobId = model.JobId;
           candidate.UpdatedAt = DateTime.UtcNow;
 
@@ -199,15 +191,7 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var candidateDto = new CandidateDTO
-      {
-        Id = candidate.Id,
-        Name = candidate.Name,
-        PhoneNumber = candidate.Phone,
-        JobId = candidate.JobId,
-        JobName = candidate.Job.Title,
-        RegisteredDate = candidate.CreatedAt
-      };
+      var candidateDto = _mapper.Map<CandidateDTO>(candidate);
 
       return View(candidateDto);
     }
@@ -254,20 +238,13 @@ namespace TawtheefTest.Controllers
       var candidates = await _context.Candidates
           .Where(c => c.JobId == id)
           .Include(c => c.Job)
-          .Select(c => new CandidateDTO
-          {
-            Id = c.Id,
-            Name = c.Name,
-            PhoneNumber = c.Phone,
-            JobId = c.JobId,
-            JobName = c.Job.Title,
-            RegisteredDate = c.CreatedAt
-          })
           .ToListAsync();
+
+      var candidateDTOs = _mapper.Map<List<CandidateDTO>>(candidates);
 
       var viewModel = new CandidateListViewModel
       {
-        Candidates = candidates,
+        Candidates = candidateDTOs,
         JobName = job.Title,
         JobId = job.Id
       };

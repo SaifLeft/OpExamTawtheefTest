@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System;
+using TawtheefTest.Enum;
 
 namespace TawtheefTest.Data.Structure
 {

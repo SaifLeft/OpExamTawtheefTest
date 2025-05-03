@@ -7,9 +7,12 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using TawtheefTest.Models;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
+using TawtheefTest.DTOs.ExamModels;
+using AutoMapper;
+using TawtheefTest.DTOs;
+using TawtheefTest.Enum;
 
 namespace TawtheefTest.Services
 {
@@ -19,43 +22,46 @@ namespace TawtheefTest.Services
     private readonly string _apiKey;
     private readonly string _serverUrl;
     private readonly ApplicationDbContext _context;
+    private readonly IMapper _mapper;
 
-    public OpExamsService(HttpClient httpClient, IConfiguration configuration, ApplicationDbContext context)
+    public OpExamsService(HttpClient httpClient, IConfiguration configuration, ApplicationDbContext context, IMapper mapper)
     {
       _httpClient = httpClient;
       _apiKey = configuration["OpExams:ApiKey"];
       _serverUrl = configuration["OpExams:ServerUrl"];
       _context = context;
+      _mapper = mapper;
 
       _httpClient.DefaultRequestHeaders.Add("api-key", _apiKey);
     }
 
-    public async Task<List<Question>> GenerateQuestions(string topic, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestions(string topic, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
-      // Placeholder implementation
-      return new List<Question>();
+      // Placeholder implementation - in a real implementation, would use data models internally
+      // and map to DTOs when returning
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsFromText(string text, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsFromText(string text, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsFromLink(string link, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsFromLink(string link, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsFromYoutube(string youtubeLink, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsFromYoutube(string youtubeLink, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
     public async Task<string> UploadFile(Stream fileStream, string fileName)
@@ -64,46 +70,46 @@ namespace TawtheefTest.Services
       return Guid.NewGuid().ToString();
     }
 
-    public async Task<List<Question>> GenerateQuestionsFromDocument(string documentId, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsFromDocument(string documentId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsFromImage(string imageId, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsFromImage(string imageId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsFromAudio(string audioId, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsFromAudio(string audioId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsFromVideo(string videoId, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsFromVideo(string videoId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsWithOrderingOrMatching(string topic, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsWithOrderingOrMatching(string topic, string questionType,
         string language, string difficulty, int questionCount, int numberOfRows)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
-    public async Task<List<Question>> GenerateQuestionsWithMultiSelect(string topic, string questionType,
+    public async Task<List<QuestionDTO>> GenerateQuestionsWithMultiSelect(string topic, string questionType,
         string language, string difficulty, int questionCount, int optionsCount, int numberOfCorrectOptions)
     {
       // Placeholder implementation
-      return new List<Question>();
+      return new List<QuestionDTO>();
     }
 
     public async Task<bool> GenerateQuestionsAsync(int questionSetId)
@@ -111,6 +117,7 @@ namespace TawtheefTest.Services
       // Get the question set details
       var questionSet = await _context.QuestionSets
           .Include(qs => qs.ContentSources)
+          .Include(qs => qs.ExamQuestionSets)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
       if (questionSet == null)
@@ -137,6 +144,7 @@ namespace TawtheefTest.Services
         // Create dummy questions (for demonstration purposes)
         for (int i = 0; i < questionSet.QuestionCount; i++)
         {
+          // Always use Data.Structure models when working with EF Core
           var question = new Question
           {
             QuestionSetId = questionSet.Id,
@@ -150,7 +158,7 @@ namespace TawtheefTest.Services
           _context.Questions.Add(question);
 
           // Add options for multiple choice questions
-          if (questionSet.QuestionType == QuestionTypeEnum.MCQ || questionSet.QuestionType == QuestionTypeEnum.TF)
+          if (questionSet.QuestionType == QuestionTypeEnum.MCQ.ToString() || questionSet.QuestionType == QuestionTypeEnum.TF.ToString())
           {
             int optionsCount = questionSet.OptionsCount ?? 4;
             for (int j = 0; j < optionsCount; j++)

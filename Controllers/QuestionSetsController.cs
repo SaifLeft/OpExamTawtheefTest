@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.ViewModels;
 using TawtheefTest.DTOs;
+using TawtheefTest.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using TawtheefTest.Services;
+using TawtheefTest.Enum;
 
 namespace TawtheefTest.Controllers
 {
@@ -96,7 +97,7 @@ namespace TawtheefTest.Controllers
     // POST: QuestionSets/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateQuestionSetDto model)
+    public async Task<IActionResult> Create(CreateQuestionSetViewModel model)
     {
       if (ModelState.IsValid)
       {
@@ -104,7 +105,7 @@ namespace TawtheefTest.Controllers
         {
           Name = model.Name,
           Description = model.Description,
-          QuestionType = model.QuestionType,
+          QuestionType = model.QuestionType.ToString(),
           Difficulty = model.Difficulty,
           QuestionCount = model.QuestionCount,
           OptionsCount = model.OptionsCount,

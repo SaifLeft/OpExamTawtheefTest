@@ -1,11 +1,11 @@
-@model CandidateExam
+@model CandidateExamResultViewModel
 
 @{
     ViewData["Title"] = "نتائج الاختبار";
-    var candidateAnswers = ViewData["CandidateAnswers"] as IEnumerable<CandidateAnswer>;
+    var candidateAnswers = ViewData["CandidateAnswers"] as IEnumerable<CandidateAnswerViewModel>;
 
     var totalQuestions = candidateAnswers.Count();
-    var correctAnswers = candidateAnswers.Count(a => a.IsCorrect);
+    var correctAnswers = candidateAnswers.Count(a => a.IsCorrect ?? false);
     var score = totalQuestions > 0 ? ((double)correctAnswers / totalQuestions) * 100 : 0;
     var passed = score >= 60;
 }
@@ -17,7 +17,7 @@
     </a>
 </div>
 
-@if (!Model.Exam.ShowResultsImmediately)
+@if (!Model.ShowResultsImmediately)
 {
     <div class="alert alert-info">
         <h4 class="mb-0">لم يتم إعلان النتائج بعد</h4>
@@ -68,29 +68,29 @@ else
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>سؤال @questionIndex</span>
-                <span class="badge bg-@(answer.IsCorrect ? "success" : "danger")">
-                    @(answer.IsCorrect ? "صحيح" : "خطأ")
+                <span class="badge bg-@(answer.IsCorrect == true ? "success" : "danger")">
+                    @(answer.IsCorrect == true ? "صحيح" : "خطأ")
                 </span>
             </div>
             <div class="card-body">
-                <p><strong>السؤال:</strong> @answer.Question.QuestionText</p>
+                <p><strong>السؤال:</strong> @answer.QuestionText</p>
 
-                @if (answer.Question.QuestionType.ToUpper() == "MCQ")
+                @if (answer.QuestionType.ToUpper() == "MCQ")
                 {
-                    <p><strong>إجابتك:</strong> @(answer.Question.Options.FirstOrDefault(o => o.Id.ToString() ==
-                                answer.Answer)?.OptionText ?? "لم تتم الإجابة")</p>
-                    <p><strong>الإجابة الصحيحة:</strong> @answer.Question.Options.FirstOrDefault(o => o.IsCorrect)?.OptionText</p>
+                    <p><strong>إجابتك:</strong> @(answer.Options.FirstOrDefault(o => o.Id.ToString() ==
+                                answer.Answer)?.Text ?? "لم تتم الإجابة")</p>
+                    <p><strong>الإجابة الصحيحة:</strong> @answer.Options.FirstOrDefault(o => o.IsCorrect)?.Text</p>
                 }
-                else if (answer.Question.QuestionType.ToUpper() == "TF")
+                else if (answer.QuestionType.ToUpper() == "TF")
                 {
                     <p><strong>إجابتك:</strong> @(answer.Answer == "true" ? "صحيح" : "خطأ")</p>
-                    <p><strong>الإجابة الصحيحة:</strong> @(answer.Question.Options.FirstOrDefault(o => o.IsCorrect)?.OptionText ==
+                    <p><strong>الإجابة الصحيحة:</strong> @(answer.Options.FirstOrDefault(o => o.IsCorrect)?.Text ==
                                 "True" ? "صحيح" : "خطأ")</p>
                 }
                 else
                 {
                     <p><strong>إجابتك:</strong> @answer.Answer</p>
-                    <p><strong>الإجابة الصحيحة:</strong> @answer.Question.CorrectAnswer</p>
+                    <p><strong>الإجابة الصحيحة:</strong> @answer.CorrectAnswer</p>
                 }
             </div>
         </div>

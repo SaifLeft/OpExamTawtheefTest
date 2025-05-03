@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
+using TawtheefTest.Infrastructure;
 using TawtheefTest.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOTPService, OTPService>();
 builder.Services.AddScoped<IOpExamsService, OpExamsService>();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfiles));
 
 // Add session support
 builder.Services.AddDistributedMemoryCache();

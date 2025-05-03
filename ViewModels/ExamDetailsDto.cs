@@ -1,4 +1,5 @@
 using TawtheefTest.Data.Structure;
+using TawtheefTest.Enum;
 
 namespace TawtheefTest.ViewModels
 {

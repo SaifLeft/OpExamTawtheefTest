@@ -35,7 +35,7 @@ namespace TawtheefTest.Controllers
 
       // Check if the candidate with the phone number exists
       var candidate = await _context.Candidates
-          .FirstOrDefaultAsync(c => c.Phone == phoneNumber);
+          .FirstOrDefaultAsync(c => c.Phone.ToString() == phoneNumber);
 
       if (candidate == null)
       {
@@ -44,7 +44,7 @@ namespace TawtheefTest.Controllers
       }
 
       // Generate and send OTP
-      var otpCode = await _otpService.GenerateAndSendOTP(phoneNumber);
+      var otpCode = await _otpService.GenerateAndSendOTP(int.Parse(phoneNumber));
 
       TempData["SuccessMessage"] = "OTP sent to your phone number.";
       TempData["PhoneNumber"] = phoneNumber;
@@ -76,14 +76,22 @@ namespace TawtheefTest.Controllers
     [HttpPost]
     public async Task<IActionResult> VerifyOTP(string phoneNumber, string otpCode)
     {
-      if (string.IsNullOrEmpty(phoneNumber) || string.IsNullOrEmpty(otpCode))
+      if (string.IsNullOrEmpty(otpCode))
       {
-        TempData["ErrorMessage"] = "Phone number and OTP code are required.";
+        TempData["ErrorMessage"] = "OTP code is required.";
+        return RedirectToAction(nameof(VerifyOTP));
+      }
+
+      // Check if the OTP code matches the one sent
+      var sentOtpCode = TempData["OTPCode"]?.ToString();
+      if (string.IsNullOrEmpty(sentOtpCode) || sentOtpCode != otpCode)
+      {
+        TempData["ErrorMessage"] = "Invalid OTP code.";
         return RedirectToAction(nameof(VerifyOTP));
       }
 
       // Verify OTP
-      bool isValid = await _otpService.VerifyOTP(phoneNumber, otpCode);
+      bool isValid = await _otpService.VerifyOTPAsync(int.Parse(phoneNumber), otpCode);
 
       if (!isValid)
       {
@@ -94,7 +102,7 @@ namespace TawtheefTest.Controllers
 
       // Get candidate
       var candidate = await _context.Candidates
-          .FirstOrDefaultAsync(c => c.Phone == phoneNumber);
+          .FirstOrDefaultAsync(c => c.Phone.ToString() == phoneNumber);
 
       if (candidate == null)
       {

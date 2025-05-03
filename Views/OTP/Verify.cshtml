@@ -1,0 +1,43 @@
+@model OTPVerificationViewModel
+
+@{
+    ViewData["Title"] = "التحقق من رمز التحقق";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">التحقق من رمز التحقق</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-center mb-3">تم إرسال رمز التحقق إلى الرقم: @Model.PhoneNumber</p>
+
+                    <form asp-action="Verify" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <input type="hidden" asp-for="PhoneNumber" />
+
+                        <div class="form-group mb-3">
+                            <label asp-for="OTPCode" class="control-label"></label>
+                            <input asp-for="OTPCode" class="form-control" />
+                            <span asp-validation-for="OTPCode" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-success">تحقق</button>
+                            <a asp-action="Request" class="btn btn-secondary">إعادة طلب رمز التحقق</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

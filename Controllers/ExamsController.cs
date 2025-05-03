@@ -7,6 +7,7 @@ using TawtheefTest.ViewModels;
 using TawtheefTest.DTOs;
 using System.Threading.Tasks;
 using System.Linq;
+using TawtheefTest.Enum;
 
 namespace TawtheefTest.Controllers
 {
@@ -119,8 +120,8 @@ namespace TawtheefTest.Controllers
           Description = model.Description,
           JobId = model.JobId,
           Duration = model.Duration,
-          StartDate = model.ExamStartDate,
-          EndDate = model.ExamEndDate,
+          StartDate = model.StartDate,
+          EndDate = model.EndDate,
           Status = ExamStatus.Draft,
           CreatedAt = DateTime.UtcNow
         };
@@ -265,7 +266,7 @@ namespace TawtheefTest.Controllers
       {
         Name = $"Question Set: {topic}",
         Description = $"Generated for {exam.Name}",
-        QuestionType = questionType,
+        QuestionType = questionType.ToString(),
         Difficulty = difficulty,
         QuestionCount = questionCount,
         Status = QuestionSetStatus.Pending,
@@ -278,7 +279,7 @@ namespace TawtheefTest.Controllers
       // Create content source
       var contentSource = new ContentSource
       {
-        Type = ContentSourceType.Topic,
+        ContentSourceType = ContentSourceType.Topic.ToString(),
         Content = topic,
         QuestionSetId = questionSet.Id,
         CreatedAt = DateTime.UtcNow
@@ -328,7 +329,6 @@ namespace TawtheefTest.Controllers
         Id = ce.Id,
         ExamId = ce.ExamId,
         ApplicantName = ce.Candidate.Name,
-        ApplicantEmail = ce.Candidate.Email,
         StartTime = ce.StartTime,
         EndTime = ce.EndTime,
         Score = ce.Score.HasValue ? (double)ce.Score.Value : 0,

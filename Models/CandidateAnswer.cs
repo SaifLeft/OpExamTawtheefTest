@@ -1,4 +1,5 @@
 using System;
+using TawtheefTest.Data.Structure;
 
 namespace TawtheefTest.Models
 {

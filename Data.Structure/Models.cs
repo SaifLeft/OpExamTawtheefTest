@@ -3,65 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using TawtheefTest.Enum;
 
 namespace TawtheefTest.Data.Structure
 {
-  // Enums
-  public enum QuestionSetStatus
-  {
-    Pending,
-    Processing,
-    Completed,
-    Failed
-  }
-
-  public enum ContentSourceType
-  {
-    Topic,
-    Text,
-    Link,
-    Youtube,
-    Document,
-    Image,
-    Audio,
-    Video
-  }
-
-  public enum ExamStatus
-  {
-    Draft,
-    Published,
-    Archived
-  }
-
-  public enum CandidateExamStatus
-  {
-    NotStarted,
-    InProgress,
-    Completed,
-    Abandoned
-  }
-
-  public enum QuestionTypeEnum
-  {
-    MCQ,
-    TF,
-    Open,
-    FillInTheBlank,
-    Ordering,
-    Matching,
-    MultiSelect,
-    ShortAnswer
-  }
-
-  public enum FileType
-  {
-    Document,
-    Image,
-    Audio,
-    Video,
-    Other
-  }
 
   // Models
   public class Job
@@ -99,6 +44,9 @@ namespace TawtheefTest.Data.Structure
     [StringLength(8)]
     public int Phone { get; set; }
 
+    [StringLength(100)]
+    public string? Email { get; set; }
+
     [Required]
     public int JobId { get; set; }
 
@@ -120,7 +68,7 @@ namespace TawtheefTest.Data.Structure
     public int Id { get; set; }
 
     [Required]
-    public ContentSourceType Type { get; set; }
+    public string ContentSourceType { get; set; }
 
     [StringLength(10000)]
     public string? Content { get; set; }
@@ -156,7 +104,7 @@ namespace TawtheefTest.Data.Structure
     public string FileId { get; set; } = string.Empty;
 
     [Required]
-    public FileType FileType { get; set; }
+    public string FileType { get; set; }
 
     [StringLength(100)]
     public string ContentType { get; set; } = string.Empty;
@@ -186,7 +134,7 @@ namespace TawtheefTest.Data.Structure
 
     // Question generation settings
     [Required]
-    public QuestionTypeEnum QuestionType { get; set; } = QuestionTypeEnum.MCQ;
+    public string QuestionType { get; set; }
 
     [Required]
     [StringLength(50)]
@@ -309,7 +257,7 @@ namespace TawtheefTest.Data.Structure
     public string QuestionText { get; set; } = string.Empty;
 
     [Required]
-    public QuestionTypeEnum QuestionType { get; set; }
+    public string QuestionType { get; set; }
 
     // For multiple choice questions
     public virtual ICollection<QuestionOption> Options { get; set; } = new List<QuestionOption>();
@@ -451,7 +399,7 @@ namespace TawtheefTest.Data.Structure
     public virtual Exam Exam { get; set; } = null!;
 
     [Required]
-    public CandidateExamStatus Status { get; set; } = CandidateExamStatus.NotStarted;
+    public string Status { get; set; }
 
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }

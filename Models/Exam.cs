@@ -13,7 +13,7 @@ namespace TawtheefTest.Models
     public int OptionsCount { get; set; } // For MCQ questions
     public string QuestionType { get; set; } // "MCQ", "TF", etc.
     public int Duration { get; set; } // Duration in minutes
-    public bool ShowResultsImmediately { get; set; } // Duration in minutes
+    public bool ShowResultsImmediately { get; set; }
     public DateTime CreatedDate { get; set; }
 
     // Navigation properties

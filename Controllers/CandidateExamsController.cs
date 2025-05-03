@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.ViewModels;
+using TawtheefTest.DTOs;
+using TawtheefTest.Enum;
+using AutoMapper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,23 +16,24 @@ namespace TawtheefTest.Controllers
   public class CandidateExamsController : Controller
   {
     private readonly ApplicationDbContext _context;
+    private readonly IMapper _mapper;
 
-    public CandidateExamsController(ApplicationDbContext context)
+    public CandidateExamsController(ApplicationDbContext context, IMapper mapper)
     {
       _context = context;
+      _mapper = mapper;
     }
 
     // GET: CandidateExams
     public async Task<IActionResult> Index()
     {
-      // Check if candidate is logged in
-      var candidateId = HttpContext.Session.GetInt32("CandidateId");
-      if (candidateId == null)
+      if (!HttpContext.Session.TryGetValue("CandidateId", out var candidateIdBytes))
       {
         return RedirectToAction("Login", "Auth");
       }
 
-      // Get candidate details
+      var candidateId = BitConverter.ToInt32(candidateIdBytes);
+
       var candidate = await _context.Candidates
           .Include(c => c.Job)
           .FirstOrDefaultAsync(c => c.Id == candidateId);
@@ -39,23 +43,28 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Login", "Auth");
       }
 
-      // Get all exams for the candidate's job
-      var exams = await _context.Exams
-          .Where(e => e.JobId == candidate.JobId)
-          .Include(e => e.Job)
-          .Include(e => e.Questions)
-          .ToListAsync();
+      var candidateViewModel = _mapper.Map<CandidateViewModel>(candidate);
 
-      // Get candidate's exam attempts
       var candidateExams = await _context.CandidateExams
-          .Where(ce => ce.CandidateId == candidateId)
           .Include(ce => ce.Exam)
+          .ThenInclude(e => e.Job)
+          .Where(ce => ce.CandidateId == candidateId)
           .ToListAsync();
 
-      ViewData["Candidate"] = candidate;
-      ViewData["CandidateExams"] = candidateExams;
+      var candidateExamViewModels = _mapper.Map<List<CandidateExamViewModel>>(candidateExams);
 
-      return View(exams);
+      // Get available exams for the candidate's job
+      var exams = await _context.Exams
+          .Include(e => e.Job)
+          .Where(e => e.JobId == candidate.JobId && e.Status == ExamStatus.Published)
+          .ToListAsync();
+
+      var examViewModels = _mapper.Map<List<ExamForCandidateViewModel>>(exams);
+
+      ViewData["Candidate"] = candidateViewModel;
+      ViewData["CandidateExams"] = candidateExamViewModels;
+
+      return View(examViewModels);
     }
 
     // GET: CandidateExams/Start/5
@@ -88,7 +97,7 @@ namespace TawtheefTest.Controllers
       var existingAttempt = await _context.CandidateExams
           .FirstOrDefaultAsync(ce => ce.CandidateId == candidateId &&
                                     ce.ExamId == id &&
-                                    ce.Status == CandidateExamStatus.InProgress);
+                                    ce.Status == CandidateExamStatus.InProgress.ToString());
 
       if (existingAttempt != null)
       {
@@ -102,7 +111,7 @@ namespace TawtheefTest.Controllers
         CandidateId = candidateId.Value,
         ExamId = id.Value,
         StartTime = DateTime.UtcNow,
-        Status = CandidateExamStatus.InProgress,
+        Status = CandidateExamStatus.InProgress.ToString(),
         CreatedAt = DateTime.UtcNow
       };
 
@@ -146,19 +155,23 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed)
+      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
       {
         return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
       }
 
       // Get candidate's answers
       var candidateAnswers = await _context.CandidateAnswers
+          .Include(ca => ca.Question)
           .Where(ca => ca.CandidateExamId == id)
           .ToListAsync();
 
-      ViewData["CandidateAnswers"] = candidateAnswers;
+      var candidateExamViewModel = _mapper.Map<CandidateExamViewModel>(candidateExam);
+      var candidateAnswerDTOs = _mapper.Map<List<CandidateAnswerDTO>>(candidateAnswers);
 
-      return View(candidateExam);
+      ViewData["CandidateAnswers"] = candidateAnswerDTOs;
+
+      return View(candidateExamViewModel);
     }
 
     // POST: CandidateExams/SaveAnswer
@@ -176,7 +189,7 @@ namespace TawtheefTest.Controllers
       var candidateExam = await _context.CandidateExams
           .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
 
-      if (candidateExam == null || candidateExam.Status == CandidateExamStatus.Completed)
+      if (candidateExam == null || candidateExam.Status == CandidateExamStatus.Completed.ToString())
       {
         return BadRequest();
       }
@@ -200,24 +213,24 @@ namespace TawtheefTest.Controllers
       // Check if answer is correct
       switch (question.QuestionType)
       {
-        case QuestionTypeEnum.MCQ:
+        case "MCQ":
           var selectedOption = question.Options.FirstOrDefault(o => o.Id.ToString() == answer);
           isCorrect = selectedOption?.IsCorrect;
           break;
 
-        case QuestionTypeEnum.TF:
+        case "TF":
           if (bool.TryParse(answer, out bool boolAnswer))
           {
             isCorrect = boolAnswer == question.TrueFalseAnswer;
           }
           break;
 
-        case QuestionTypeEnum.ShortAnswer:
-        case QuestionTypeEnum.FillInTheBlank:
+        case "ShortAnswer":
+        case "FillInTheBlank":
           isCorrect = string.Equals(question.Answer, answer, StringComparison.OrdinalIgnoreCase);
           break;
 
-        case QuestionTypeEnum.MultiSelect:
+        case "MultiSelect":
           try
           {
             var selectedOptions = JsonSerializer.Deserialize<List<int>>(answer);
@@ -230,7 +243,7 @@ namespace TawtheefTest.Controllers
           }
           break;
 
-        case QuestionTypeEnum.Matching:
+        case "Matching":
           try
           {
             var pairs = JsonSerializer.Deserialize<Dictionary<string, string>>(answer);
@@ -243,7 +256,7 @@ namespace TawtheefTest.Controllers
           }
           break;
 
-        case QuestionTypeEnum.Ordering:
+        case "Ordering":
           try
           {
             var orderItems = JsonSerializer.Deserialize<List<string>>(answer);
@@ -308,7 +321,7 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed)
+      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
       {
         return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
       }
@@ -320,8 +333,8 @@ namespace TawtheefTest.Controllers
 
       // Update candidate exam
       candidateExam.EndTime = DateTime.UtcNow;
-      candidateExam.Score = score;
-      candidateExam.Status = CandidateExamStatus.Completed;
+      candidateExam.Score = Math.Round(score, 2);
+      candidateExam.Status = CandidateExamStatus.Completed.ToString();
       candidateExam.UpdatedAt = DateTime.UtcNow;
 
       _context.Update(candidateExam);
@@ -336,38 +349,30 @@ namespace TawtheefTest.Controllers
     {
       if (id == null)
       {
-        return NotFound();
+        return RedirectToAction(nameof(Index));
       }
 
-      // Check if candidate is logged in
-      var candidateId = HttpContext.Session.GetInt32("CandidateId");
-      if (candidateId == null)
-      {
-        return RedirectToAction("Login", "Auth");
-      }
-
-      // Get candidate exam details
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Candidate)
           .Include(ce => ce.Exam)
-              .ThenInclude(e => e.Job)
-          .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
+          .Include(ce => ce.CandidateAnswers)
+              .ThenInclude(ca => ca.Question)
+                  .ThenInclude(q => q.Options)
+          .FirstOrDefaultAsync(ce => ce.Id == id);
 
       if (candidateExam == null)
       {
         return NotFound();
       }
 
-      // Get candidate answers
-      var candidateAnswers = await _context.CandidateAnswers
-          .Where(ca => ca.CandidateExamId == id)
-          .Include(ca => ca.Question)
-              .ThenInclude(q => q.Options)
-          .ToListAsync();
+      var candidateExamResult = _mapper.Map<CandidateExamResultViewModel>(candidateExam);
 
-      ViewData["CandidateAnswers"] = candidateAnswers;
+      // Map candidate answers
+      candidateExamResult.Answers = _mapper.Map<List<CandidateAnswerViewModel>>(candidateExam.CandidateAnswers);
 
-      return View(candidateExam);
+      ViewData["CandidateAnswers"] = candidateExamResult.Answers;
+
+      return View(candidateExamResult);
     }
 
     // GET: CandidateExams/ByCandidateId/5
@@ -383,7 +388,9 @@ namespace TawtheefTest.Controllers
           .Include(ce => ce.Exam)
           .ToListAsync();
 
-      ViewData["CandidateExams"] = candidateExams;
+      var candidateExamViewModels = _mapper.Map<List<CandidateExamViewModel>>(candidateExams);
+
+      ViewData["CandidateExams"] = candidateExamViewModels;
 
       return View();
     }
@@ -410,13 +417,13 @@ namespace TawtheefTest.Controllers
         return Json(new { success = false, message = "الاختبار غير موجود" });
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed)
+      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
       {
         return Json(new { success = false, message = "الاختبار مكتمل" });
       }
 
       // Check if question replacement is already used
-      if (candidateExam.Status == CandidateExamStatus.InProgress && candidateExam.StartTime.HasValue)
+      if (candidateExam.Status == CandidateExamStatus.InProgress.ToString() && candidateExam.StartTime.HasValue)
       {
         var questionReplaced = await _context.CandidateExams
             .Where(ce => ce.Id == candidateExamId)

@@ -1,174 +1,173 @@
-@model IEnumerable<Exam>
+@model IEnumerable<ExamForCandidateViewModel>
 
 @{
-    ViewData["Title"] = "الاختبارات المتاحة";
-    var candidate = ViewData["Candidate"] as Candidate;
-    var candidateExams = ViewData["CandidateExams"] as IEnumerable<CandidateExam>;
+  ViewData["Title"] = "الاختبارات المتاحة";
+  var candidate = ViewData["Candidate"] as CandidateViewModel;
+  var candidateExams = ViewData["CandidateExams"] as IEnumerable<CandidateExamViewModel>;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>الاختبارات المتاحة</h1>
+  <h1>الاختبارات المتاحة</h1>
 </div>
 
 <div class="alert alert-info">
-    <h5>مرحباً @candidate.Name</h5>
-    <p>أنت مسجل للوظيفة: <strong>@candidate.Job.Name</strong></p>
+  <h5>مرحباً @candidate.Name</h5>
+  <p>أنت مسجل للوظيفة: <strong>@candidate.JobName</strong></p>
 </div>
 
 <div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">الاختبارات السابقة</h5>
-            </div>
-            <div class="card-body">
-                @if (!candidateExams.Any(ce => ce.IsCompleted))
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">الاختبارات السابقة</h5>
+      </div>
+      <div class="card-body">
+        @if (!candidateExams.Any(ce => ce.IsCompleted))
+        {
+          <p class="text-muted">لم تقم بإكمال أي اختبار حتى الآن.</p>
+        }
+        else
+        {
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>الاختبار</th>
+                  <th>تاريخ البدء</th>
+                  <th>تاريخ الانتهاء</th>
+                  <th>النتيجة</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach (var exam in candidateExams.Where(ce => ce.IsCompleted))
                 {
-                    <p class="text-muted">لم تقم بإكمال أي اختبار حتى الآن.</p>
+                  <tr>
+                    <td>@exam.JobName - @exam.QuestionType</td>
+                    <td>@exam.StartTime?.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@exam.EndTime?.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                      @if (exam.Score.HasValue)
+                      {
+                        <span class="badge bg-@(exam.Score >= 60 ? "success" : "danger")">
+                          @Math.Round((decimal)exam.Score.Value, 2)%
+                        </span>
+                      }
+                    </td>
+                    <td>
+                      <a asp-action="Results" asp-route-id="@exam.Id" class="btn btn-sm btn-outline-primary">
+                        عرض النتائج
+                      </a>
+                    </td>
+                  </tr>
                 }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>الاختبار</th>
-                                    <th>تاريخ البدء</th>
-                                    <th>تاريخ الانتهاء</th>
-                                    <th>النتيجة</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var exam in candidateExams.Where(ce => ce.IsCompleted))
-                                {
-                                    <tr>
-                                        <td>@exam.Exam.Job.Name - @exam.Exam.QuestionType</td>
-                                        <td>@exam.StartTime?.ToString("yyyy-MM-dd HH:mm")</td>
-                                        <td>@exam.EndTime?.ToString("yyyy-MM-dd HH:mm")</td>
-                                        <td>
-                                            @if (exam.Score.HasValue)
-                                            {
-                                                <span class="badge bg-@(exam.Score >= 60 ? "success" : "danger")">
-                                                    @Math.Round(exam.Score.Value, 2)%
-                                                </span>
-                                            }
-                                        </td>
-                                        <td>
-                                            <a asp-action="Results" asp-route-id="@exam.Id"
-                                                class="btn btn-sm btn-outline-primary">
-                                                عرض النتائج
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-            </div>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
     </div>
+  </div>
 </div>
 
 @if (!Model.Any())
 {
-    <div class="alert alert-warning">
-        لا توجد اختبارات متاحة لهذه الوظيفة.
-    </div>
+  <div class="alert alert-warning">
+    لا توجد اختبارات متاحة لهذه الوظيفة.
+  </div>
 }
 else
 {
-    <h4>الاختبارات المتاحة للوظيفة</h4>
-    <div class="row">
-        @foreach (var exam in Model)
-        {
-            var takenExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && !ce.IsCompleted);
-            var completedExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && ce.IsCompleted);
+  <h4>الاختبارات المتاحة للوظيفة</h4>
+  <div class="row">
+    @foreach (var exam in Model)
+    {
+      var takenExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && !ce.IsCompleted);
+      var completedExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && ce.IsCompleted);
 
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">@exam.Job.Name</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush mb-3">
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>نوع الاختبار</span>
-                                <span>@GetQuestionTypeName(exam.QuestionType)</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>مستوى الصعوبة</span>
-                                <span>@GetDifficultyName(exam.Difficulty)</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>عدد الأسئلة</span>
-                                <span>@exam.QuestionCount</span>
-                            </li>
-                        </ul>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0">@exam.JobName</h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush mb-3">
+              <li class="list-group-item d-flex justify-content-between">
+                <span>نوع الاختبار</span>
+                <span>@GetQuestionTypeName(exam.QuestionType)</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>مستوى الصعوبة</span>
+                <span>@GetDifficultyName(exam.Difficulty)</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>عدد الأسئلة</span>
+                <span>@exam.QuestionCount</span>
+              </li>
+            </ul>
 
-                        @if (takenExam != null)
-                        {
-                            <div class="alert alert-warning">
-                                <small>لديك اختبار قيد التقدم</small>
-                            </div>
-                            <div class="d-grid">
-                                <a asp-action="Take" asp-route-id="@takenExam.Id" class="btn btn-warning">
-                                    <i class="bi bi-arrow-right-circle"></i> متابعة الاختبار
-                                </a>
-                            </div>
-                        }
-                        else if (completedExam != null)
-                        {
-                            <div class="alert alert-success">
-                                <small>أكملت هذا الاختبار بنتيجة @Math.Round(completedExam.Score.Value, 2)%</small>
-                            </div>
-                            <div class="d-grid">
-                                <a asp-action="Results" asp-route-id="@completedExam.Id" class="btn btn-outline-primary">
-                                    <i class="bi bi-eye"></i> عرض النتائج
-                                </a>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="d-grid">
-                                <a asp-action="Start" asp-route-id="@exam.Id" class="btn btn-primary">
-                                    <i class="bi bi-play-circle"></i> بدء الاختبار
-                                </a>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+            @if (takenExam != null)
+            {
+              <div class="alert alert-warning">
+                <small>لديك اختبار قيد التقدم</small>
+              </div>
+              <div class="d-grid">
+                <a asp-action="Take" asp-route-id="@takenExam.Id" class="btn btn-warning">
+                  <i class="bi bi-arrow-right-circle"></i> متابعة الاختبار
+                </a>
+              </div>
+            }
+            else if (completedExam != null)
+            {
+              <div class="alert alert-success">
+                <small>أكملت هذا الاختبار بنتيجة @Math.Round((decimal)completedExam.Score.Value, 2)%</small>
+              </div>
+              <div class="d-grid">
+                <a asp-action="Results" asp-route-id="@completedExam.Id" class="btn btn-outline-primary">
+                  <i class="bi bi-eye"></i> عرض النتائج
+                </a>
+              </div>
+            }
+            else
+            {
+              <div class="d-grid">
+                <a asp-action="Start" asp-route-id="@exam.Id" class="btn btn-primary">
+                  <i class="bi bi-play-circle"></i> بدء الاختبار
+                </a>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
 }
 
 @functions {
-    private string GetQuestionTypeName(string type)
+  private string GetQuestionTypeName(string type)
+  {
+    return type switch
     {
-        return type switch
-        {
-            "MCQ" => "اختيار من متعدد",
-            "TF" => "صح / خطأ",
-            "open" => "إجابة مفتوحة",
-            "fillInTheBlank" => "ملء الفراغات",
-            "ordering" => "ترتيب",
-            "matching" => "مطابقة",
-            "multiSelect" => "اختيار متعدد",
-            "shortAnswer" => "إجابة قصيرة",
-            _ => type
-        };
-    }
+      "MCQ" => "اختيار من متعدد",
+      "TF" => "صح / خطأ",
+      "open" => "إجابة مفتوحة",
+      "fillInTheBlank" => "ملء الفراغات",
+      "ordering" => "ترتيب",
+      "matching" => "مطابقة",
+      "multiSelect" => "اختيار متعدد",
+      "shortAnswer" => "إجابة قصيرة",
+      _ => type
+    };
+  }
 
-    private string GetDifficultyName(string difficulty)
+  private string GetDifficultyName(string difficulty)
+  {
+    return difficulty switch
     {
-        return difficulty switch
-        {
-            "easy" => "سهل",
-            "medium" => "متوسط",
-            "hard" => "صعب",
-            _ => difficulty
-        };
-    }
+      "easy" => "سهل",
+      "medium" => "متوسط",
+      "hard" => "صعب",
+      _ => difficulty
+    };
+  }
 }
