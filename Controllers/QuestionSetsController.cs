@@ -1,19 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.ViewModels;
+using TawtheefTest.DTOs;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using TawtheefTest.Services;
 
 namespace TawtheefTest.Controllers
 {
   public class QuestionSetsController : Controller
   {
     private readonly ApplicationDbContext _context;
+    private readonly IOpExamsService _opExamsService;
 
-    public QuestionSetsController(ApplicationDbContext context)
+    public QuestionSetsController(ApplicationDbContext context, IOpExamsService opExamsService)
     {
       _context = context;
+      _opExamsService = opExamsService;
     }
 
     // GET: QuestionSets
@@ -22,7 +28,19 @@ namespace TawtheefTest.Controllers
       var questionSets = await _context.QuestionSets
           .Include(qs => qs.ExamQuestionSets)
               .ThenInclude(eqs => eqs.Exam)
+          .Select(qs => new QuestionSetDto
+          {
+            Id = qs.Id,
+            Name = qs.Name,
+            Description = qs.Description,
+            QuestionType = qs.QuestionType.ToString(),
+            QuestionCount = qs.QuestionCount,
+            Status = qs.Status.ToString(),
+            CreatedDate = qs.CreatedAt,
+            CompletedDate = qs.ProcessedAt
+          })
           .ToListAsync();
+
       return View(questionSets);
     }
 
@@ -35,10 +53,12 @@ namespace TawtheefTest.Controllers
       }
 
       var questionSet = await _context.QuestionSets
-          .Include(qs => qs.ExamQuestionSets)
-              .ThenInclude(eqs => eqs.Exam)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.Options)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.OrderingItems)
           .Include(qs => qs.ContentSources)
           .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -47,14 +67,29 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      return View(questionSet);
+      var questionSetDto = new QuestionSetDto
+      {
+        Id = questionSet.Id,
+        Name = questionSet.Name,
+        Description = questionSet.Description,
+        QuestionType = questionSet.QuestionType.ToString(),
+        Language = questionSet.Language,
+        Difficulty = questionSet.Difficulty,
+        QuestionCount = questionSet.QuestionCount,
+        OptionsCount = questionSet.OptionsCount ?? 4,
+        Status = questionSet.Status.ToString(),
+        CreatedDate = questionSet.CreatedAt,
+        CompletedDate = questionSet.ProcessedAt
+      };
+
+      ViewBag.Questions = questionSet.Questions.ToList();
+      return View(questionSetDto);
     }
 
     // GET: QuestionSets/Create
     public IActionResult Create()
     {
       ViewBag.Exams = _context.Exams.ToList();
-      ViewBag.QuestionTypes = GetQuestionTypesList();
       return View();
     }
 
@@ -74,7 +109,7 @@ namespace TawtheefTest.Controllers
           QuestionCount = model.QuestionCount,
           OptionsCount = model.OptionsCount,
           Status = QuestionSetStatus.Pending,
-          CreatedAt = System.DateTime.UtcNow
+          CreatedAt = DateTime.UtcNow
         };
 
         _context.Add(questionSet);
@@ -93,11 +128,11 @@ namespace TawtheefTest.Controllers
           await _context.SaveChangesAsync();
         }
 
+        TempData["SuccessMessage"] = "تم إنشاء مجموعة الأسئلة بنجاح";
         return RedirectToAction(nameof(Index));
       }
 
       ViewBag.Exams = _context.Exams.ToList();
-      ViewBag.QuestionTypes = GetQuestionTypesList();
       return View(model);
     }
 
@@ -116,7 +151,6 @@ namespace TawtheefTest.Controllers
       }
 
       ViewBag.Exams = _context.Exams.ToList();
-      ViewBag.QuestionTypes = GetQuestionTypesList();
       return View(questionSet);
     }
 
@@ -134,9 +168,11 @@ namespace TawtheefTest.Controllers
       {
         try
         {
-          questionSet.UpdatedAt = System.DateTime.UtcNow;
+          questionSet.UpdatedAt = DateTime.UtcNow;
           _context.Update(questionSet);
           await _context.SaveChangesAsync();
+
+          TempData["SuccessMessage"] = "تم تحديث مجموعة الأسئلة بنجاح";
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -153,7 +189,6 @@ namespace TawtheefTest.Controllers
       }
 
       ViewBag.Exams = _context.Exams.ToList();
-      ViewBag.QuestionTypes = GetQuestionTypesList();
       return View(questionSet);
     }
 
@@ -183,43 +218,25 @@ namespace TawtheefTest.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-      var questionSet = await _context.QuestionSets.FindAsync(id);
-      _context.QuestionSets.Remove(questionSet);
-      await _context.SaveChangesAsync();
+      var questionSet = await _context.QuestionSets
+          .Include(qs => qs.Questions)
+          .Include(qs => qs.ExamQuestionSets)
+          .FirstOrDefaultAsync(qs => qs.Id == id);
+
+      if (questionSet != null)
+      {
+        _context.QuestionSets.Remove(questionSet);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "تم حذف مجموعة الأسئلة بنجاح";
+      }
+
       return RedirectToAction(nameof(Index));
     }
 
     private bool QuestionSetExists(int id)
     {
       return _context.QuestionSets.Any(e => e.Id == id);
-    }
-
-    private System.Collections.Generic.List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> GetQuestionTypesList()
-    {
-      return System.Enum.GetValues(typeof(QuestionTypeEnum))
-          .Cast<QuestionTypeEnum>()
-          .Select(qt => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
-          {
-            Value = qt.ToString(),
-            Text = GetQuestionTypeName(qt)
-          })
-          .ToList();
-    }
-
-    private string GetQuestionTypeName(QuestionTypeEnum type)
-    {
-      return type switch
-      {
-        QuestionTypeEnum.MCQ => "اختيار من متعدد",
-        QuestionTypeEnum.TF => "صح/خطأ",
-        QuestionTypeEnum.Open => "إجابة مفتوحة",
-        QuestionTypeEnum.FillInTheBlank => "ملء الفراغات",
-        QuestionTypeEnum.Ordering => "ترتيب",
-        QuestionTypeEnum.Matching => "مطابقة",
-        QuestionTypeEnum.MultiSelect => "اختيار متعدد",
-        QuestionTypeEnum.ShortAnswer => "إجابة قصيرة",
-        _ => type.ToString()
-      };
     }
   }
 }

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
+using TawtheefTest.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace TawtheefTest.Controllers
 {
@@ -41,6 +43,7 @@ namespace TawtheefTest.Controllers
       var exams = await _context.Exams
           .Where(e => e.JobId == candidate.JobId)
           .Include(e => e.Job)
+          .Include(e => e.Questions)
           .ToListAsync();
 
       // Get candidate's exam attempts
@@ -83,7 +86,9 @@ namespace TawtheefTest.Controllers
 
       // Check if candidate already has an unfinished exam attempt
       var existingAttempt = await _context.CandidateExams
-          .FirstOrDefaultAsync(ce => ce.CandidateId == candidateId && ce.ExamId == id && ce.Status == CandidateExamStatus.InProgress);
+          .FirstOrDefaultAsync(ce => ce.CandidateId == candidateId &&
+                                    ce.ExamId == id &&
+                                    ce.Status == CandidateExamStatus.InProgress);
 
       if (existingAttempt != null)
       {
@@ -126,6 +131,13 @@ namespace TawtheefTest.Controllers
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Exam)
               .ThenInclude(e => e.Questions)
+                  .ThenInclude(q => q.Options)
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.Questions)
+                  .ThenInclude(q => q.MatchingPairs)
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.Questions)
+                  .ThenInclude(q => q.OrderingItems)
           .Include(ce => ce.CandidateAnswers)
           .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
 
@@ -157,7 +169,7 @@ namespace TawtheefTest.Controllers
       var candidateId = HttpContext.Session.GetInt32("CandidateId");
       if (candidateId == null)
       {
-        return RedirectToAction("Login", "Auth");
+        return Unauthorized();
       }
 
       // Get candidate exam
@@ -194,8 +206,7 @@ namespace TawtheefTest.Controllers
           break;
 
         case QuestionTypeEnum.TF:
-          bool boolAnswer;
-          if (bool.TryParse(answer, out boolAnswer))
+          if (bool.TryParse(answer, out bool boolAnswer))
           {
             isCorrect = boolAnswer == question.TrueFalseAnswer;
           }
@@ -204,6 +215,45 @@ namespace TawtheefTest.Controllers
         case QuestionTypeEnum.ShortAnswer:
         case QuestionTypeEnum.FillInTheBlank:
           isCorrect = string.Equals(question.Answer, answer, StringComparison.OrdinalIgnoreCase);
+          break;
+
+        case QuestionTypeEnum.MultiSelect:
+          try
+          {
+            var selectedOptions = JsonSerializer.Deserialize<List<int>>(answer);
+            var correctOptions = question.Options.Where(o => o.IsCorrect).Select(o => o.Id).ToList();
+            isCorrect = selectedOptions != null && selectedOptions.OrderBy(x => x).SequenceEqual(correctOptions.OrderBy(x => x));
+          }
+          catch
+          {
+            isCorrect = false;
+          }
+          break;
+
+        case QuestionTypeEnum.Matching:
+          try
+          {
+            var pairs = JsonSerializer.Deserialize<Dictionary<string, string>>(answer);
+            var correctPairs = question.MatchingPairs.ToDictionary(p => p.LeftItem, p => p.RightItem);
+            isCorrect = pairs != null && pairs.OrderBy(x => x.Key).SequenceEqual(correctPairs.OrderBy(x => x.Key));
+          }
+          catch
+          {
+            isCorrect = false;
+          }
+          break;
+
+        case QuestionTypeEnum.Ordering:
+          try
+          {
+            var orderItems = JsonSerializer.Deserialize<List<string>>(answer);
+            var correctOrder = question.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList();
+            isCorrect = orderItems != null && orderItems.SequenceEqual(correctOrder);
+          }
+          catch
+          {
+            isCorrect = false;
+          }
           break;
       }
 
@@ -249,6 +299,7 @@ namespace TawtheefTest.Controllers
       // Get candidate exam
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Exam)
+              .ThenInclude(e => e.Questions)
           .Include(ce => ce.CandidateAnswers)
           .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
 
@@ -263,7 +314,7 @@ namespace TawtheefTest.Controllers
       }
 
       // Calculate score
-      var totalQuestions = await _context.Questions.CountAsync(q => q.ExamId == candidateExam.ExamId);
+      var totalQuestions = candidateExam.Exam.Questions.Count;
       var correctAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect == true);
       var score = totalQuestions > 0 ? (decimal)correctAnswers / totalQuestions * 100 : 0;
 
@@ -276,6 +327,7 @@ namespace TawtheefTest.Controllers
       _context.Update(candidateExam);
       await _context.SaveChangesAsync();
 
+      TempData["SuccessMessage"] = "تم تسليم الاختبار بنجاح";
       return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
     }
 
@@ -298,6 +350,7 @@ namespace TawtheefTest.Controllers
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Candidate)
           .Include(ce => ce.Exam)
+              .ThenInclude(e => e.Job)
           .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
 
       if (candidateExam == null)
@@ -315,6 +368,101 @@ namespace TawtheefTest.Controllers
       ViewData["CandidateAnswers"] = candidateAnswers;
 
       return View(candidateExam);
+    }
+
+    // GET: CandidateExams/ByCandidateId/5
+    public async Task<IActionResult> ByCandidateId(int? id)
+    {
+      if (id == null)
+      {
+        return NotFound();
+      }
+
+      var candidateExams = await _context.CandidateExams
+          .Where(ce => ce.CandidateId == id)
+          .Include(ce => ce.Exam)
+          .ToListAsync();
+
+      ViewData["CandidateExams"] = candidateExams;
+
+      return View();
+    }
+
+    // POST: CandidateExams/ReplaceQuestion
+    [HttpPost]
+    public async Task<IActionResult> ReplaceQuestion(int candidateExamId, int questionId)
+    {
+      // Check if candidate is logged in
+      var candidateId = HttpContext.Session.GetInt32("CandidateId");
+      if (candidateId == null)
+      {
+        return Json(new { success = false, message = "يجب تسجيل الدخول أولاً" });
+      }
+
+      // Get candidate exam
+      var candidateExam = await _context.CandidateExams
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.Questions)
+          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
+
+      if (candidateExam == null)
+      {
+        return Json(new { success = false, message = "الاختبار غير موجود" });
+      }
+
+      if (candidateExam.Status == CandidateExamStatus.Completed)
+      {
+        return Json(new { success = false, message = "الاختبار مكتمل" });
+      }
+
+      // Check if question replacement is already used
+      if (candidateExam.Status == CandidateExamStatus.InProgress && candidateExam.StartTime.HasValue)
+      {
+        var questionReplaced = await _context.CandidateExams
+            .Where(ce => ce.Id == candidateExamId)
+            .Select(ce => ce.StartTime.HasValue && ce.StartTime.Value.AddMinutes(1) < DateTime.UtcNow)
+            .FirstOrDefaultAsync();
+
+        if (questionReplaced)
+        {
+          return Json(new { success = false, message = "تم استخدام استبدال السؤال بالفعل" });
+        }
+      }
+
+      // Get the question to replace
+      var questionToReplace = await _context.Questions
+          .FirstOrDefaultAsync(q => q.Id == questionId && q.ExamId == candidateExam.ExamId);
+
+      if (questionToReplace == null)
+      {
+        return Json(new { success = false, message = "السؤال غير موجود" });
+      }
+
+      // Find a replacement question of the same type and difficulty
+      var replacementQuestion = await _context.Questions
+          .Where(q => q.ExamId == candidateExam.ExamId &&
+                     q.QuestionType == questionToReplace.QuestionType &&
+                     q.Id != questionId &&
+                     !_context.CandidateAnswers.Any(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == q.Id))
+          .OrderBy(q => Guid.NewGuid()) // Random selection
+          .FirstOrDefaultAsync();
+
+      if (replacementQuestion == null)
+      {
+        return Json(new { success = false, message = "لا يوجد سؤال بديل متاح" });
+      }
+
+      // Delete existing answer if any
+      var existingAnswer = await _context.CandidateAnswers
+          .FirstOrDefaultAsync(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == questionId);
+
+      if (existingAnswer != null)
+      {
+        _context.CandidateAnswers.Remove(existingAnswer);
+        await _context.SaveChangesAsync();
+      }
+
+      return Json(new { success = true, replacementQuestionId = replacementQuestion.Id });
     }
   }
 }

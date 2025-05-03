@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using TawtheefTest.Data.Structure;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using TawtheefTest.Data.Structure;
+using System.Threading.Tasks;
 
 namespace TawtheefTest.Controllers
 {
@@ -17,11 +16,6 @@ namespace TawtheefTest.Controllers
 
     public async Task<IActionResult> Index()
     {
-      // Initialize TempData for layouts
-      TempData["appName"] = "OpExams Tawtheef";
-      TempData["productPage"] = "https://example.com";
-      TempData["menuHorizontal"] = false;
-
       ViewData["JobsCount"] = await _context.Jobs.CountAsync();
       ViewData["CandidatesCount"] = await _context.Candidates.CountAsync();
       ViewData["ExamsCount"] = await _context.Exams.CountAsync();

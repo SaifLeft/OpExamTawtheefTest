@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
+using TawtheefTest.ViewModels;
+using TawtheefTest.DTOs.ExamModels;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using TawtheefTest.Models;
 
 namespace TawtheefTest.Controllers
 {
@@ -20,7 +21,21 @@ namespace TawtheefTest.Controllers
     // GET: Jobs
     public async Task<IActionResult> Index()
     {
-      return View(await _context.Jobs.ToListAsync());
+      var jobs = await _context.Jobs
+          .Include(j => j.Candidates)
+          .Include(j => j.Exams)
+          .Select(j => new JobDTO
+          {
+            Id = j.Id,
+            Name = j.Title,
+            Code = j.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
+            CreatedDate = j.CreatedAt,
+            CandidateCount = j.Candidates.Count,
+            ExamCount = j.Exams.Count
+          })
+          .ToListAsync();
+
+      return View(jobs);
     }
 
     // GET: Jobs/Create
@@ -32,20 +47,26 @@ namespace TawtheefTest.Controllers
     // POST: Jobs/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(CreateJobViewModel model)
     {
       if (ModelState.IsValid)
       {
-        // Generate a random 8-digit code
-        Random random = new Random();
-        job.Code = random.Next(10000000, 99999999).ToString();
-        job.CreatedDate = DateTime.UtcNow;
+        var job = new Job
+        {
+          Title = model.Name,
+          Description = string.Empty,
+          IsActive = true,
+          CreatedAt = DateTime.UtcNow
+        };
 
         _context.Add(job);
         await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "تم إضافة الوظيفة بنجاح";
         return RedirectToAction(nameof(Index));
       }
-      return View(job);
+
+      return View(model);
     }
 
     // GET: Jobs/Edit/5
@@ -61,15 +82,24 @@ namespace TawtheefTest.Controllers
       {
         return NotFound();
       }
-      return View(job);
+
+      var viewModel = new EditJobViewModel
+      {
+        Id = job.Id,
+        Name = job.Title,
+        Code = job.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
+        CreatedDate = job.CreatedAt
+      };
+
+      return View(viewModel);
     }
 
     // POST: Jobs/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit()
+    public async Task<IActionResult> Edit(int id, EditJobViewModel model)
     {
-      if (id != job.Id)
+      if (id != model.Id)
       {
         return NotFound();
       }
@@ -78,31 +108,23 @@ namespace TawtheefTest.Controllers
       {
         try
         {
-          // Get existing job from database to preserve relationships
-          var existingJob = await _context.Jobs
-              .Include(j => j.Candidates)
-              .Include(j => j.Exams)
-              .FirstOrDefaultAsync(j => j.Id == id);
-
-          if (existingJob == null)
+          var job = await _context.Jobs.FindAsync(id);
+          if (job == null)
           {
             return NotFound();
           }
 
-          // Update only the fields that should be updated
-          existingJob.Name = job.Name;
-          // Code remains the same (no need to update)
-          // CreatedDate remains the same (no need to update)
+          job.Title = model.Name;
+          job.UpdatedAt = DateTime.UtcNow;
 
-          // Mark as modified and save
-          _context.Entry(existingJob).State = EntityState.Modified;
+          _context.Update(job);
           await _context.SaveChangesAsync();
 
           TempData["SuccessMessage"] = "تم تحديث الوظيفة بنجاح";
         }
         catch (DbUpdateConcurrencyException)
         {
-          if (!JobExists(job.Id))
+          if (!JobExists(model.Id))
           {
             return NotFound();
           }
@@ -113,7 +135,7 @@ namespace TawtheefTest.Controllers
         }
         return RedirectToAction(nameof(Index));
       }
-      return View(job);
+      return View(model);
     }
 
     // GET: Jobs/Delete/5
@@ -125,13 +147,24 @@ namespace TawtheefTest.Controllers
       }
 
       var job = await _context.Jobs
+          .Include(j => j.Candidates)
+          .Include(j => j.Exams)
           .FirstOrDefaultAsync(m => m.Id == id);
+
       if (job == null)
       {
         return NotFound();
       }
 
-      return View(job);
+      var jobDto = new JobDTO
+      {
+        Id = job.Id,
+        Name = job.Title,
+        Code = job.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
+        CreatedDate = job.CreatedAt
+      };
+
+      return View(jobDto);
     }
 
     // POST: Jobs/Delete/5
@@ -139,13 +172,24 @@ namespace TawtheefTest.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-      var job = await _context.Jobs.FindAsync(id);
+      var job = await _context.Jobs
+          .Include(j => j.Candidates)
+          .Include(j => j.Exams)
+          .FirstOrDefaultAsync(j => j.Id == id);
+
       if (job != null)
       {
+        if (job.Candidates.Any() || job.Exams.Any())
+        {
+          TempData["ErrorMessage"] = "لا يمكن حذف الوظيفة لوجود مرشحين أو اختبارات مرتبطة بها";
+          return RedirectToAction(nameof(Index));
+        }
+
         _context.Jobs.Remove(job);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "تم حذف الوظيفة بنجاح";
       }
 
-      await _context.SaveChangesAsync();
       return RedirectToAction(nameof(Index));
     }
 

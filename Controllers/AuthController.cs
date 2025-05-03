@@ -35,7 +35,7 @@ namespace TawtheefTest.Controllers
 
       // Check if the candidate with the phone number exists
       var candidate = await _context.Candidates
-          .FirstOrDefaultAsync(c => c.PhoneNumber == phoneNumber);
+          .FirstOrDefaultAsync(c => c.Phone == phoneNumber);
 
       if (candidate == null)
       {
@@ -94,7 +94,7 @@ namespace TawtheefTest.Controllers
 
       // Get candidate
       var candidate = await _context.Candidates
-          .FirstOrDefaultAsync(c => c.PhoneNumber == phoneNumber);
+          .FirstOrDefaultAsync(c => c.Phone == phoneNumber);
 
       if (candidate == null)
       {

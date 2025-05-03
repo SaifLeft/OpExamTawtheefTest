@@ -96,8 +96,8 @@ namespace TawtheefTest.Data.Structure
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    [StringLength(20)]
-    public int PhoneNumber { get; set; }
+    [StringLength(8)]
+    public int Phone { get; set; }
 
     [Required]
     public int JobId { get; set; }
