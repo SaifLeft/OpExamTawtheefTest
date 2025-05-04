@@ -1,26 +1,51 @@
 @model IEnumerable<TawtheefTest.DTOs.QuestionSetDto>
 @{
-  ViewData["title"] = "مجموعات الأسئلة";
+  ViewData["title"] = ViewBag.ExamName != null ? $"مجموعات الأسئلة - {ViewBag.ExamName}" : "مجموعات الأسئلة";
 }
+
+@await Html.PartialAsync("_QuestionSetStyles")
 
 <div class="container-xxl flex-grow-1 container-p-y">
   <h4 class="fw-bold py-3 mb-4">
-    <span class="text-muted fw-light">إدارة الأسئلة /</span> مجموعات الأسئلة
+    @if (ViewBag.ExamName != null)
+    {
+      <span class="text-muted fw-light">
+        <a href="@Url.Action("Index", "Exams")">الاختبارات</a> /
+        <a href="@Url.Action("Details", "Exams", new { id = ViewBag.ExamId })">@ViewBag.ExamName</a> /
+      </span>
+      <span>مجموعات الأسئلة</span>
+    }
+    else
+    {
+      <span class="text-muted fw-light">إدارة الأسئلة /</span>
+      <span>مجموعات الأسئلة</span>
+    }
   </h4>
 
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card question-set-card">
+    <div class="card-header index-card-header d-flex justify-content-between align-items-center">
       <h5 class="mb-0">مجموعات الأسئلة</h5>
-      <a href="@Url.Action("Create")" class="btn btn-primary">
-        <i class="bx bx-plus me-1"></i>
-        إنشاء مجموعة أسئلة جديدة
-      </a>
+      @if (ViewBag.ExamId != null)
+      {
+        <a href="@Url.Action("Create", "QuestionSets", new { examId = ViewBag.ExamId })" class="btn btn-primary d-flex align-items-center">
+          <i class="bx bx-plus me-1"></i>
+          إضافة مجموعة أسئلة جديدة
+        </a>
+      }
+      else
+      {
+        <a href="@Url.Action("Create")" class="btn btn-primary d-flex align-items-center">
+          <i class="bx bx-plus me-1"></i>
+          إنشاء مجموعة أسئلة جديدة
+        </a>
+      }
     </div>
 
     <div class="card-body">
       @if (TempData["SuccessMessage"] != null)
       {
         <div class="alert alert-success alert-dismissible mb-3" role="alert">
+          <i class="bx bx-check-circle me-1"></i>
           @TempData["SuccessMessage"]
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -29,6 +54,7 @@
       @if (TempData["ErrorMessage"] != null)
       {
         <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+          <i class="bx bx-error-circle me-1"></i>
           @TempData["ErrorMessage"]
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -36,16 +62,40 @@
 
       @if (!Model.Any())
       {
-        <div class="alert alert-info text-center">
+        <div class="alert alert-info text-center p-4">
           <i class="bx bx-info-circle fs-1 mb-2"></i>
-          <p>لا توجد مجموعات أسئلة حالياً.</p>
+          @if (ViewBag.ExamId != null)
+          {
+            <p>لا توجد مجموعات أسئلة في هذا الاختبار.</p>
+            <a href="@Url.Action("Create", "QuestionSets", new { examId = ViewBag.ExamId })" class="btn btn-primary mt-2">
+              <i class="bx bx-plus me-1"></i>
+              إضافة مجموعة أسئلة جديدة
+            </a>
+          }
+          else
+          {
+            <p>لا توجد مجموعات أسئلة حالياً.</p>
+            <a href="@Url.Action("Create")" class="btn btn-primary mt-2">
+              <i class="bx bx-plus me-1"></i>
+              إنشاء مجموعة أسئلة جديدة
+            </a>
+          }
         </div>
       }
       else
       {
+        <div class="row">
+          <div class="col-12">
+            <div class="input-group mb-3">
+              <span class="input-group-text"><i class="bx bx-search"></i></span>
+              <input type="text" id="searchInput" class="form-control" placeholder="البحث عن مجموعة أسئلة...">
+            </div>
+          </div>
+        </div>
+
         <div class="table-responsive">
-          <table class="table table-bordered table-hover">
-            <thead>
+          <table id="questionSetsTable" class="table table-bordered table-hover">
+            <thead class="table-light">
               <tr>
                 <th>الاسم</th>
                 <th>نوع الأسئلة</th>
@@ -58,52 +108,63 @@
             <tbody>
               @foreach (var item in Model)
               {
-                <tr>
+                <tr class="question-set-row">
                   <td>
-                    <strong>@item.Name</strong>
-                    <small class="d-block text-muted">@item.Description</small>
+                    <div class="d-flex flex-column">
+                      <strong>@item.Name</strong>
+                      @if (!string.IsNullOrEmpty(item.Description))
+                      {
+                        <small class="text-muted">@(item.Description.Length > 100 ? item.Description.Substring(0, 100) + "..." : item.Description)</small>
+                      }
+                    </div>
                   </td>
                   <td>
-                    @GetQuestionTypeDisplay(item.QuestionType)
+                    <span class="badge bg-label-primary">@GetQuestionTypeDisplay(item.QuestionType)</span>
                   </td>
                   <td>
                     @if (item.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
                     {
-                      <span>@item.QuestionsGenerated / @item.QuestionCount</span>
+                      <span class="fw-medium">@item.QuestionsGenerated / @item.QuestionCount</span>
                     }
                     else
                     {
-                      <span>@item.QuestionCount</span>
+                      <span class="fw-medium">@item.QuestionCount</span>
                     }
                   </td>
                   <td>
-                    <span class="badge rounded-pill bg-@GetStatusBadge(item.Status)">@item.StatusDescription</span>
+                    <span class="badge rounded-pill status-badge bg-@GetStatusBadge(item.Status)">
+                      @item.StatusDescription
+                    </span>
                   </td>
-                  <td>@item.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                  <td>
+                    <span class="text-muted"><i class="bx bx-calendar me-1"></i> @item.CreatedAt.ToString("yyyy/MM/dd")</span>
+                    <br />
+                    <small class="text-muted"><i class="bx bx-time me-1"></i> @item.CreatedAt.ToString("HH:mm")</small>
+                  </td>
                   <td>
                     <div class="dropdown">
                       <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                         <i class="bx bx-dots-vertical-rounded"></i>
                       </button>
                       <div class="dropdown-menu">
-                        <a class="dropdown-item" href="@Url.Action("Details", new { id = item.Id })">
+                        <a class="dropdown-item" href="@Url.Action("Details", "QuestionSets", new { id = item.Id })">
                           <i class="bx bx-show-alt me-1"></i> عرض
                         </a>
                         @if (item.Status != TawtheefTest.Enum.QuestionSetStatus.Processing)
                         {
-                          <a class="dropdown-item" href="@Url.Action("Edit", new { id = item.Id })">
+                          <a class="dropdown-item" href="@Url.Action("Edit", "QuestionSets", new { id = item.Id })">
                             <i class="bx bx-edit-alt me-1"></i> تعديل
                           </a>
-                          <a class="dropdown-item text-danger" href="@Url.Action("Delete", new { id = item.Id })">
+                          <a class="dropdown-item text-danger" href="@Url.Action("Delete", "QuestionSets", new { id = item.Id })">
                             <i class="bx bx-trash me-1"></i> حذف
                           </a>
                         }
                         @if (item.Status == TawtheefTest.Enum.QuestionSetStatus.Failed)
                         {
-                          <form asp-action="Retry" method="post"
+                          <form asp-action="Retry" asp-controller="QuestionSets" method="post" class="dropdown-item-form"
                             onsubmit="return confirm('هل أنت متأكد من إعادة المحاولة؟');">
                             <input type="hidden" name="id" value="@item.Id" />
-                            <button type="submit" class="dropdown-item">
+                            <button type="submit" class="dropdown-item w-100 text-start">
                               <i class="bx bx-refresh me-1"></i> إعادة المحاولة
                             </button>
                           </form>
@@ -119,6 +180,15 @@
       }
     </div>
   </div>
+
+  @if (ViewBag.ExamId != null)
+  {
+    <div class="mt-4">
+      <a href="@Url.Action("Details", "Exams", new { id = ViewBag.ExamId })" class="btn btn-outline-secondary">
+        <i class="bx bx-arrow-back me-1"></i> العودة للاختبار
+      </a>
+    </div>
+  }
 </div>
 
 @functions {
@@ -149,4 +219,34 @@
       _ => "secondary"
     };
   }
+}
+
+@section Scripts {
+  <script>
+    $(document).ready(function() {
+      // بحث مباشر في الجدول
+      $("#searchInput").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        $("#questionSetsTable .question-set-row").filter(function() {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+      });
+
+      // تأثير حركي عند المرور فوق الصفوف
+      $(".question-set-row").hover(
+        function() {
+          $(this).addClass("table-active");
+        },
+        function() {
+          $(this).removeClass("table-active");
+        }
+      );
+
+      // أنماط خاصة للنماذج داخل القائمة المنسدلة
+      $(".dropdown-item-form").css({
+        "padding": "0",
+        "margin": "0"
+      });
+    });
+  </script>
 }

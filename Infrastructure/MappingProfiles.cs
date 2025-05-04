@@ -17,7 +17,7 @@ namespace TawtheefTest.Infrastructure
       CreateMap<Exam, ExamDTO>();
       CreateMap<Candidate, CandidateDTO>();
       CreateMap<Question, QuestionDTO>();
-      CreateMap<QuestionOption, OptionDTO>();
+      CreateMap<QuestionOption, QuestionOptionDTO>();
       CreateMap<OTPVerification, OTPVerificationDto>();
       CreateMap<CandidateAnswer, CandidateAnswerDTO>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty));
@@ -56,7 +56,7 @@ namespace TawtheefTest.Infrastructure
       CreateMap<ExamDTO, Exam>();
       CreateMap<CandidateDTO, Candidate>();
       CreateMap<QuestionDTO, Question>();
-      CreateMap<OptionDTO, QuestionOption>();
+      CreateMap<QuestionOptionDTO, QuestionOption>();
       CreateMap<CandidateAnswerDTO, CandidateAnswer>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText));
       CreateMap<CreateExamDTO, Exam>();
@@ -79,7 +79,7 @@ namespace TawtheefTest.Infrastructure
       CreateMap<JobDTO, JobViewModel>();
       CreateMap<CandidateDTO, CandidateViewModel>();
       CreateMap<QuestionDTO, QuestionViewModel>();
-      CreateMap<OptionDTO, OptionViewModel>();
+      CreateMap<QuestionOptionDTO, OptionViewModel>();
       CreateMap<CandidateAnswerDTO, CandidateAnswerViewModel>()
           .ForMember(dest => dest.QuestionText, opt => opt.Ignore())
           .ForMember(dest => dest.QuestionType, opt => opt.Ignore())
@@ -96,7 +96,7 @@ namespace TawtheefTest.Infrastructure
       CreateMap<JobViewModel, JobDTO>();
       CreateMap<CandidateViewModel, CandidateDTO>();
       CreateMap<QuestionViewModel, QuestionDTO>();
-      CreateMap<OptionViewModel, OptionDTO>();
+      CreateMap<OptionViewModel, QuestionOptionDTO>();
       CreateMap<CandidateAnswerViewModel, CandidateAnswerDTO>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.Answer));
       CreateMap<CreateExamViewModel, CreateExamDTO>();

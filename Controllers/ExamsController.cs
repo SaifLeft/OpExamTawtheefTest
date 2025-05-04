@@ -68,6 +68,12 @@ namespace TawtheefTest.Controllers
           .Include(e => e.ExamQuestionSets)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
+          .Include(e => e.Questions)
+              .ThenInclude(q => q.Options)
+          .Include(e => e.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(e => e.Questions)
+              .ThenInclude(q => q.OrderingItems)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (exam == null)
@@ -97,6 +103,46 @@ namespace TawtheefTest.Controllers
           CreatedAt = eqs.QuestionSet.CreatedAt
         }).ToList()
       };
+
+      // جلب الأسئلة للاختبار
+      var questions = exam.Questions
+          .OrderBy(q => q.Index)
+          .Select(q => new QuestionDTO
+          {
+            Id = q.Id,
+            SequenceNumber = q.Index,
+            QuestionText = q.QuestionText,
+            QuestionType = q.QuestionType,
+            Answer = q.Answer,
+            TrueFalseAnswer = q.TrueFalseAnswer,
+            InstructionText = q.InstructionText,
+            // للأسئلة من نوع الترتيب
+            CorrectlyOrdered = q.QuestionType.ToLower() == "ordering"
+                ? q.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList()
+                : null,
+            ShuffledOrder = q.QuestionType.ToLower() == "ordering"
+                ? q.OrderingItems.OrderBy(o => o.DisplayOrder).Select(o => o.Text).ToList()
+                : null,
+            // للأسئلة من نوع المطابقة
+            MatchingPairs = q.QuestionType.ToLower() == "matching"
+                ? q.MatchingPairs.Select(m => new MatchingPairDTO
+                {
+                  Left = m.LeftItem,
+                  Right = m.RightItem,
+                  Index = m.DisplayOrder
+                }).ToList()
+                : null,
+            Options = q.Options?.Select(o => new QuestionOptionDTO
+            {
+              Id = o.Id,
+              Text = o.Text,
+              Index = o.Index,
+              IsCorrect = o.IsCorrect
+            }).ToList()
+          })
+          .ToList();
+
+      ViewBag.Questions = questions;
 
       return View(examDetailsDto);
     }
@@ -376,6 +422,123 @@ namespace TawtheefTest.Controllers
       ViewBag.JobId = job.Id;
 
       return View(exams);
+    }
+
+    // GET: Exams/QuestionSets/5
+    public async Task<IActionResult> QuestionSets(int? id)
+    {
+      if (id == null)
+      {
+        return NotFound();
+      }
+
+      var exam = await _context.Exams
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+          .FirstOrDefaultAsync(e => e.Id == id);
+
+      if (exam == null)
+      {
+        return NotFound();
+      }
+
+      ViewBag.ExamId = exam.Id;
+      ViewBag.ExamName = exam.Name;
+
+      var questionSets = exam.ExamQuestionSets
+          .OrderBy(eqs => eqs.DisplayOrder)
+          .Select(eqs => new QuestionSetDto
+          {
+            Id = eqs.QuestionSet.Id,
+            Name = eqs.QuestionSet.Name,
+            Description = eqs.QuestionSet.Description,
+            QuestionType = eqs.QuestionSet.QuestionType,
+            QuestionCount = eqs.QuestionSet.QuestionCount,
+            Status = eqs.QuestionSet.Status,
+            StatusDescription = GetStatusDescription(eqs.QuestionSet.Status),
+            CreatedAt = eqs.QuestionSet.CreatedAt
+          })
+          .ToList();
+
+      return View(questionSets);
+    }
+
+    // GET: Exams/ExamQuestions/5
+    public async Task<IActionResult> ExamQuestions(int? id)
+    {
+      if (id == null)
+      {
+        return NotFound();
+      }
+
+      var exam = await _context.Exams
+          .Include(e => e.Job)
+          .Include(e => e.Questions)
+              .ThenInclude(q => q.Options)
+          .Include(e => e.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(e => e.Questions)
+              .ThenInclude(q => q.OrderingItems)
+          .FirstOrDefaultAsync(m => m.Id == id);
+
+      if (exam == null)
+      {
+        return NotFound();
+      }
+
+      ViewBag.ExamName = exam.Name;
+      ViewBag.JobName = exam.Job.Title;
+
+      var questions = exam.Questions
+          .OrderBy(q => q.Index)
+          .Select(q => new QuestionDTO
+          {
+            Id = q.Id,
+            SequenceNumber = q.Index,
+            QuestionText = q.QuestionText,
+            QuestionType = q.QuestionType,
+            Answer = q.Answer,
+            TrueFalseAnswer = q.TrueFalseAnswer,
+            InstructionText = q.InstructionText,
+            // للأسئلة من نوع الترتيب
+            CorrectlyOrdered = q.QuestionType.ToLower() == "ordering"
+                ? q.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList()
+                : null,
+            ShuffledOrder = q.QuestionType.ToLower() == "ordering"
+                ? q.OrderingItems.OrderBy(o => o.DisplayOrder).Select(o => o.Text).ToList()
+                : null,
+            // للأسئلة من نوع المطابقة
+            MatchingPairs = q.QuestionType.ToLower() == "matching"
+                ? q.MatchingPairs.Select(m => new MatchingPairDTO
+                {
+                  Left = m.LeftItem,
+                  Right = m.RightItem,
+                  Index = m.DisplayOrder
+                }).ToList()
+                : null,
+            Options = q.Options?.Select(o => new QuestionOptionDTO
+            {
+              Id = o.Id,
+              Text = o.Text,
+              Index = o.Index,
+              IsCorrect = o.IsCorrect
+            }).ToList()
+          })
+          .ToList();
+
+      return View(questions);
+    }
+
+    private string GetStatusDescription(QuestionSetStatus status)
+    {
+      return status switch
+      {
+        QuestionSetStatus.Pending => "في الانتظار",
+        QuestionSetStatus.Processing => "قيد المعالجة",
+        QuestionSetStatus.Completed => "مكتمل",
+        QuestionSetStatus.Failed => "فشل",
+        _ => status.ToString()
+      };
     }
 
     private bool ExamExists(int id)

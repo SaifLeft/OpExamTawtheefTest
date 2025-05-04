@@ -1,46 +1,92 @@
 @{
-    ViewData["Title"] = "التحقق من الرمز";
-    var phoneNumber = ViewData["PhoneNumber"] as string;
+  ViewData["Title"] = "التحقق من الرمز";
+  var phoneNumber = ViewData["PhoneNumber"] as string;
 }
 
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white text-center">
-                <h5 class="mb-0">التحقق من رمز OTP</h5>
-            </div>
-            <div class="card-body">
-                <div class="text-center mb-4">
-                    <i class="bi bi-shield-lock" style="font-size: 3rem;"></i>
-                </div>
-
-                <div class="alert alert-info">
-                    <p class="mb-0">تم إرسال رمز التحقق إلى رقم الهاتف <strong>@phoneNumber</strong></p>
-                    <p class="small mb-0 mt-1">ملاحظة: في هذه النسخة التجريبية، الرمز هو:
-                        <strong>@TempData["OTPCode"]</strong></p>
-                </div>
-
-                <form asp-action="VerifyOTP" method="post">
-                    <input type="hidden" name="phoneNumber" value="@phoneNumber">
-
-                    <div class="mb-3">
-                        <label for="otpCode" class="form-label">رمز التحقق</label>
-                        <input type="text" class="form-control text-center" id="otpCode" name="otpCode" maxlength="6"
-                            required>
-                        <small class="form-text text-muted">أدخل رمز التحقق المكون من 6 أرقام الذي تم إرساله إلى
-                            هاتفك</small>
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i> تحقق وتسجيل الدخول
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer text-center">
-                <a asp-action="Login" class="btn btn-link">العودة لصفحة تسجيل الدخول</a>
-            </div>
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white text-center">
+        <h5 class="mb-0">التحقق من رمز OTP</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-4">
+          <i class="bi bi-shield-lock-fill" style="font-size: 3rem; color: #0d6efd;"></i>
         </div>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+          <div class="alert alert-danger" role="alert">
+            @TempData["ErrorMessage"]
+          </div>
+        }
+
+        <div class="alert alert-info">
+          <p class="mb-0"><i class="bi bi-info-circle-fill"></i> تم إرسال رمز التحقق إلى رقم الهاتف <strong
+              dir="ltr">@phoneNumber</strong></p>
+          <p class="small mb-0 mt-1">ملاحظة: في هذه النسخة التجريبية، الرمز هو:
+            <strong>@TempData["OTPCode"]</strong>
+          </p>
+        </div>
+
+        <div class="text-center mb-3">
+          <div class="d-inline-block px-3 py-2 bg-light rounded-3">
+            <span id="countdown" class="text-danger fw-bold">05:00</span>
+            <small class="d-block text-muted">الوقت المتبقي لصلاحية الرمز</small>
+          </div>
+        </div>
+
+        <form asp-action="VerifyOTP" method="post">
+          <input type="hidden" name="phoneNumber" value="@phoneNumber">
+
+          <div class="mb-4">
+            <label for="otpCode" class="form-label">رمز التحقق</label>
+            <input type="text" class="form-control form-control-lg text-center" id="otpCode" name="otpCode"
+              maxlength="6" required placeholder="أدخل الرمز المكون من 6 أرقام" autocomplete="off">
+            <small class="form-text text-muted">أدخل رمز التحقق الذي تم إرساله إلى هاتفك</small>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-check-circle"></i> تحقق وتسجيل الدخول
+            </button>
+            <a asp-action="SendOTP" asp-route-phoneNumber="@phoneNumber" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-repeat"></i> إعادة إرسال الرمز
+            </a>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer text-center">
+        <a asp-action="Login" class="btn btn-link">
+          <i class="bi bi-arrow-left"></i> العودة لصفحة تسجيل الدخول
+        </a>
+      </div>
     </div>
+  </div>
 </div>
+
+@section Scripts {
+  <script>
+    // عداد تنازلي لمدة 5 دقائق
+    document.addEventListener('DOMContentLoaded', function () {
+      var countdownEl = document.getElementById('countdown');
+      var timeLeft = 5 * 60; // 5 دقائق بالثواني
+
+      var countdownInterval = setInterval(function () {
+        var minutes = Math.floor(timeLeft / 60);
+        var seconds = timeLeft % 60;
+
+        countdownEl.textContent = (minutes < 10 ? '0' + minutes : minutes) + ':' +
+          (seconds < 10 ? '0' + seconds : seconds);
+
+        if (--timeLeft < 0) {
+          clearInterval(countdownInterval);
+          countdownEl.textContent = '00:00';
+          countdownEl.classList.remove('text-danger');
+          countdownEl.classList.add('text-muted');
+          alert('انتهت صلاحية رمز التحقق، يرجى طلب رمز جديد.');
+        }
+      }, 1000);
+    });
+  </script>
+}

@@ -240,11 +240,10 @@ namespace TawtheefTest.Data.Structure
     [ForeignKey("QuestionSetId")]
     public virtual QuestionSet QuestionSet { get; set; } = null!;
 
-    [Required]
-    public int ExamId { get; set; }
+    public int? ExamId { get; set; }
 
     [ForeignKey("ExamId")]
-    public virtual Exam Exam { get; set; } = null!;
+    public virtual Exam? Exam { get; set; }
 
     [Required]
     public int Index { get; set; }

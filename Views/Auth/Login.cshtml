@@ -1,35 +1,60 @@
 @{
-    ViewData["Title"] = "تسجيل الدخول";
+  ViewData["Title"] = "تسجيل الدخول";
 }
 
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white text-center">
-                <h5 class="mb-0">تسجيل الدخول للمرشحين</h5>
-            </div>
-            <div class="card-body">
-                <div class="text-center mb-4">
-                    <i class="bi bi-person-circle" style="font-size: 3rem;"></i>
-                </div>
-
-                <form asp-action="SendOTP" method="post">
-                    <div class="mb-3">
-                        <label for="phoneNumber" class="form-label">رقم الهاتف</label>
-                        <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" required>
-                        <small class="form-text text-muted">أدخل رقم الهاتف المسجل للحصول على رمز التحقق</small>
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send"></i> إرسال رمز التحقق
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer text-center">
-                <a asp-controller="Home" asp-action="Index" class="btn btn-link">العودة للصفحة الرئيسية</a>
-            </div>
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white text-center">
+        <h5 class="mb-0">تسجيل الدخول للمرشحين</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-4">
+          <i class="bi bi-person-badge" style="font-size: 3rem; color: #0d6efd;"></i>
         </div>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+          <div class="alert alert-danger" role="alert">
+            @TempData["ErrorMessage"]
+          </div>
+        }
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+          <div class="alert alert-success" role="alert">
+            @TempData["SuccessMessage"]
+          </div>
+        }
+
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> مرحباً بك في منصة اختبارات المرشحين للوظائف. يرجى إدخال رقم الهاتف
+          المسجل للوصول إلى الاختبارات المتاحة لك.
+        </div>
+
+        <form asp-action="SendOTP" method="post">
+          <div class="mb-3">
+            <label for="phoneNumber" class="form-label">رقم الهاتف</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-phone"></i></span>
+              <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" required
+                placeholder="أدخل رقم الهاتف المسجل">
+            </div>
+            <small class="form-text text-muted">سيتم إرسال رمز التحقق إلى هذا الرقم</small>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-send"></i> إرسال رمز التحقق
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer text-center">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-link">
+          <i class="bi bi-house-door"></i> العودة للصفحة الرئيسية
+        </a>
+      </div>
     </div>
+  </div>
 </div>

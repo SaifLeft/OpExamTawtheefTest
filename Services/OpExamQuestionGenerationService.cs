@@ -230,7 +230,7 @@ namespace TawtheefTest.Services
         if (questionSet != null)
         {
           questionSet.Status = QuestionSetStatus.Failed;
-          questionSet.ErrorMessage = ex.Message;
+          questionSet.ErrorMessage = ex.Message + " " + ex.InnerException?.Message;
           await _dbContext.SaveChangesAsync();
         }
 
@@ -250,9 +250,7 @@ namespace TawtheefTest.Services
           QuestionText = opExamQuestion.QuestionText,
           Index = opExamQuestion.Index,
           QuestionType = questionSet.QuestionType,
-          CreatedAt = DateTime.UtcNow,
-          ExamId = questionSet.ExamId,
-
+          CreatedAt = DateTime.UtcNow
         };
 
         // معالجة الأسئلة حسب نوعها
@@ -445,6 +443,11 @@ namespace TawtheefTest.Services
     {
       var questionSet = await _dbContext.QuestionSets
           .Include(qs => qs.Questions)
+              .ThenInclude(q => q.Options)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.OrderingItems)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
       if (questionSet == null || questionSet.Status != QuestionSetStatus.Completed)
@@ -499,6 +502,7 @@ namespace TawtheefTest.Services
             Index = ++maxIndex,
             Answer = question.Answer,
             TrueFalseAnswer = question.TrueFalseAnswer,
+            InstructionText = question.InstructionText,
             CreatedAt = DateTime.UtcNow
           };
 
@@ -520,9 +524,43 @@ namespace TawtheefTest.Services
 
               _dbContext.QuestionOptions.Add(newOption);
             }
-
-            await _dbContext.SaveChangesAsync();
           }
+
+          // نسخ بيانات الترتيب إذا كان السؤال من نوع الترتيب
+          if (question.QuestionType.ToLower() == "ordering" && question.OrderingItems != null && question.OrderingItems.Any())
+          {
+            foreach (var item in question.OrderingItems)
+            {
+              var newItem = new OrderingItem
+              {
+                QuestionId = newQuestion.Id,
+                Text = item.Text,
+                CorrectOrder = item.CorrectOrder,
+                DisplayOrder = item.DisplayOrder
+              };
+
+              _dbContext.OrderingItems.Add(newItem);
+            }
+          }
+
+          // نسخ بيانات المطابقة إذا كان السؤال من نوع المطابقة
+          if (question.QuestionType.ToLower() == "matching" && question.MatchingPairs != null && question.MatchingPairs.Any())
+          {
+            foreach (var pair in question.MatchingPairs)
+            {
+              var newPair = new MatchingPair
+              {
+                QuestionId = newQuestion.Id,
+                LeftItem = pair.LeftItem,
+                RightItem = pair.RightItem,
+                DisplayOrder = pair.DisplayOrder
+              };
+
+              _dbContext.MatchingPairs.Add(newPair);
+            }
+          }
+
+          await _dbContext.SaveChangesAsync();
         }
       }
 

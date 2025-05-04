@@ -158,13 +158,13 @@ namespace TawtheefTest.Services
             break;
           case "youtube":
             await _questionGenerationService.GenerateQuestionsFromYoutubeAsync(
-                questionSetId, content, questionSet.QuestionType,
+                questionSetId, contentSource.Url, questionSet.QuestionType,
                 questionSet.QuestionCount, questionSet.Difficulty);
             break;
           case "document":
           case "pdf":
             await _questionGenerationService.GenerateQuestionsFromDocumentAsync(
-                questionSetId, content, questionSet.QuestionType,
+                questionSetId, contentSource.UploadedFile.FileId, questionSet.QuestionType,
                 questionSet.QuestionCount, questionSet.Difficulty);
             break;
           case "image":

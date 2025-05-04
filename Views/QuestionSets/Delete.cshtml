@@ -3,16 +3,20 @@
   ViewData["title"] = "حذف مجموعة الأسئلة";
 }
 
+@await Html.PartialAsync("_QuestionSetStyles")
+
 <div class="container-xxl flex-grow-1 container-p-y">
   <h4 class="fw-bold py-3 mb-4">
     <span class="text-muted fw-light">إدارة الأسئلة /</span> حذف مجموعة الأسئلة
   </h4>
 
   <div class="row">
-    <div class="col-12">
-      <div class="card mb-4">
+    <div class="col-md-8 mx-auto">
+      <div class="card question-set-card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">تأكيد الحذف</h5>
+          <span
+            class="badge rounded-pill status-badge bg-@GetStatusBadge(Model.Status)">@GetStatusText(Model.Status)</span>
         </div>
         <div class="card-body">
           <div class="alert alert-danger mb-4">
@@ -20,41 +24,75 @@
               <i class="bx bx-error-circle fs-3 me-2"></i>
               <div>
                 <h6 class="alert-heading mb-1">هل أنت متأكد من رغبتك في حذف مجموعة الأسئلة هذه؟</h6>
-                <p class="mb-0">سيتم حذف جميع الأسئلة المرتبطة بهذه المجموعة. لا يمكن التراجع عن هذا
-                  الإجراء.</p>
+                <p class="mb-0">سيتم حذف جميع الأسئلة المرتبطة بهذه المجموعة. <strong>لا يمكن التراجع عن هذا
+                    الإجراء.</strong></p>
               </div>
             </div>
           </div>
 
-          <div class="p-3 mb-4 border rounded bg-light">
-            <dl class="row mb-0">
-              <dt class="col-sm-3">الاسم:</dt>
-              <dd class="col-sm-9">@Model.Name</dd>
+          <div class="card bg-light shadow-none border mb-4">
+            <div class="card-header bg-transparent">
+              <h6 class="mb-0"><i class="bx bx-info-circle me-1"></i> معلومات مجموعة الأسئلة</h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <dl>
+                    <dt class="text-muted"><i class="bx bx-tag-alt me-1"></i> الاسم:</dt>
+                    <dd class="mb-2">@Model.Name</dd>
 
-              <dt class="col-sm-3">الوصف:</dt>
-              <dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Description) ? "- بدون وصف -" :
-                Model.Description)</ dd >
+                    <dt class="text-muted"><i class="bx bx-align-left me-1"></i> الوصف:</dt>
+                    <dd class="mb-2">
+                      @if (string.IsNullOrEmpty(Model.Description))
+                      {
+                        <span class="text-muted"><em>- بدون وصف -</em></span>
+                      }
+                      else
+                      {
+                        @Model.Description
+                      }
+                    </dd>
+                  </dl>
+                </div>
+                <div class="col-md-6">
+                  <dl>
+                    <dt class="text-muted"><i class="bx bx-question-mark me-1"></i> نوع الأسئلة:</dt>
+                    <dd class="mb-2">
+                      <span class="badge bg-label-primary">@GetQuestionTypeDisplay(Model.QuestionType)</span>
+                    </dd>
 
-              <dt class="col-sm-3">نوع الأسئلة:</dt>
-              <dd class="col-sm-9">@GetQuestionTypeDisplay(Model.QuestionType)</dd>
+                    <dt class="text-muted"><i class="bx bx-list-ol me-1"></i> عدد الأسئلة:</dt>
+                    <dd class="mb-2">
+                      @if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
+                      {
+                        <span>@Model.QuestionsGenerated / @Model.QuestionCount</span>
+                      }
+                      else
+                      {
+                        <span>@Model.QuestionCount</span>
+                      }
+                    </dd>
 
-              <dt class="col-sm-3">عدد الأسئلة:</dt>
-              <dd class="col-sm-9">@Model.QuestionCount</dd>
-
-              <dt class="col-sm-3">الحالة:</dt>
-              <dd class="col-sm-9">
-                @{
-                  var (statusClass, statusText) = GetStatusDisplay(Model.Status);
-                }
-                <span class="badge rounded-pill bg-@statusClass">@statusText</span>
-              </dd>
-            </dl>
+                    <dt class="text-muted"><i class="bx bx-calendar me-1"></i> تاريخ الإنشاء:</dt>
+                    <dd class="mb-2">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <form asp-action="Delete" method="post">
+          <form asp-action="Delete" method="post" id="deleteForm">
             <input type="hidden" name="id" value="@Model.Id" />
-            <div class="d-flex justify-content-between">
-              <button type="submit" class="btn btn-danger">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                <label class="form-check-label" for="confirmDelete">
+                  أؤكد رغبتي في حذف مجموعة الأسئلة
+                </label>
+              </div>
+            </div>
+            <div class="mt-2 d-flex justify-content-between">
+              <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
                 <i class="bx bx-trash me-1"></i> تأكيد الحذف
               </button>
               <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary">
@@ -85,15 +123,49 @@
     };
   }
 
-  (string badgeClass, string text) GetStatusDisplay(TawtheefTest.Enum.QuestionSetStatus status)
+  string GetStatusBadge(TawtheefTest.Enum.QuestionSetStatus status)
   {
     return status switch
     {
-      TawtheefTest.Enum.QuestionSetStatus.Pending => ("warning", "في الانتظار"),
-      TawtheefTest.Enum.QuestionSetStatus.Processing => ("info", "قيد المعالجة"),
-      TawtheefTest.Enum.QuestionSetStatus.Completed => ("success", "مكتمل"),
-      TawtheefTest.Enum.QuestionSetStatus.Failed => ("danger", "فشل"),
-      _ => ("secondary", status.ToString())
+      TawtheefTest.Enum.QuestionSetStatus.Pending => "warning",
+      TawtheefTest.Enum.QuestionSetStatus.Processing => "info",
+      TawtheefTest.Enum.QuestionSetStatus.Completed => "success",
+      TawtheefTest.Enum.QuestionSetStatus.Failed => "danger",
+      _ => "secondary"
     };
   }
+
+  string GetStatusText(TawtheefTest.Enum.QuestionSetStatus status)
+  {
+    return status switch
+    {
+      TawtheefTest.Enum.QuestionSetStatus.Pending => "في الانتظار",
+      TawtheefTest.Enum.QuestionSetStatus.Processing => "قيد المعالجة",
+      TawtheefTest.Enum.QuestionSetStatus.Completed => "مكتمل",
+      TawtheefTest.Enum.QuestionSetStatus.Failed => "فشل",
+      _ => status.ToString()
+    };
+  }
+}
+
+@section Scripts {
+  <script>
+    $(document).ready(function () {
+      // تفعيل/تعطيل زر الحذف بناءً على حالة مربع الاختيار
+      $('#confirmDelete').change(function () {
+        $('#deleteButton').prop('disabled', !$(this).is(':checked'));
+      });
+
+      // إظهار رسالة تأكيد إضافية عند الضغط على زر الحذف
+      $('#deleteForm').submit(function (e) {
+        if (!confirm('هل أنت متأكد من رغبتك في حذف مجموعة الأسئلة؟ لا يمكن التراجع عن هذا الإجراء.')) {
+          e.preventDefault();
+          return false;
+        }
+
+        // تغيير نص الزر عند التأكيد
+        $('#deleteButton').prop('disabled', true).html('<i class="bx bx-loader-circle bx-spin me-1"></i> جاري الحذف...');
+      });
+    });
+  </script>
 }
