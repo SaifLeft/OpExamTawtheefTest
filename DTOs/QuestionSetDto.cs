@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using TawtheefTest.Enum;
 using TawtheefTest.ViewModels;
 
@@ -23,6 +24,52 @@ namespace TawtheefTest.DTOs
     public int QuestionsGenerated { get; set; }
     public int ExamId { get; set; }
     public IEnumerable<ContentSourceViewModel> ContentSources { get; set; }
-    public IEnumerable<QuestionViewModel> Questions { get; set; }
+    public IEnumerable<QuestionDto> Questions { get; set; }
+    public int UsageCount { get; set; }
+    public List<string> UsedInExams { get; set; }
+    [JsonIgnore]
+    public string StatusClass => GetStatusClass();
+    [JsonIgnore]
+    public string StatusIcon => GetStatusIcon();
+
+    private string GetStatusClass()
+    {
+      return Status switch
+      {
+        QuestionSetStatus.Pending => "bg-warning",
+        QuestionSetStatus.Processing => "bg-info",
+        QuestionSetStatus.Completed => "bg-success",
+        QuestionSetStatus.Failed => "bg-danger",
+        _ => "bg-secondary"
+      };
+    }
+
+    private string GetStatusIcon()
+    {
+      return Status switch
+      {
+        QuestionSetStatus.Pending => "hourglass",
+        QuestionSetStatus.Processing => "arrow-repeat",
+        QuestionSetStatus.Completed => "check-circle",
+        QuestionSetStatus.Failed => "exclamation-triangle",
+        _ => "question-circle"
+      };
+    }
+  }
+
+  public class QuestionDto
+  {
+    public int Id { get; set; }
+    public int Index { get; set; }
+    public string QuestionText { get; set; }
+    public string QuestionType { get; set; }
+    public IEnumerable<QuestionOptionViewModel> Options { get; set; }
+    public IEnumerable<MatchingPairViewModel> MatchingPairs { get; set; }
+    public IEnumerable<OrderingItemViewModel> OrderingItems { get; set; }
+    public IEnumerable<string> CorrectlyOrdered { get; set; }
+    public bool? TrueFalseAnswer { get; set; }
+    public string Answer { get; set; }
+    public string InstructionText { get; set; }
+    public string SampleAnswer { get; set; }
   }
 }

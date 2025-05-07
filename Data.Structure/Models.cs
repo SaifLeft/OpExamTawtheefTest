@@ -199,6 +199,9 @@ namespace TawtheefTest.Data.Structure
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
 
+    public bool ShowResultsImmediately { get; set; } = false;
+    public bool SendExamLinkToApplicants { get; set; } = false;
+
     // Navigation properties
     public virtual ICollection<ExamQuestionSet> ExamQuestionSets { get; set; } = new List<ExamQuestionSet>();
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();

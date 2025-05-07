@@ -201,13 +201,9 @@
               @if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
               {
                 <div class="float-end">
-                  <form asp-action="AddToExam" method="post" class="d-inline" id="addToExamForm">
-                    <input type="hidden" name="questionSetId" value="@Model.Id" />
-                    <input type="hidden" name="examId" value="@Model.ExamId" />
-                    <button type="button" class="btn btn-primary btn-sm" onclick="confirmAddToExam()">
-                      <i class="bx bx-plus me-1"></i> إضافة الأسئلة للاختبار
-                    </button>
-                  </form>
+                  <a href="@Url.Action("AddToExam", new { id = Model.Id })" class="btn btn-primary btn-sm">
+                    <i class="bx bx-plus me-1"></i> إضافة الأسئلة للاختبار
+                  </a>
                 </div>
               }
             </h6>
@@ -376,8 +372,8 @@
                                         foreach (var pair in question.MatchingPairs)
                                         {
                                           <tr>
-                                            <td>@pair.Left</td>
-                                            <td>@pair.Right</td>
+                                            <td>@pair.LeftSide</td>
+                                            <td>@pair.RightSide</td>
                                           </tr>
                                         }
                                       }
@@ -557,11 +553,5 @@
         $(".accordion-button").addClass("collapsed");
       });
     });
-
-    function confirmAddToExam() {
-      if (confirm('هل أنت متأكد من رغبتك في إضافة هذه الأسئلة إلى الاختبار؟')) {
-        document.getElementById('addToExamForm').submit();
-      }
-    }
   </script>
 }

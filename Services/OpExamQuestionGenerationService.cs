@@ -297,6 +297,65 @@ namespace TawtheefTest.Services
 
       await _dbContext.Questions.AddRangeAsync(questions);
       await _dbContext.SaveChangesAsync();
+
+      // نسخ خيارات الأسئلة إذا وجدت
+      if (questionSet.Questions != null && questionSet.Questions.Any())
+      {
+        foreach (var question in questionSet.Questions)
+        {
+          if (question.Options != null && question.Options.Any())
+          {
+            var newOptions = new List<QuestionOption>();
+            foreach (var option in question.Options)
+            {
+              newOptions.Add(new QuestionOption
+              {
+                QuestionId = question.Id,
+                Text = option.Text,
+                Index = option.Index,
+                IsCorrect = option.IsCorrect
+              });
+            }
+            _dbContext.QuestionOptions.AddRange(newOptions);
+          }
+
+          // نسخ بيانات الترتيب إذا كان السؤال من نوع الترتيب
+          if (question.QuestionType.ToLower() == "ordering" && question.OrderingItems != null && question.OrderingItems.Any())
+          {
+            var newOrderingItems = new List<OrderingItem>();
+            foreach (var item in question.OrderingItems)
+            {
+              newOrderingItems.Add(new OrderingItem
+              {
+                QuestionId = question.Id,
+                Text = item.Text,
+                CorrectOrder = item.CorrectOrder,
+                DisplayOrder = item.DisplayOrder
+              });
+            }
+            _dbContext.OrderingItems.AddRange(newOrderingItems);
+          }
+
+          // نسخ بيانات المطابقة إذا كان السؤال من نوع المطابقة
+          if (question.QuestionType.ToLower() == "matching" && question.MatchingPairs != null && question.MatchingPairs.Any())
+          {
+            var newMatchingPairs = new List<MatchingPair>();
+            foreach (var pair in question.MatchingPairs)
+            {
+              newMatchingPairs.Add(new MatchingPair
+              {
+                QuestionId = question.Id,
+                LeftItem = pair.LeftItem,
+                RightItem = pair.RightItem,
+                DisplayOrder = pair.DisplayOrder
+              });
+            }
+            _dbContext.MatchingPairs.AddRange(newMatchingPairs);
+          }
+
+          await _dbContext.SaveChangesAsync();
+        }
+      }
     }
 
     private List<QuestionOption> CreateOptions(List<string> options)
@@ -491,6 +550,12 @@ namespace TawtheefTest.Services
             .DefaultIfEmpty(0)
             .MaxAsync();
 
+        var allNewQuestions = new List<Question>();
+        var allNewOptions = new List<QuestionOption>();
+        var allNewOrderingItems = new List<OrderingItem>();
+        var allNewMatchingPairs = new List<MatchingPair>();
+
+        // تحضير جميع الأسئلة للإضافة الجماعية
         foreach (var question in questionSet.Questions)
         {
           var newQuestion = new Question
@@ -506,62 +571,82 @@ namespace TawtheefTest.Services
             CreatedAt = DateTime.UtcNow
           };
 
-          _dbContext.Questions.Add(newQuestion);
-          await _dbContext.SaveChangesAsync();
+          allNewQuestions.Add(newQuestion);
+        }
+
+        // إضافة جميع الأسئلة دفعة واحدة
+        await _dbContext.Questions.AddRangeAsync(allNewQuestions);
+        await _dbContext.SaveChangesAsync();
+
+        // إضافة الخيارات وعناصر الترتيب وأزواج المطابقة
+        for (int i = 0; i < questionSet.Questions.Count; i++)
+        {
+          var originalQuestion = questionSet.Questions.ElementAt(i);
+          var newQuestion = allNewQuestions[i];
 
           // نسخ خيارات السؤال إذا وجدت
-          if (question.Options != null && question.Options.Any())
+          if (originalQuestion.Options != null && originalQuestion.Options.Any())
           {
-            foreach (var option in question.Options)
+            foreach (var option in originalQuestion.Options)
             {
-              var newOption = new QuestionOption
+              allNewOptions.Add(new QuestionOption
               {
                 QuestionId = newQuestion.Id,
                 Text = option.Text,
                 Index = option.Index,
                 IsCorrect = option.IsCorrect
-              };
-
-              _dbContext.QuestionOptions.Add(newOption);
+              });
             }
           }
 
           // نسخ بيانات الترتيب إذا كان السؤال من نوع الترتيب
-          if (question.QuestionType.ToLower() == "ordering" && question.OrderingItems != null && question.OrderingItems.Any())
+          if (originalQuestion.QuestionType.ToLower() == "ordering" && originalQuestion.OrderingItems != null && originalQuestion.OrderingItems.Any())
           {
-            foreach (var item in question.OrderingItems)
+            foreach (var item in originalQuestion.OrderingItems)
             {
-              var newItem = new OrderingItem
+              allNewOrderingItems.Add(new OrderingItem
               {
                 QuestionId = newQuestion.Id,
                 Text = item.Text,
                 CorrectOrder = item.CorrectOrder,
                 DisplayOrder = item.DisplayOrder
-              };
-
-              _dbContext.OrderingItems.Add(newItem);
+              });
             }
           }
 
           // نسخ بيانات المطابقة إذا كان السؤال من نوع المطابقة
-          if (question.QuestionType.ToLower() == "matching" && question.MatchingPairs != null && question.MatchingPairs.Any())
+          if (originalQuestion.QuestionType.ToLower() == "matching" && originalQuestion.MatchingPairs != null && originalQuestion.MatchingPairs.Any())
           {
-            foreach (var pair in question.MatchingPairs)
+            foreach (var pair in originalQuestion.MatchingPairs)
             {
-              var newPair = new MatchingPair
+              allNewMatchingPairs.Add(new MatchingPair
               {
                 QuestionId = newQuestion.Id,
                 LeftItem = pair.LeftItem,
                 RightItem = pair.RightItem,
                 DisplayOrder = pair.DisplayOrder
-              };
-
-              _dbContext.MatchingPairs.Add(newPair);
+              });
             }
           }
-
-          await _dbContext.SaveChangesAsync();
         }
+
+        // إضافة جميع العناصر المرتبطة دفعة واحدة
+        if (allNewOptions.Any())
+        {
+          await _dbContext.QuestionOptions.AddRangeAsync(allNewOptions);
+        }
+
+        if (allNewOrderingItems.Any())
+        {
+          await _dbContext.OrderingItems.AddRangeAsync(allNewOrderingItems);
+        }
+
+        if (allNewMatchingPairs.Any())
+        {
+          await _dbContext.MatchingPairs.AddRangeAsync(allNewMatchingPairs);
+        }
+
+        await _dbContext.SaveChangesAsync();
       }
 
       return true;

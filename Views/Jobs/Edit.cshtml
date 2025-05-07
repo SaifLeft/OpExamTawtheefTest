@@ -1,48 +1,64 @@
 @model EditJobViewModel
 
 @{
-    ViewData["Title"] = "تعديل الوظيفة";
+  ViewData["Title"] = "تعديل الوظيفة";
 }
 
-<h1>تعديل الوظيفة</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>تعديل الوظيفة</h1>
+  <a asp-action="Index" class="btn btn-secondary">
+    <i class="bi bi-arrow-return-left"></i> العودة للقائمة
+  </a>
+</div>
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <form asp-action="Edit">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    <input type="hidden" asp-for="Id" />
-                    <input type="hidden" asp-for="CreatedDate" />
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <i class="bi bi-pencil-square"></i> تعديل معلومات الوظيفة
+      </div>
+      <div class="card-body">
+        <form asp-action="Edit">
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+          <input type="hidden" asp-for="Id" />
+          <input type="hidden" asp-for="CreatedDate" />
 
-                    <div class="mb-3">
-                        <label asp-for="Name" class="form-label">اسم الوظيفة</label>
-                        <input asp-for="Name" class="form-control" required />
-                        <span asp-validation-for="Name" class="text-danger"></span>
-                    </div>
+          <div class="mb-3">
+            <label asp-for="Name" class="form-label">
+              <i class="bi bi-briefcase"></i> اسم الوظيفة
+            </label>
+            <input asp-for="Name" class="form-control" required placeholder="أدخل اسم الوظيفة" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+          </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Code" class="form-label">رمز الوظيفة</label>
-                        <input asp-for="Code" class="form-control" readonly />
-                        <span asp-validation-for="Code" class="text-danger"></span>
-                    </div>
+          <div class="mb-3">
+            <label asp-for="Code" class="form-label">
+              <i class="bi bi-key"></i> رمز الوظيفة
+            </label>
+            <input asp-for="Code" class="form-control" readonly />
+            <small class="text-muted">يتم إنشاء رمز الوظيفة تلقائياً</small>
+          </div>
 
-                    <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save"></i> حفظ التغييرات
-                        </button>
-                        <a asp-action="Index" class="btn btn-secondary">
-                            <i class="bi bi-arrow-return-left"></i> العودة للقائمة
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
+          <div class="mb-3">
+            <label class="form-label">
+              <i class="bi bi-calendar"></i> تاريخ الإنشاء
+            </label>
+            <input type="text" class="form-control" value="@Model.CreatedDate.ToString("yyyy-MM-dd")" readonly />
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save"></i> حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+  @{
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+  }
 }

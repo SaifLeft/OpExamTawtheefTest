@@ -21,17 +21,20 @@ namespace TawtheefTest.Controllers
     private readonly IOpExamsService _opExamsService;
     private readonly IOpExamQuestionGenerationService _questionGenerationService;
     private readonly IMapper _mapper;
+    private readonly IQuestionSetLibraryService _questionSetLibraryService;
 
     public QuestionSetsController(
         ApplicationDbContext context,
         IOpExamsService opExamsService,
         IOpExamQuestionGenerationService questionGenerationService,
-        IMapper mapper)
+        IMapper mapper,
+        IQuestionSetLibraryService questionSetLibraryService)
     {
       _context = context;
       _opExamsService = opExamsService;
       _questionGenerationService = questionGenerationService;
       _mapper = mapper;
+      _questionSetLibraryService = questionSetLibraryService;
     }
 
     // GET: QuestionSets
@@ -575,20 +578,71 @@ namespace TawtheefTest.Controllers
       return RedirectToAction("Details", new { id });
     }
 
+    // GET: QuestionSets/AddToExam/5
+    public async Task<IActionResult> AddToExam(int id)
+    {
+      var questionSet = await _questionGenerationService.GetQuestionSetDetailsAsync(id);
+      if (questionSet == null)
+      {
+        return NotFound();
+      }
+
+      var exams = await _context.Exams
+          .Where(e => e.Status != ExamStatus.Archived)
+          .Select(e => new SelectListItem
+          {
+            Value = e.Id.ToString(),
+            Text = e.Name
+          }).ToListAsync();
+
+      ViewBag.Exams = exams;
+      ViewBag.QuestionSet = questionSet;
+
+      return View(new AddQuestionSetToExamViewModel { QuestionSetId = id });
+    }
+
     // POST: QuestionSets/AddToExam
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddToExam(int questionSetId, int examId)
+    public async Task<IActionResult> AddToExam(AddQuestionSetToExamViewModel model)
     {
-      var result = await _questionGenerationService.AddQuestionsToExamAsync(questionSetId, examId);
-      if (!result)
+      if (ModelState.IsValid)
       {
-        TempData["ErrorMessage"] = "فشل إضافة الأسئلة إلى الاختبار. تأكد أن مجموعة الأسئلة مكتملة وأن الاختبار موجود.";
-        return RedirectToAction("Details", new { id = questionSetId });
+        // استخدام الخدمة لإضافة مجموعة الأسئلة إلى الاختبار إذا كانت متاحة
+        if (_questionSetLibraryService != null)
+        {
+          await _questionSetLibraryService.AddQuestionSetToExamAsync(model.ExamId, model.QuestionSetId, model.DisplayOrder);
+        }
+        else
+        {
+          // إذا لم تكن الخدمة متاحة، استخدم الطريقة التقليدية
+          var examQuestionSet = new ExamQuestionSet
+          {
+            ExamId = model.ExamId,
+            QuestionSetId = model.QuestionSetId,
+            DisplayOrder = model.DisplayOrder
+          };
+
+          _context.ExamQuestionSets.Add(examQuestionSet);
+          await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction("Details", "Exams", new { id = model.ExamId });
       }
 
-      TempData["SuccessMessage"] = "تم إضافة الأسئلة إلى الاختبار بنجاح.";
-      return RedirectToAction("Details", "Exams", new { id = examId });
+      var questionSet = await _questionGenerationService.GetQuestionSetDetailsAsync(model.QuestionSetId);
+      var exams = await _context.Exams
+          .Where(e => e.Status != ExamStatus.Archived)
+          .Select(e => new SelectListItem
+          {
+            Value = e.Id.ToString(),
+            Text = e.Name
+          }).ToListAsync();
+
+      ViewBag.Exams = exams;
+      ViewBag.QuestionSet = questionSet;
+
+      return View(model);
     }
 
     // POST: QuestionSets/GenerateAgain/5
@@ -713,6 +767,71 @@ namespace TawtheefTest.Controllers
         new SelectListItem { Value = "hard", Text = "صعب" },
         new SelectListItem { Value = "auto", Text = "تلقائي" }
       };
+    }
+
+    // تم نقلها من QuestionSetsLibraryController
+    // GET: QuestionSets/Library
+    public async Task<IActionResult> Library()
+    {
+      var questionSets = await _questionSetLibraryService.GetAllQuestionSetsAsync();
+      return View(questionSets);
+    }
+
+    // GET: QuestionSets/LibraryDetails/5
+    public async Task<IActionResult> LibraryDetails(int id)
+    {
+      var questionSet = await _questionSetLibraryService.GetQuestionSetDetailsAsync(id);
+      if (questionSet == null)
+      {
+        return NotFound();
+      }
+
+      return View(questionSet);
+    }
+
+    // POST: QuestionSets/Clone/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Clone(int id)
+    {
+      var newQuestionSetId = await _questionSetLibraryService.CloneQuestionSetAsync(id);
+      if (newQuestionSetId == 0)
+      {
+        return NotFound();
+      }
+
+      TempData["SuccessMessage"] = "تم نسخ مجموعة الأسئلة بنجاح";
+      return RedirectToAction(nameof(LibraryDetails), new { id = newQuestionSetId });
+    }
+
+    // GET: QuestionSets/ShuffleOptions/5
+    public async Task<IActionResult> ShuffleOptions(int id)
+    {
+      var questionSet = await _questionSetLibraryService.GetQuestionSetDetailsAsync(id);
+      if (questionSet == null)
+      {
+        return NotFound();
+      }
+
+      ViewBag.QuestionSet = questionSet;
+      return View(new ShuffleOptionsViewModel { QuestionSetId = id });
+    }
+
+    // POST: QuestionSets/ShuffleOptions
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ShuffleOptions(ShuffleOptionsViewModel model)
+    {
+      if (ModelState.IsValid)
+      {
+        await _questionSetLibraryService.ShuffleQuestionOptionsAsync(model.QuestionSetId, model.ShuffleType);
+        TempData["SuccessMessage"] = "تم خلط خيارات الأسئلة بنجاح";
+        return RedirectToAction(nameof(LibraryDetails), new { id = model.QuestionSetId });
+      }
+
+      var questionSet = await _questionSetLibraryService.GetQuestionSetDetailsAsync(model.QuestionSetId);
+      ViewBag.QuestionSet = questionSet;
+      return View(model);
     }
   }
 }

@@ -42,7 +42,7 @@
         </div>
       }
 
-      @if (Model == null || !Model.Any())
+      @if (Model == null || Model.Count == 0)
       {
         <div class="alert alert-info text-center">
           <i class="bx bx-info-circle me-1"></i>
@@ -93,7 +93,7 @@
                 {
                   case "mcq":
                   case "multiselect":
-                    if (question.Options != null && question.Options.Any())
+                    if (question.Options != null && question.Options.Count > 0)
                     {
                       <div class="mb-3">
                         <h6 class="text-muted mb-2">الخيارات:</h6>
@@ -133,7 +133,7 @@
                     }
                     break;
                   case "ordering":
-                    if (question.CorrectlyOrdered != null && question.CorrectlyOrdered.Any())
+                    if (question.CorrectlyOrdered != null && question.CorrectlyOrdered.Count > 0)
                     {
                       <div class="mb-3">
                         @if (!string.IsNullOrEmpty(question.InstructionText))
@@ -150,7 +150,7 @@
                           }
                         </ol>
 
-                        @if (question.ShuffledOrder != null && question.ShuffledOrder.Any())
+                        @if (question.ShuffledOrder != null && question.ShuffledOrder.Count > 0)
                         {
                           <h6 class="text-muted mt-3 mb-2">الترتيب المخلوط:</h6>
                           <ul class="list-group">
@@ -164,7 +164,7 @@
                     }
                     break;
                   case "matching":
-                    if (question.MatchingPairs != null && question.MatchingPairs.Any())
+                    if (question.MatchingPairs != null && question.MatchingPairs.Count > 0)
                     {
                       <div class="mb-3">
                         <h6 class="text-muted mb-2">أزواج المطابقة:</h6>

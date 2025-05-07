@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.Infrastructure;
 using TawtheefTest.Services;
+using TawtheefTest.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,9 +21,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register services
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOTPService, OTPService>();
-builder.Services.AddScoped<IOpExamsService, OpExamsService>();
-builder.Services.AddScoped<IOpExamQuestionGenerationService, OpExamQuestionGenerationService>();
+builder.Services.AddTransient<IOpExamsService, OpExamsService>();
+builder.Services.AddTransient<IOpExamQuestionGenerationService, OpExamQuestionGenerationService>();
+builder.Services.AddTransient<IQuestionSetLibraryService, QuestionSetLibraryService>();
 builder.Services.AddScoped<IQuestionGenerationService, QuestionGenerationService>();
+builder.Services.AddScoped<IJobService, JobService>();
 
 // Register background service
 builder.Services.AddHostedService<QuestionGenerationBackgroundService>();

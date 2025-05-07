@@ -1,41 +1,31 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TawtheefTest.Data.Structure;
 using TawtheefTest.ViewModels;
 using TawtheefTest.DTOs.ExamModels;
-using System;
-using System.Linq;
+using TawtheefTest.Services.Interfaces;
+using AutoMapper;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace TawtheefTest.Controllers
 {
   public class JobsController : Controller
   {
-    private readonly ApplicationDbContext _context;
+    private readonly IJobService _jobService;
+    private readonly IMapper _mapper;
 
-    public JobsController(ApplicationDbContext context)
+    public JobsController(IJobService jobService, IMapper mapper)
     {
-      _context = context;
+      _jobService = jobService;
+      _mapper = mapper;
     }
 
     // GET: Jobs
     public async Task<IActionResult> Index()
     {
-      var jobs = await _context.Jobs
-          .Include(j => j.Candidates)
-          .Include(j => j.Exams)
-          .Select(j => new JobDTO
-          {
-            Id = j.Id,
-            Name = j.Title,
-            Code = j.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
-            CreatedDate = j.CreatedAt,
-            CandidateCount = j.Candidates.Count,
-            ExamCount = j.Exams.Count
-          })
-          .ToListAsync();
-
-      return View(jobs);
+      var jobDTOs = await _jobService.GetAllJobsAsync();
+      var jobViewModels = _mapper.Map<List<JobViewModel>>(jobDTOs);
+      return View(jobViewModels);
     }
 
     // GET: Jobs/Create
@@ -51,19 +41,21 @@ namespace TawtheefTest.Controllers
     {
       if (ModelState.IsValid)
       {
-        var job = new Job
+        var jobDTO = new JobDTO
         {
-          Title = model.Name,
-          Description = string.Empty,
-          IsActive = true,
-          CreatedAt = DateTime.UtcNow
+          Name = model.Name
         };
 
-        _context.Add(job);
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = "تم إضافة الوظيفة بنجاح";
-        return RedirectToAction(nameof(Index));
+        var result = await _jobService.CreateJobAsync(jobDTO);
+        if (result)
+        {
+          TempData["SuccessMessage"] = "تم إضافة الوظيفة بنجاح";
+          return RedirectToAction(nameof(Index));
+        }
+        else
+        {
+          TempData["ErrorMessage"] = "حدث خطأ أثناء إضافة الوظيفة";
+        }
       }
 
       return View(model);
@@ -77,20 +69,13 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var job = await _context.Jobs.FindAsync(id);
-      if (job == null)
+      var jobDTO = await _jobService.GetJobByIdAsync(id.Value);
+      if (jobDTO == null)
       {
         return NotFound();
       }
 
-      var viewModel = new EditJobViewModel
-      {
-        Id = job.Id,
-        Name = job.Title,
-        Code = job.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
-        CreatedDate = job.CreatedAt
-      };
-
+      var viewModel = _mapper.Map<EditJobViewModel>(jobDTO);
       return View(viewModel);
     }
 
@@ -108,23 +93,29 @@ namespace TawtheefTest.Controllers
       {
         try
         {
-          var job = await _context.Jobs.FindAsync(id);
-          if (job == null)
+          var jobDTO = new JobDTO
           {
-            return NotFound();
+            Id = model.Id,
+            Name = model.Name,
+            Code = model.Code,
+            CreatedDate = model.CreatedDate
+          };
+
+          var result = await _jobService.UpdateJobAsync(id, jobDTO);
+
+          if (result)
+          {
+            TempData["SuccessMessage"] = "تم تحديث الوظيفة بنجاح";
+            return RedirectToAction(nameof(Index));
           }
-
-          job.Title = model.Name;
-          job.UpdatedAt = DateTime.UtcNow;
-
-          _context.Update(job);
-          await _context.SaveChangesAsync();
-
-          TempData["SuccessMessage"] = "تم تحديث الوظيفة بنجاح";
+          else
+          {
+            TempData["ErrorMessage"] = "حدث خطأ أثناء تحديث الوظيفة";
+          }
         }
         catch (DbUpdateConcurrencyException)
         {
-          if (!JobExists(model.Id))
+          if (!await _jobService.JobExistsAsync(model.Id))
           {
             return NotFound();
           }
@@ -133,7 +124,6 @@ namespace TawtheefTest.Controllers
             throw;
           }
         }
-        return RedirectToAction(nameof(Index));
       }
       return View(model);
     }
@@ -146,25 +136,14 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var job = await _context.Jobs
-          .Include(j => j.Candidates)
-          .Include(j => j.Exams)
-          .FirstOrDefaultAsync(m => m.Id == id);
-
-      if (job == null)
+      var jobDTO = await _jobService.GetJobDetailsByIdAsync(id.Value);
+      if (jobDTO == null)
       {
         return NotFound();
       }
 
-      var jobDto = new JobDTO
-      {
-        Id = job.Id,
-        Name = job.Title,
-        Code = job.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
-        CreatedDate = job.CreatedAt
-      };
-
-      return View(jobDto);
+      var viewModel = _mapper.Map<JobViewModel>(jobDTO);
+      return View(viewModel);
     }
 
     // POST: Jobs/Delete/5
@@ -172,30 +151,24 @@ namespace TawtheefTest.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-      var job = await _context.Jobs
-          .Include(j => j.Candidates)
-          .Include(j => j.Exams)
-          .FirstOrDefaultAsync(j => j.Id == id);
-
-      if (job != null)
+      var canDelete = await _jobService.CanDeleteJobAsync(id);
+      if (!canDelete)
       {
-        if (job.Candidates.Any() || job.Exams.Any())
-        {
-          TempData["ErrorMessage"] = "لا يمكن حذف الوظيفة لوجود مرشحين أو اختبارات مرتبطة بها";
-          return RedirectToAction(nameof(Index));
-        }
+        TempData["ErrorMessage"] = "لا يمكن حذف الوظيفة لوجود مرشحين أو اختبارات مرتبطة بها";
+        return RedirectToAction(nameof(Index));
+      }
 
-        _context.Jobs.Remove(job);
-        await _context.SaveChangesAsync();
+      var result = await _jobService.DeleteJobAsync(id);
+      if (result)
+      {
         TempData["SuccessMessage"] = "تم حذف الوظيفة بنجاح";
+      }
+      else
+      {
+        TempData["ErrorMessage"] = "حدث خطأ أثناء حذف الوظيفة";
       }
 
       return RedirectToAction(nameof(Index));
-    }
-
-    private bool JobExists(int id)
-    {
-      return _context.Jobs.Any(e => e.Id == id);
     }
   }
 }

@@ -1,0 +1,143 @@
+@model TawtheefTest.ViewModels.ShuffleOptionsViewModel
+@{
+    ViewData["Title"] = "خلط الأسئلة والخيارات";
+    var questionSet = ViewBag.QuestionSet as TawtheefTest.DTOs.QuestionSetDto;
+}
+
+@await Html.PartialAsync("_QuestionSetStyles")
+
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+        <span class="text-muted fw-light">
+            <a href="@Url.Action("Index", "QuestionSets")">مجموعات الأسئلة</a> /
+            <a href="@Url.Action("Library")">مكتبة مجموعات الأسئلة</a> /
+            <a href="@Url.Action("LibraryDetails", new { id = questionSet.Id })">@questionSet.Name</a> /
+        </span>
+        <span>خلط الأسئلة والخيارات</span>
+    </h4>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">خلط الأسئلة والخيارات في مجموعة '@questionSet.Name'</h5>
+        </div>
+        <div class="card-body">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                </div>
+            }
+
+            <form asp-action="ShuffleOptions" method="post" class="row">
+                <input type="hidden" asp-for="QuestionSetId" value="@questionSet.Id" />
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">معلومات مجموعة الأسئلة</h6>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row">
+                                    <dt class="col-sm-4">الاسم:</dt>
+                                    <dd class="col-sm-8">@questionSet.Name</dd>
+
+                                    <dt class="col-sm-4">نوع الأسئلة:</dt>
+                                    <dd class="col-sm-8"><span
+                                            class="badge bg-label-primary">@GetQuestionTypeDisplay(questionSet.QuestionType)</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4">عدد الأسئلة:</dt>
+                                    <dd class="col-sm-8">@questionSet.Questions.Count() / @questionSet.QuestionCount
+                                    </dd>
+
+                                    <dt class="col-sm-4">الحالة:</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge rounded-pill status-badge @questionSet.StatusClass">
+                                            <i class="bx bx-@questionSet.StatusIcon me-1"></i>
+                                            @questionSet.StatusDescription
+                                        </span>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">إعدادات الخلط</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="ShuffleType" class="form-label">نوع الخلط:</label>
+                                    <select asp-for="ShuffleType" class="form-select"
+                                        asp-items="Html.GetEnumSelectList<TawtheefTest.ViewModels.ShuffleType>()">
+                                    </select>
+                                    <span asp-validation-for="ShuffleType" class="text-danger"></span>
+                                </div>
+
+                                <div class="alert alert-warning mb-3">
+                                    <div class="mb-2">
+                                        <i class="bx bx-error-circle me-1"></i>
+                                        <strong>تنبيه:</strong> عملية الخلط ستغير ترتيب العرض للأسئلة و/أو الخيارات حسب
+                                        ما تختار.
+                                    </div>
+                                    <div>
+                                        هذه العملية لا تؤثر على الإجابات الصحيحة أو محتوى الأسئلة.
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <ul class="mb-0">
+                                        <li>خلط الخيارات فقط: سيتم تغيير ترتيب الخيارات في كل سؤال مع الحفاظ على ترتيب
+                                            الأسئلة.</li>
+                                        <li>خلط الأسئلة فقط: سيتم تغيير ترتيب الأسئلة مع الحفاظ على ترتيب الخيارات في كل
+                                            سؤال.</li>
+                                        <li>خلط الأسئلة والخيارات: سيتم تغيير ترتيب الأسئلة وترتيب الخيارات في كل سؤال.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="@Url.Action("LibraryDetails", new { id = questionSet.Id })"
+                        class="btn btn-outline-secondary me-2">
+                        <i class="bx bx-arrow-back me-1"></i> العودة إلى التفاصيل
+                    </a>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bx bx-shuffle me-1"></i> خلط الأسئلة والخيارات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetQuestionTypeDisplay(string questionType)
+    {
+        return questionType?.ToLower() switch
+        {
+            "mcq" => "اختيار من متعدد",
+            "tf" => "صح / خطأ",
+            "truefalse" => "صح / خطأ",
+            "open" => "إجابة مفتوحة",
+            "fillintheblank" => "ملء الفراغات",
+            "ordering" => "ترتيب",
+            "matching" => "مطابقة",
+            "multiselect" => "اختيار متعدد",
+            "shortanswer" => "إجابة قصيرة",
+            _ => questionType
+        };
+    }
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

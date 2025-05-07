@@ -1,21 +1,79 @@
-
 @model IEnumerable<ExamResultDto>
 @{
-    ViewData["title"] = "نتائج الاختبار";
+    ViewData["title"] = "نتائج الامتحان";
 }
 
 <div class="container-xxl flex-grow-1 container-p-y">
     <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">الاختبارات / @ViewBag.ExamName /</span> نتائج الاختبار
+        <span class="text-muted fw-light">الامتحانات / @ViewBag.ExamName /</span> نتائج الامتحان
     </h4>
 
-    <div class="card">
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar avatar-sm bg-label-primary me-2">
+                            <i class="bx bx-user-circle fs-4"></i>
+                        </div>
+                        <span class="fw-semibold">إجمالي المتقدمين</span>
+                    </div>
+                    <h3 class="mb-1">@Model.Count()</h3>
+                    <span class="text-muted small">عدد الأشخاص الذين تقدموا للامتحان</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar avatar-sm bg-label-success me-2">
+                            <i class="bx bx-check-circle fs-4"></i>
+                        </div>
+                        <span class="fw-semibold">الناجحون</span>
+                    </div>
+                    <h3 class="mb-1">@Model.Count(r => r.Score.HasValue && r.Score >= 70)</h3>
+                    <span class="text-muted small">عدد من اجتازوا الامتحان بنجاح (70% وأعلى)</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar avatar-sm bg-label-danger me-2">
+                            <i class="bx bx-x-circle fs-4"></i>
+                        </div>
+                        <span class="fw-semibold">غير ناجحين</span>
+                    </div>
+                    <h3 class="mb-1">@Model.Count(r => r.Score.HasValue && r.Score < 70)</h3>
+                    <span class="text-muted small">عدد من لم يجتازوا الامتحان (أقل من 70%)</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar avatar-sm bg-label-warning me-2">
+                            <i class="bx bx-bar-chart-alt-2 fs-4"></i>
+                        </div>
+                        <span class="fw-semibold">متوسط النتائج</span>
+                    </div>
+                    <h3 class="mb-1">@(Model.Any(r => r.Score.HasValue) ? Math.Round(Model.Where(r => r.Score.HasValue).Average(r => r.Score.Value)) : 0)%</h3>
+                    <span class="text-muted small">متوسط النسبة المئوية للنتائج</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">نتائج المتقدمين</h5>
             <div>
                 <a href="@Url.Action("Details", "Exams", new { id = ViewBag.ExamId })" class="btn btn-outline-secondary">
                     <i class="bx bx-arrow-back me-1"></i>
-                    العودة إلى الاختبار
+                    العودة إلى الامتحان
                 </a>
                 @if (Model.Any())
                 {
@@ -27,19 +85,39 @@
             </div>
         </div>
 
+        <div class="card-header bg-light py-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bx bx-search"></i></span>
+                        <input id="searchInput" type="text" class="form-control" placeholder="البحث في النتائج...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">عرض كل النتائج</option>
+                        <option value="success">الناجحون فقط</option>
+                        <option value="danger">غير الناجحين فقط</option>
+                        <option value="warning">نتائج متوسطة</option>
+                        <option value="secondary">غير مكتمل</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="card-body">
             @if (!Model.Any())
             {
                 <div class="alert alert-info text-center">
                     <i class="bx bx-info-circle fs-1 mb-2"></i>
-                    <p>لا توجد نتائج بعد. لم يتقدم أحد للاختبار أو لم يكمل أحد الاختبار بعد.</p>
+                    <p>لا توجد نتائج بعد. لم يتقدم أحد للامتحان أو لم يكمل أحد الامتحان بعد.</p>
                 </div>
             }
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
-                        <thead>
+                    <table class="table table-bordered table-hover" id="resultsTable">
+                        <thead class="table-light">
                             <tr>
                                 <th>المتقدم</th>
                                 <th>البريد الإلكتروني</th>
@@ -53,16 +131,26 @@
                         <tbody>
                             @foreach (var result in Model)
                             {
-                                <tr>
-                                    <td>@result.ApplicantName</td>
+                                var resultStatus = !result.Score.HasValue ? "secondary" :
+                                                   (result.Score >= 70 ? "success" :
+                                                   (result.Score >= 50 ? "warning" : "danger"));
+                                <tr data-status="@resultStatus">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar avatar-xs me-2 bg-label-@resultStatus">
+                                                <span class="avatar-initial rounded-circle">@(result.ApplicantName?.Substring(0, 1).ToUpper() ?? "؟")</span>
+                                            </div>
+                                            <span>@result.ApplicantName</span>
+                                        </div>
+                                    </td>
                                     <td>@result.ApplicantEmail</td>
-                                    <td>@result.StartTime?.ToString("yyyy/MM/dd HH:mm:ss")</td>
-                                    <td>@result.EndTime?.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                                    <td>@result.StartTime?.ToString("yyyy/MM/dd HH:mm")</td>
+                                    <td>@result.EndTime?.ToString("yyyy/MM/dd HH:mm")</td>
                                     <td>
                                         @if (result.StartTime.HasValue && result.EndTime.HasValue)
                                         {
                                             var duration = result.EndTime.Value - result.StartTime.Value;
-                                            @($"{duration.Hours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}")
+                                            <span class="badge bg-label-info">@($"{duration.Hours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}")</span>
                                         }
                                         else
                                         {
@@ -72,8 +160,12 @@
                                     <td>
                                         @if (result.Score.HasValue)
                                         {
-                                            var scoreClass = result.Score >= 70 ? "success" : (result.Score >= 50 ? "warning" : "danger");
-                                            <span class="badge bg-label-@scoreClass">@result.Score%</span>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px">
+                                                    <div class="progress-bar bg-@resultStatus" style="width: @result.Score%"></div>
+                                                </div>
+                                                <span class="badge bg-label-@resultStatus">@result.Score%</span>
+                                            </div>
                                         }
                                         else
                                         {
@@ -81,18 +173,13 @@
                                         }
                                     </td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                <i class="bx bx-dots-vertical-rounded"></i>
-                                            </button>
-                                            <div class="dropdown-menu">
-                                                <a class="dropdown-item" href="@Url.Action("ResultDetails", "Exams", new { id = result.Id })">
-                                                    <i class="bx bx-show-alt me-1"></i> عرض التفاصيل
-                                                </a>
-                                                <a class="dropdown-item" href="@Url.Action("SendResultEmail", "Exams", new { id = result.Id })">
-                                                    <i class="bx bx-envelope me-1"></i> إرسال النتيجة بالبريد
-                                                </a>
-                                            </div>
+                                        <div class="d-flex">
+                                            <a href="@Url.Action("ResultDetails", "Exams", new { id = result.Id })" class="btn btn-sm btn-icon btn-outline-primary me-1" data-bs-toggle="tooltip" data-bs-placement="top" title="عرض التفاصيل">
+                                                <i class="bx bx-show-alt"></i>
+                                            </a>
+                                            <a href="@Url.Action("SendResultEmail", "Exams", new { id = result.Id })" class="btn btn-sm btn-icon btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="إرسال النتيجة بالبريد">
+                                                <i class="bx bx-envelope"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -103,4 +190,32 @@
             }
         </div>
     </div>
-</div> 
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // تفعيل التلميحات
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // البحث في الجدول
+            $("#searchInput").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#resultsTable tbody tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // فلترة النتائج حسب الحالة
+            $("#statusFilter").on("change", function() {
+                var value = $(this).val();
+                if (value === "") {
+                    $("#resultsTable tbody tr").show();
+                } else {
+                    $("#resultsTable tbody tr").hide();
+                    $("#resultsTable tbody tr[data-status='" + value + "']").show();
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,199 @@
+@model List<TawtheefTest.DTOs.QuestionSetDto>
+@{
+    ViewData["Title"] = "مكتبة مجموعات الأسئلة";
+}
+
+@await Html.PartialAsync("_QuestionSetStyles")
+
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+        <span class="text-muted fw-light">
+            <a href="@Url.Action("Index", "QuestionSets")">مجموعات الأسئلة</a> /
+        </span>
+        <span>مكتبة مجموعات الأسئلة</span>
+    </h4>
+
+    <div class="card question-set-card">
+        <div class="card-header index-card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">مجموعات الأسئلة القابلة لإعادة الاستخدام</h5>
+            <a href="@Url.Action("Create")" class="btn btn-primary d-flex align-items-center">
+                <i class="bx bx-plus me-1"></i>
+                إنشاء مجموعة أسئلة جديدة
+            </a>
+        </div>
+
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible mb-3" role="alert">
+                    <i class="bx bx-check-circle me-1"></i>
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info text-center p-4">
+                    <i class="bx bx-info-circle fs-1 mb-2"></i>
+                    <p>لا توجد مجموعات أسئلة في المكتبة حالياً.</p>
+                    <a href="@Url.Action("Create")" class="btn btn-primary mt-2">
+                        <i class="bx bx-plus me-1"></i>
+                        إنشاء مجموعة أسئلة جديدة
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="row">
+                    <div class="col-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="bx bx-search"></i></span>
+                            <input type="text" id="searchInput" class="form-control" placeholder="البحث عن مجموعة أسئلة...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="questionSetsTable" class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>الاسم</th>
+                                <th>نوع الأسئلة</th>
+                                <th>عدد الأسئلة</th>
+                                <th>مستوى الصعوبة</th>
+                                <th>الحالة</th>
+                                <th>عدد الاستخدامات</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>العمليات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="question-set-row">
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <strong>@item.Name</strong>
+                                            @if (!string.IsNullOrEmpty(item.Description))
+                                            {
+                                                <small class="text-muted">@(item.Description.Length > 100 ? item.Description.Substring(0, 100) + "..." : item.Description)</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-label-primary">@GetQuestionTypeDisplay(item.QuestionType)</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-medium">@item.Questions.Count() / @item.QuestionCount</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-label-secondary">@GetDifficultyDisplay(item.Difficulty)</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill status-badge @item.StatusClass">
+                                            <i class="bx bx-@item.StatusIcon me-1"></i>
+                                            @item.StatusDescription
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-medium">@item.UsageCount</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted"><i class="bx bx-calendar me-1"></i> @item.CreatedAt.ToString("yyyy/MM/dd")</span>
+                                        <br />
+                                        <small class="text-muted"><i class="bx bx-time me-1"></i> @item.CreatedAt.ToString("HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                                <i class="bx bx-dots-vertical-rounded"></i>
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" href="@Url.Action("LibraryDetails", new { id = item.Id })">
+                                                    <i class="bx bx-show-alt me-1"></i> عرض
+                                                </a>
+                                                <a class="dropdown-item" href="@Url.Action("AddToExam", new { id = item.Id })">
+                                                    <i class="bx bx-plus-circle me-1"></i> إضافة إلى اختبار
+                                                </a>
+                                                <a class="dropdown-item" href="@Url.Action("ShuffleOptions", new { id = item.Id })">
+                                                    <i class="bx bx-shuffle me-1"></i> خلط الأسئلة
+                                                </a>
+                                                <form asp-action="Clone" method="post" class="dropdown-item-form" onsubmit="return confirm('هل أنت متأكد من نسخ هذه المجموعة؟');">
+                                                    <input type="hidden" name="id" value="@item.Id" />
+                                                    <button type="submit" class="dropdown-item w-100 text-start">
+                                                        <i class="bx bx-copy me-1"></i> نسخ المجموعة
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetQuestionTypeDisplay(string questionType)
+    {
+        return questionType?.ToLower() switch
+        {
+            "mcq" => "اختيار من متعدد",
+            "tf" => "صح / خطأ",
+            "truefalse" => "صح / خطأ",
+            "open" => "إجابة مفتوحة",
+            "fillintheblank" => "ملء الفراغات",
+            "ordering" => "ترتيب",
+            "matching" => "مطابقة",
+            "multiselect" => "اختيار متعدد",
+            "shortanswer" => "إجابة قصيرة",
+            _ => questionType
+        };
+    }
+
+    string GetDifficultyDisplay(string difficulty)
+    {
+        return difficulty?.ToLower() switch
+        {
+            "easy" => "سهل",
+            "medium" => "متوسط",
+            "hard" => "صعب",
+            _ => difficulty
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // بحث مباشر في الجدول
+            $("#searchInput").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#questionSetsTable .question-set-row").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // تأثير حركي عند المرور فوق الصفوف
+            $(".question-set-row").hover(
+                function() {
+                    $(this).addClass("table-active");
+                },
+                function() {
+                    $(this).removeClass("table-active");
+                }
+            );
+
+            // أنماط خاصة للنماذج داخل القائمة المنسدلة
+            $(".dropdown-item-form").css({
+                "padding": "0",
+                "margin": "0"
+            });
+        });
+    </script>
+}

@@ -1,147 +1,350 @@
 @model IEnumerable<TawtheefTest.DTOs.QuestionSetDto>
 @{
-    ViewData["title"] = "مجموعات الأسئلة في الاختبار";
+  ViewData["title"] = "مجموعات الأسئلة في الامتحان";
 }
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">الاختبارات / @ViewBag.ExamName /</span> مجموعات الأسئلة
-    </h4>
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light">الامتحانات / @ViewBag.ExamName /</span> مجموعات الأسئلة
+  </h4>
 
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">مجموعات الأسئلة</h5>
-            <div>
-                <a href="@Url.Action("Create", "QuestionSets", new { examId = ViewBag.ExamId })" class="btn btn-primary">
-                    <i class="bx bx-plus me-1"></i>
-                    إضافة مجموعة أسئلة جديدة
-                </a>
-                <a href="@Url.Action("Details", "Exams", new { id = ViewBag.ExamId })" class="btn btn-outline-secondary ms-2">
-                    <i class="bx bx-arrow-back me-1"></i>
-                    العودة إلى الاختبار
-                </a>
-            </div>
-        </div>
-
+  <!-- الإحصائيات -->
+  <div class="row mb-4">
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm">
         <div class="card-body">
-            @if (!Model.Any())
-            {
-                <div class="alert alert-info text-center">
-                    <i class="bx bx-info-circle fs-1 mb-2"></i>
-                    <p>لا توجد مجموعات أسئلة في هذا الاختبار. يمكنك إضافة مجموعة أسئلة جديدة باستخدام الزر أعلاه.</p>
-                </div>
-            }
-            else
-            {
-                <div class="row g-4">
-                    @foreach (var questionSet in Model)
-                    {
-                        <div class="col-md-6 col-lg-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    @{
-                                        var (statusClass, statusText) = GetStatusDisplay(questionSet.Status);
-                                    }
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <h6 class="card-title mb-0">@questionSet.Name</h6>
-                                        <span class="badge rounded-pill bg-@statusClass">@statusText</span>
-                                    </div>
-                                    <p class="card-text small text-muted mb-3">@(string.IsNullOrEmpty(questionSet.Description) ? "بدون وصف" : questionSet.Description)</p>
-
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge bg-label-primary">@GetQuestionTypeDisplay(questionSet.QuestionType)</span>
-                                        <span class="badge bg-label-info">@questionSet.QuestionCount سؤال</span>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge bg-label-secondary">@(questionSet.ContentSources?.FirstOrDefault()?.ContentSourceType != null ? GetContentTypeDisplay(questionSet.ContentSources.First().ContentSourceType) : "غير محدد")</span>
-                                        <span class="badge bg-label-warning">@GetDifficultyDisplay(questionSet.Difficulty)</span>
-                                    </div>
-
-                                    @if (questionSet.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
-                                    {
-                                        <div class="d-flex justify-content-end">
-                                            <small class="text-muted">
-                                                <i class="bx bx-time me-1"></i>
-                                                @questionSet.ProcessedAt?.ToString("yyyy/MM/dd HH:mm")
-                                            </small>
-                                        </div>
-                                    }
-                                </div>
-                                <div class="card-footer text-center">
-                                    <a href="@Url.Action("Details", "QuestionSets", new { id = questionSet.Id })" class="btn btn-sm btn-primary me-1">
-                                        <i class="bx bx-show-alt me-1"></i> عرض
-                                    </a>
-                                    <a href="@Url.Action("Edit", "QuestionSets", new { id = questionSet.Id })" class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="bx bx-edit-alt me-1"></i> تعديل
-                                    </a>
-                                    <a href="@Url.Action("Delete", "QuestionSets", new { id = questionSet.Id })" class="btn btn-sm btn-outline-danger">
-                                        <i class="bx bx-trash me-1"></i> حذف
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
+          <div class="d-flex align-items-center mb-2">
+            <div class="avatar avatar-sm bg-label-primary me-2">
+              <i class="bx bx-list-check fs-4"></i>
+            </div>
+            <span class="fw-semibold">إجمالي المجموعات</span>
+          </div>
+          <h3 class="mb-1">@Model.Count()</h3>
+          <span class="text-muted small">مجموعة أسئلة في الامتحان</span>
         </div>
+      </div>
     </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <div class="avatar avatar-sm bg-label-success me-2">
+              <i class="bx bx-check-circle fs-4"></i>
+            </div>
+            <span class="fw-semibold">مجموعات مكتملة</span>
+          </div>
+          <h3 class="mb-1">@Model.Count(qs => qs.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)</h3>
+          <span class="text-muted small">مجموعات تم معالجتها بنجاح</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <div class="avatar avatar-sm bg-label-warning me-2">
+              <i class="bx bx-question-mark fs-4"></i>
+            </div>
+            <span class="fw-semibold">إجمالي الأسئلة</span>
+          </div>
+          <h3 class="mb-1">@Model.Sum(qs => qs.QuestionCount)</h3>
+          <span class="text-muted small">سؤال في جميع المجموعات</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <div class="avatar avatar-sm bg-label-info me-2">
+              <i class="bx bx-bulb fs-4"></i>
+            </div>
+            <span class="fw-semibold">أنواع الأسئلة</span>
+          </div>
+          <h3 class="mb-1">@Model.Select(qs => qs.QuestionType).Distinct().Count()</h3>
+          <span class="text-muted small">نوع مختلف من الأسئلة</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center py-3">
+      <h5 class="mb-0 text-primary">
+        <i class="bx bx-folder-open me-2"></i>
+        مجموعات الأسئلة
+      </h5>
+      <div>
+        <a href="@Url.Action("Create", "QuestionSets", new { examId = ViewBag.ExamId })" class="btn btn-primary btn-sm">
+          <i class="bx bx-plus me-1"></i>
+          إضافة مجموعة أسئلة جديدة
+        </a>
+        <a href="@Url.Action("Details", "Exams", new { id = ViewBag.ExamId })"
+          class="btn btn-outline-secondary btn-sm ms-2">
+          <i class="bx bx-arrow-back me-1"></i>
+          العودة إلى الامتحان
+        </a>
+      </div>
+    </div>
+
+    <div class="card-header bg-light py-3">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bx bx-search"></i></span>
+            <input type="text" id="searchQuestionSets" class="form-control" placeholder="البحث في المجموعات...">
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="d-flex gap-2">
+            <select id="statusFilter" class="form-select">
+              <option value="">كل الحالات</option>
+              <option value="success">مكتملة</option>
+              <option value="warning">في الانتظار</option>
+              <option value="info">قيد المعالجة</option>
+              <option value="danger">فشلت</option>
+            </select>
+            <select id="typeFilter" class="form-select">
+              <option value="">كل أنواع الأسئلة</option>
+              <option value="اختيار من متعدد">اختيار من متعدد</option>
+              <option value="صح / خطأ">صح / خطأ</option>
+              <option value="إجابة مفتوحة">إجابة مفتوحة</option>
+              <option value="ملء الفراغات">ملء الفراغات</option>
+              <option value="ترتيب">ترتيب</option>
+              <option value="مطابقة">مطابقة</option>
+            </select>
+            <select id="difficultyFilter" class="form-select">
+              <option value="">كل مستويات الصعوبة</option>
+              <option value="سهل">سهل</option>
+              <option value="متوسط">متوسط</option>
+              <option value="صعب">صعب</option>
+              <option value="تلقائي">تلقائي</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      @if (!Model.Any())
+      {
+        <div class="alert alert-info text-center">
+          <i class="bx bx-info-circle fs-1 mb-2"></i>
+          <p>لا توجد مجموعات أسئلة في هذا الامتحان. يمكنك إضافة مجموعة أسئلة جديدة باستخدام الزر أعلاه.</p>
+        </div>
+      }
+      else
+      {
+        <div class="row g-3" id="questionSetsContainer">
+          @foreach (var questionSet in Model)
+          {
+            var (statusClass, statusText) = GetStatusDisplay(questionSet.Status);
+            var questionType = GetQuestionTypeDisplay(questionSet.QuestionType);
+            var difficulty = GetDifficultyDisplay(questionSet.Difficulty);
+
+            <div class="col-md-6 col-lg-4 question-set-card" data-status="@statusClass" data-type="@questionType"
+              data-difficulty="@difficulty">
+              <div class="card h-100 shadow-sm border-0 hover-shadow">
+                <div class="card-header pb-0 pt-3 bg-transparent border-0">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0 text-truncate">@questionSet.Name</h6>
+                    <span class="badge rounded-pill bg-@statusClass">@statusText</span>
+                  </div>
+                </div>
+                <div class="card-body pt-2">
+                  <p class="card-text small text-muted mb-3" style="min-height: 40px;">
+                    @(string.IsNullOrEmpty(questionSet.Description) ? "بدون وصف" :
+                                    (questionSet.Description.Length > 100 ? questionSet.Description.Substring(0, 100) +
+                                    "..." : questionSet.Description))
+                  </p>
+
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                      <span class="badge bg-label-primary">@questionType</span>
+                    </div>
+                    <div class="d-flex gap-1 align-items-center">
+                      <i class="bx bx-help-circle text-info"></i>
+                      <span class="badge bg-label-info">@questionSet.QuestionCount سؤال</span>
+                    </div>
+                  </div>
+
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                      <span class="badge bg-label-secondary">
+                        <i class="bx bx-category-alt me-1"></i>
+                        @(questionSet.ContentSources?.FirstOrDefault()?.ContentSourceType != null ?
+                                            GetContentTypeDisplay(questionSet.ContentSources.First().ContentSourceType) :
+                                            "غير محدد")
+                    </span>
+                  </div>
+                  <div>
+                    <span class="badge bg-label-warning">
+                      <i class="bx bx-trending-up me-1"></i>
+                      @difficulty
+                    </span>
+                  </div>
+                </div>
+
+              @if (questionSet.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
+                  {
+                    <div class="d-flex justify-content-end">
+                      <small class="text-muted">
+                        <i class="bx bx-time me-1"></i>
+                        @questionSet.ProcessedAt?.ToString("yyyy/MM/dd HH:mm")
+                      </small>
+                    </div>
+                  }
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between py-2">
+                  <a href="@Url.Action("Details", "QuestionSets", new { id = questionSet.Id })"
+                    class="btn btn-sm btn-primary">
+                    <i class="bx bx-show-alt me-1"></i> عرض
+                  </a>
+                  <div>
+                    <a href="@Url.Action("Edit", "QuestionSets", new { id = questionSet.Id })"
+                      class="btn btn-sm btn-outline-primary me-1">
+                      <i class="bx bx-edit-alt"></i>
+                    </a>
+                    <a href="@Url.Action("Delete", "QuestionSets", new { id = questionSet.Id })"
+                      class="btn btn-sm btn-outline-danger">
+                      <i class="bx bx-trash"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
 </div>
 
+@section Scripts {
+  <script>
+    $(document).ready(function () {
+      // تأثير تفاعلي لبطاقات مجموعات الأسئلة
+      $(".hover-shadow").hover(
+        function () {
+          $(this).addClass("shadow");
+        },
+        function () {
+          $(this).removeClass("shadow");
+        }
+      );
+
+      // فلترة البحث في المجموعات
+      $("#searchQuestionSets").on("keyup", function () {
+        var value = $(this).val().toLowerCase();
+        $(".question-set-card").filter(function () {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+        updateEmptyState();
+      });
+
+      // فلترة حسب الحالة
+      $("#statusFilter").on("change", function () {
+        applyFilters();
+      });
+
+      // فلترة حسب نوع السؤال
+      $("#typeFilter").on("change", function () {
+        applyFilters();
+      });
+
+      // فلترة حسب مستوى الصعوبة
+      $("#difficultyFilter").on("change", function () {
+        applyFilters();
+      });
+
+      function applyFilters() {
+        var statusValue = $("#statusFilter").val();
+        var typeValue = $("#typeFilter").val();
+        var difficultyValue = $("#difficultyFilter").val();
+
+        $(".question-set-card").hide();
+        $(".question-set-card").each(function () {
+          var statusMatch = statusValue === "" || $(this).data("status") === statusValue;
+          var typeMatch = typeValue === "" || $(this).data("type") === typeValue;
+          var difficultyMatch = difficultyValue === "" || $(this).data("difficulty") === difficultyValue;
+
+          if (statusMatch && typeMatch && difficultyMatch) {
+            $(this).show();
+          }
+        });
+
+        updateEmptyState();
+      }
+
+      function updateEmptyState() {
+        var visibleCards = $(".question-set-card:visible").length;
+
+        if (visibleCards === 0 && $("#questionSetsContainer").children().length > 0) {
+          if ($("#noResultsMessage").length === 0) {
+            $("#questionSetsContainer").append('<div id="noResultsMessage" class="col-12 mt-3"><div class="alert alert-info text-center">لا توجد نتائج تطابق معايير البحث</div></div>');
+          }
+        } else {
+          $("#noResultsMessage").remove();
+        }
+      }
+    });
+  </script>
+}
+
 @functions {
-    string GetQuestionTypeDisplay(string questionType)
+  string GetQuestionTypeDisplay(string questionType)
+  {
+    return questionType?.ToLower() switch
     {
-        return questionType?.ToLower() switch
-        {
-            "mcq" => "اختيار من متعدد",
-            "tf" => "صح / خطأ",
-            "open" => "إجابة مفتوحة",
-            "fillintheblank" => "ملء الفراغات",
-            "ordering" => "ترتيب",
-            "matching" => "مطابقة",
-            "multiselect" => "اختيار متعدد",
-            "shortanswer" => "إجابة قصيرة",
-            _ => questionType
-        };
-    }
+      "mcq" => "اختيار من متعدد",
+      "tf" => "صح / خطأ",
+      "open" => "إجابة مفتوحة",
+      "fillintheblank" => "ملء الفراغات",
+      "ordering" => "ترتيب",
+      "matching" => "مطابقة",
+      "multiselect" => "اختيار متعدد",
+      "shortanswer" => "إجابة قصيرة",
+      _ => questionType
+    };
+  }
 
-    string GetContentTypeDisplay(string contentType)
+  string GetContentTypeDisplay(string contentType)
+  {
+    return contentType?.ToLower() switch
     {
-        return contentType?.ToLower() switch
-        {
-            "topic" => "موضوع",
-            "text" => "نص",
-            "link" => "رابط",
-            "youtube" => "يوتيوب",
-            "document" => "مستند",
-            "image" => "صورة",
-            "audio" => "صوت",
-            "video" => "فيديو",
-            _ => contentType
-        };
-    }
+      "topic" => "موضوع",
+      "text" => "نص",
+      "link" => "رابط",
+      "youtube" => "يوتيوب",
+      "document" => "مستند",
+      "image" => "صورة",
+      "audio" => "صوت",
+      "video" => "فيديو",
+      _ => contentType
+    };
+  }
 
-    string GetDifficultyDisplay(string difficulty)
+  string GetDifficultyDisplay(string difficulty)
+  {
+    return difficulty?.ToLower() switch
     {
-        return difficulty?.ToLower() switch
-        {
-            "easy" => "سهل",
-            "medium" => "متوسط",
-            "hard" => "صعب",
-            "auto" => "تلقائي",
-            _ => difficulty
-        };
-    }
+      "easy" => "سهل",
+      "medium" => "متوسط",
+      "hard" => "صعب",
+      "auto" => "تلقائي",
+      _ => difficulty
+    };
+  }
 
-    (string badge, string text) GetStatusDisplay(TawtheefTest.Enum.QuestionSetStatus status)
+  (string badge, string text) GetStatusDisplay(TawtheefTest.Enum.QuestionSetStatus status)
+  {
+    return status switch
     {
-        return status switch
-        {
-            TawtheefTest.Enum.QuestionSetStatus.Pending => ("warning", "في الانتظار"),
-            TawtheefTest.Enum.QuestionSetStatus.Processing => ("info", "قيد المعالجة"),
-            TawtheefTest.Enum.QuestionSetStatus.Completed => ("success", "مكتمل"),
-            TawtheefTest.Enum.QuestionSetStatus.Failed => ("danger", "فشل"),
-            _ => ("secondary", status.ToString())
-        };
-    }
+      TawtheefTest.Enum.QuestionSetStatus.Pending => ("warning", "في الانتظار"),
+      TawtheefTest.Enum.QuestionSetStatus.Processing => ("info", "قيد المعالجة"),
+      TawtheefTest.Enum.QuestionSetStatus.Completed => ("success", "مكتمل"),
+      TawtheefTest.Enum.QuestionSetStatus.Failed => ("danger", "فشل"),
+      _ => ("secondary", status.ToString())
+    };
+  }
 }

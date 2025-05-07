@@ -1,47 +1,69 @@
-@using TawtheefTest.DTOs.ExamModels
-@model JobDTO
+@using TawtheefTest.ViewModels
+@model JobViewModel
 
 @{
-    ViewData["Title"] = "حذف الوظيفة";
+  ViewData["Title"] = "حذف الوظيفة";
 }
 
-<h1>حذف الوظيفة</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>حذف الوظيفة</h1>
+  <a asp-action="Index" class="btn btn-secondary">
+    <i class="bi bi-arrow-return-left"></i> العودة للقائمة
+  </a>
+</div>
 
 <div class="alert alert-danger">
-    <h3>هل أنت متأكد من رغبتك في حذف هذه الوظيفة؟</h3>
-    <p>سيؤدي حذف الوظيفة إلى حذف جميع المرشحين والاختبارات المرتبطة بها.</p>
+  <h3><i class="bi bi-exclamation-triangle"></i> هل أنت متأكد من رغبتك في حذف هذه الوظيفة؟</h3>
+  <p class="mb-0">سيؤدي حذف الوظيفة إلى حذف جميع المرشحين والاختبارات المرتبطة بها.</p>
 </div>
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-danger text-white">
-                تفاصيل الوظيفة
-            </div>
-            <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-4">اسم الوظيفة</dt>
-                    <dd class="col-sm-8">@Model.Name</dd>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-danger text-white">
+        <i class="bi bi-trash"></i> تفاصيل الوظيفة
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-4">
+            <i class="bi bi-briefcase"></i> اسم الوظيفة
+          </dt>
+          <dd class="col-sm-8">@Model.Name</dd>
 
-                    <dt class="col-sm-4">رمز الوظيفة</dt>
-                    <dd class="col-sm-8">@Model.Code</dd>
+          <dt class="col-sm-4">
+            <i class="bi bi-key"></i> رمز الوظيفة
+          </dt>
+          <dd class="col-sm-8">@Model.Code</dd>
 
-                    <dt class="col-sm-4">تاريخ الإنشاء</dt>
-                    <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy-MM-dd")</dd>
-                </dl>
+          <dt class="col-sm-4">
+            <i class="bi bi-calendar"></i> تاريخ الإنشاء
+          </dt>
+          <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy-MM-dd")</dd>
 
-                <form asp-action="Delete">
-                    <input type="hidden" asp-for="Id" />
-                    <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> تأكيد الحذف
-                        </button>
-                        <a asp-action="Index" class="btn btn-secondary">
-                            <i class="bi bi-arrow-return-left"></i> العودة للقائمة
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
+          <dt class="col-sm-4">
+            <i class="bi bi-people"></i> عدد المرشحين
+          </dt>
+          <dd class="col-sm-8">
+            <span class="badge bg-success">@Model.CandidateCount</span>
+          </dd>
+
+          <dt class="col-sm-4">
+            <i class="bi bi-journal-text"></i> عدد الاختبارات
+          </dt>
+          <dd class="col-sm-8">
+            <span class="badge bg-info">@Model.ExamCount</span>
+          </dd>
+        </dl>
+
+        <form asp-action="Delete">
+          <input type="hidden" asp-for="Id" />
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> تأكيد الحذف
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>

@@ -92,6 +92,10 @@ namespace TawtheefTest.Controllers
         CreatedDate = exam.CreatedAt,
         ExamStartDate = exam.StartDate ?? DateTime.Now,
         ExamEndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
+        QuestionCount = exam.Questions.Count,
+        ShowResultsImmediately = exam.ShowResultsImmediately,
+        SendExamLinkToApplicants = exam.SendExamLinkToApplicants,
+        Status = exam.Status,
         QuestionSets = exam.ExamQuestionSets.Select(eqs => new QuestionSetDto
         {
           Id = eqs.QuestionSet.Id,
@@ -103,6 +107,12 @@ namespace TawtheefTest.Controllers
           CreatedAt = eqs.QuestionSet.CreatedAt
         }).ToList()
       };
+
+      // طباعة قيمة Status للتحقق
+      System.Diagnostics.Debug.WriteLine($"Exam Status: {exam.Status} - DTO Status: {examDetailsDto.Status}");
+
+      // للاستكشاف: سأضيف رسالة توضيحية في TempData
+      TempData["StatusDebug"] = $"قيمة Status في الـ DTO: {examDetailsDto.Status} | قيمة Status في النموذج الأصلي: {exam.Status}";
 
       // جلب الأسئلة للاختبار
       var questions = exam.Questions
@@ -571,6 +581,177 @@ namespace TawtheefTest.Controllers
         "hard" => "صعب",
         _ => difficulty
       };
+    }
+
+    // GET: Exams/PublishExam/5
+    public async Task<IActionResult> PublishExam(int? id)
+    {
+      if (id == null)
+      {
+        return NotFound();
+      }
+
+      var exam = await _context.Exams
+          .Include(e => e.Job)
+          .FirstOrDefaultAsync(m => m.Id == id);
+
+      if (exam == null)
+      {
+        return NotFound();
+      }
+
+      // التحقق من أن الاختبار يحتوي على أسئلة
+      var questionsCount = await _context.Questions
+          .Where(q => q.ExamId == id)
+          .CountAsync();
+
+      if (questionsCount == 0)
+      {
+        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
+        return RedirectToAction(nameof(Details), new { id });
+      }
+
+      // إعداد نموذج تأكيد النشر
+      var publishModel = new PublishExamViewModel
+      {
+        ExamId = exam.Id,
+        ExamName = exam.Name,
+        JobName = exam.Job.Title,
+        StartDate = exam.StartDate ?? DateTime.Now,
+        EndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
+        SendSmsNotification = true,
+        ApplicantsCount = await _context.Candidates
+            .Where(c => c.JobId == exam.JobId && c.IsActive)
+            .CountAsync()
+      };
+
+      return View(publishModel);
+    }
+
+    // POST: Exams/PublishExam
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmPublishExam(PublishExamViewModel model)
+    {
+      if (!ModelState.IsValid)
+      {
+        return View("PublishExam", model);
+      }
+
+      var exam = await _context.Exams
+          .Include(e => e.Job)
+          .FirstOrDefaultAsync(e => e.Id == model.ExamId);
+
+      if (exam == null)
+      {
+        return NotFound();
+      }
+
+      // تعديل حالة الاختبار ليكون منشوراً
+      exam.Status = ExamStatus.Published;
+      exam.SendExamLinkToApplicants = true;
+      exam.UpdatedAt = DateTime.UtcNow;
+
+      _context.Update(exam);
+      await _context.SaveChangesAsync();
+
+      if (model.SendSmsNotification)
+      {
+        // الحصول على المتقدمين للوظيفة
+        var applicants = await _context.Candidates
+            .Where(c => c.JobId == exam.JobId && c.IsActive)
+            .ToListAsync();
+
+        // إنشاء نص الرسالة للمتقدمين
+        string messageTemplate = model.NotificationText ??
+          $"مرحباً {{اسم_المتقدم}}، لديك اختبار \"{exam.Name}\" متاح من {{تاريخ_البدء}} إلى {{تاريخ_الانتهاء}}. " +
+          $"يمكنك إجراء الاختبار في أي وقت خلال هذه الفترة. رابط الاختبار: {{رابط_الاختبار}}";
+
+        string startDateStr = exam.StartDate?.ToString("yyyy/MM/dd") ?? DateTime.Now.ToString("yyyy/MM/dd");
+        string endDateStr = exam.EndDate?.ToString("yyyy/MM/dd") ?? DateTime.Now.AddDays(7).ToString("yyyy/MM/dd");
+        string examUrl = $"{Request.Scheme}://{Request.Host}/CandidateExam/Start/{exam.Id}";
+
+        // تسجيل سجل بالإشعارات المرسلة
+        int successCount = 0;
+        int failedCount = 0;
+
+        // إرسال الرسائل النصية (تنفيذ فعلي يحتاج إلى خدمة SMS)
+        foreach (var applicant in applicants)
+        {
+          try
+          {
+            // استبدال المتغيرات في القالب
+            string personalizedMessage = messageTemplate
+                .Replace("{اسم_المتقدم}", applicant.Name)
+                .Replace("{اسم_الاختبار}", exam.Name)
+                .Replace("{تاريخ_البدء}", startDateStr)
+                .Replace("{تاريخ_الانتهاء}", endDateStr)
+                .Replace("{رابط_الاختبار}", examUrl);
+
+            // TODO: استدعاء خدمة الرسائل النصية هنا
+            // await _smsService.SendSmsAsync(applicant.Phone, personalizedMessage);
+
+            // تسجيل نجاح الإرسال
+            successCount++;
+
+            // تسجيل الإرسال في قاعدة البيانات إذا لزم الأمر
+            // _context.NotificationLogs.Add(new NotificationLog { ... });
+          }
+          catch (Exception ex)
+          {
+            // تسجيل فشل الإرسال
+            failedCount++;
+            // يمكن تسجيل الخطأ في سجل الأخطاء
+            // _logger.LogError(ex, $"Error sending SMS to candidate {applicant.Id}");
+          }
+        }
+
+        string resultMessage = $"تم نشر الاختبار بنجاح وإرسال {successCount} رسالة نصية للمتقدمين";
+        if (failedCount > 0)
+        {
+          resultMessage += $"، وفشل إرسال {failedCount} رسالة";
+        }
+        TempData["SuccessMessage"] = resultMessage;
+      }
+      else
+      {
+        TempData["SuccessMessage"] = "تم نشر الاختبار بنجاح";
+      }
+
+      return RedirectToAction(nameof(Details), new { id = model.ExamId });
+    }
+
+    // GET: Exams/TogglePublishStatus/5
+    public async Task<IActionResult> TogglePublishStatus(int? id)
+    {
+      if (id == null)
+      {
+        return NotFound();
+      }
+
+      var exam = await _context.Exams.FindAsync(id);
+      if (exam == null)
+      {
+        return NotFound();
+      }
+
+      // تبديل حالة النشر
+      if (exam.Status == ExamStatus.Published)
+      {
+        exam.Status = ExamStatus.Draft;
+        TempData["SuccessMessage"] = "تم إلغاء نشر الاختبار";
+      }
+      else
+      {
+        exam.Status = ExamStatus.Published;
+        TempData["SuccessMessage"] = "تم نشر الاختبار";
+      }
+
+      exam.UpdatedAt = DateTime.UtcNow;
+      _context.Update(exam);
+      await _context.SaveChangesAsync();
+
+      return RedirectToAction(nameof(Details), new { id });
     }
   }
 }

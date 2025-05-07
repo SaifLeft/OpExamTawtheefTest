@@ -19,7 +19,7 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: OTP/Request
-    public IActionResult Request()
+    public new IActionResult Request()
     {
       return View(new OTPRequestViewModel());
     }
@@ -27,7 +27,7 @@ namespace TawtheefTest.Controllers
     // POST: OTP/Request
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Request(OTPRequestViewModel viewModel)
+    public new async Task<IActionResult> Request(OTPRequestViewModel viewModel)
     {
       if (ModelState.IsValid)
       {

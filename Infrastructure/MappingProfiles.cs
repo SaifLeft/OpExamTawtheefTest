@@ -40,12 +40,18 @@ namespace TawtheefTest.Infrastructure
 
       // للتعامل مع نماذج توليد الأسئلة
       CreateMap<QuestionSet, QuestionSetDto>()
-          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
-          .ForMember(dest => dest.QuestionsGenerated, opt => opt.MapFrom(src => src.Questions.Count))
-          .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSets.FirstOrDefault().ExamId));
+          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetQuestionSetStatusDescription(src.Status)))
+          .ForMember(dest => dest.Questions, opt => opt.Ignore())
+          .ForMember(dest => dest.UsageCount, opt => opt.Ignore())
+          .ForMember(dest => dest.UsedInExams, opt => opt.Ignore());
 
       CreateMap<ContentSource, ContentSourceViewModel>();
       CreateMap<UploadedFile, UploadedFileViewModel>();
+
+      // تعيين Question إلى QuestionDto بدلاً من QuestionViewModel
+      CreateMap<Question, QuestionDto>();
+      CreateMap<QuestionViewModel, QuestionDto>();
+
       CreateMap<Question, QuestionViewModel>();
       CreateMap<QuestionOption, QuestionOptionViewModel>();
       CreateMap<MatchingPair, MatchingPairViewModel>();
@@ -91,6 +97,9 @@ namespace TawtheefTest.Infrastructure
       CreateMap<QuestionSetDto, QuestionSetDetailsViewModel>();
       CreateMap<QuestionSetDto, QuestionSetStatusViewModel>();
 
+      // تعيين QuestionDto إلى QuestionViewModel
+      CreateMap<QuestionDto, QuestionViewModel>();
+
       // Map from ViewModels to DTOs
       CreateMap<ExamViewModel, ExamDTO>();
       CreateMap<JobViewModel, JobDTO>();
@@ -107,6 +116,18 @@ namespace TawtheefTest.Infrastructure
     }
 
     private string GetStatusDescription(Enum.QuestionSetStatus status)
+    {
+      return status switch
+      {
+        Enum.QuestionSetStatus.Pending => "في الانتظار",
+        Enum.QuestionSetStatus.Processing => "قيد المعالجة",
+        Enum.QuestionSetStatus.Completed => "مكتمل",
+        Enum.QuestionSetStatus.Failed => "فشل",
+        _ => "غير معروف"
+      };
+    }
+
+    private string GetQuestionSetStatusDescription(Enum.QuestionSetStatus status)
     {
       return status switch
       {

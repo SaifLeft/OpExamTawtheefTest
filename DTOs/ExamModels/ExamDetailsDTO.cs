@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TawtheefTest.DTOs;
+using TawtheefTest.Enum;
 
 namespace TawtheefTest.DTOs.ExamModels
 {
@@ -21,6 +22,7 @@ namespace TawtheefTest.DTOs.ExamModels
     public DateTime ExamEndDate { get; set; }
     public bool ShowResultsImmediately { get; set; }
     public bool SendExamLinkToApplicants { get; set; }
+    public ExamStatus Status { get; set; }
     public List<QuestionSetDto> QuestionSets { get; set; }
   }
 

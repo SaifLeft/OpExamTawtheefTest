@@ -1,0 +1,299 @@
+@model TawtheefTest.DTOs.QuestionSetDto
+@{
+  ViewData["Title"] = "تفاصيل مجموعة الأسئلة";
+}
+
+@await Html.PartialAsync("_QuestionSetStyles")
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light">
+      <a href="@Url.Action("Index", "QuestionSets")">مجموعات الأسئلة</a> /
+      <a href="@Url.Action("Library")">مكتبة مجموعات الأسئلة</a> /
+    </span>
+    <span>@Model.Name</span>
+  </h4>
+
+  @if (TempData["SuccessMessage"] != null)
+  {
+    <div class="alert alert-success alert-dismissible mb-3" role="alert">
+      <i class="bx bx-check-circle me-1"></i>
+      @TempData["SuccessMessage"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  }
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">معلومات المجموعة</h5>
+          <div class="dropdown">
+            <button class="btn btn-sm p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bx bx-dots-vertical-rounded"></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="@Url.Action("AddToExam", new { id = Model.Id })">
+                  <i class="bx bx-plus-circle me-1"></i> إضافة إلى اختبار
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="@Url.Action("ShuffleOptions", new { id = Model.Id })">
+                  <i class="bx bx-shuffle me-1"></i> خلط الأسئلة والخيارات
+                </a>
+              </li>
+              <li>
+                <form asp-action="Clone" method="post" class="dropdown-item-form">
+                  <input type="hidden" name="id" value="@Model.Id" />
+                  <button type="submit" class="dropdown-item w-100 text-start">
+                    <i class="bx bx-copy me-1"></i> نسخ المجموعة
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="card-body">
+          <dl class="row">
+            <dt class="col-sm-4">الاسم:</dt>
+            <dd class="col-sm-8">@Model.Name</dd>
+
+            <dt class="col-sm-4">الوصف:</dt>
+            <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Description) ? "-" : Model.Description)</dd>
+
+            <dt class="col-sm-4">نوع الأسئلة:</dt>
+            <dd class="col-sm-8"><span class="badge bg-label-primary">@GetQuestionTypeDisplay(Model.QuestionType)</span>
+            </dd>
+
+            <dt class="col-sm-4">اللغة:</dt>
+            <dd class="col-sm-8">@Model.Language</dd>
+
+            <dt class="col-sm-4">الصعوبة:</dt>
+            <dd class="col-sm-8"><span class="badge bg-label-secondary">@GetDifficultyDisplay(Model.Difficulty)</span>
+            </dd>
+
+            <dt class="col-sm-4">عدد الأسئلة:</dt>
+            <dd class="col-sm-8">@Model.Questions.Count() / @Model.QuestionCount</dd>
+
+            <dt class="col-sm-4">الحالة:</dt>
+            <dd class="col-sm-8">
+              <span class="badge rounded-pill status-badge @Model.StatusClass">
+                <i class="bx bx-@Model.StatusIcon me-1"></i>
+                @Model.StatusDescription
+              </span>
+            </dd>
+
+            <dt class="col-sm-4">تاريخ الإنشاء:</dt>
+            <dd class="col-sm-8">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">استخدام المجموعة</h5>
+        </div>
+        <div class="card-body">
+          <p>تم استخدام هذه المجموعة في <strong>@Model.UsageCount</strong> اختبار:</p>
+          @if (Model.UsageCount > 0 && Model.UsedInExams != null && Model.UsedInExams.Any())
+          {
+            <ul class="list-group">
+              @foreach (var examName in Model.UsedInExams)
+              {
+                <li class="list-group-item">@examName</li>
+              }
+            </ul>
+          }
+          else
+          {
+            <div class="alert alert-info">
+              <i class="bx bx-info-circle me-1"></i>
+              لم يتم استخدام هذه المجموعة في أي اختبار حتى الآن.
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header d-flex align-items-center">
+          <h5 class="mb-0">الأسئلة (@Model.Questions.Count())</h5>
+        </div>
+        <div class="card-body">
+          @if (Model.Questions == null || !Model.Questions.Any())
+          {
+            <div class="alert alert-warning">
+              <i class="bx bx-error-circle me-1"></i>
+              لا توجد أسئلة في هذه المجموعة.
+            </div>
+          }
+          else
+          {
+            <div class="accordion" id="accordionQuestions">
+              @{
+                int index = 0;
+                foreach (var question in Model.Questions)
+                {
+                  index++;
+                  string headingId = $"heading{index}";
+                  string collapseId = $"collapse{index}";
+                  <div class="accordion-item">
+                    <h2 class="accordion-header" id="@headingId">
+                      <button class="accordion-button @(index == 1 ? "" : "collapsed")" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#@collapseId"
+                        aria-expanded="@(index == 1 ? "true" : "false")" aria-controls="@collapseId">
+                        <strong class="me-2">@index.</strong>
+                        @(question.QuestionText ?? (question.InstructionText ?? "سؤال بدون نص"))
+                      </button>
+                    </h2>
+                    <div id="@collapseId" class="accordion-collapse collapse @(index == 1 ? "show" : "")"
+                      aria-labelledby="@headingId" data-bs-parent="#accordionQuestions">
+                      <div class="accordion-body">
+                        <div class="mb-3">
+                          <span class="badge bg-label-primary mb-2">@GetQuestionTypeDisplay(question.QuestionType)</span>
+                          @if (!string.IsNullOrEmpty(question.InstructionText) && question.InstructionText !=
+                                              question.QuestionText)
+                          {
+                            <div class="alert alert-info">
+                              <i class="bx bx-info-circle me-1"></i>
+                              <strong>تعليمات:</strong> @question.InstructionText
+                            </div>
+                          }
+                          @if (Model.QuestionType.ToLower() == "mcq" || Model.QuestionType.ToLower() == "tf" ||
+                                              Model.QuestionType.ToLower() == "truefalse" || Model.QuestionType.ToLower() == "multiselect")
+                          {
+                            <div class="mt-3">
+                              <h6>الخيارات:</h6>
+                              <ul class="list-group">
+                                @if (question.Options != null)
+                                {
+                                  foreach (var option in question.Options)
+                                  {
+                                    <li class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
+                                      @if (option.IsCorrect)
+                                      {
+                                        <i class="bx bx-check-circle text-success me-2"></i>
+                                      }
+                                      @option.Text
+                                    </li>
+                                  }
+                                }
+                              </ul>
+                            </div>
+                          }
+                          else if (Model.QuestionType.ToLower() == "matching")
+                          {
+                            <div class="row">
+                              <div class="col-md-6">
+                                <h6>العناصر الأيسر:</h6>
+                                <ul class="list-group">
+                                  @if (question.MatchingPairs != null)
+                                  {
+                                    foreach (var pair in question.MatchingPairs)
+                                    {
+                                      <li class="list-group-item">@pair.LeftSide</li>
+                                    }
+                                  }
+                                </ul>
+                              </div>
+                              <div class="col-md-6">
+                                <h6>العناصر الأيمن:</h6>
+                                <ul class="list-group">
+                                  @if (question.MatchingPairs != null)
+                                  {
+                                    foreach (var pair in question.MatchingPairs)
+                                    {
+                                      <li class="list-group-item">@pair.RightSide</li>
+                                    }
+                                  }
+                                </ul>
+                              </div>
+                            </div>
+                          }
+                          else if (Model.QuestionType.ToLower() == "ordering")
+                          {
+                            <div class="mt-3">
+                              <h6>الترتيب الصحيح:</h6>
+                              <ol class="list-group list-group-numbered">
+                                @if (question.OrderingItems != null)
+                                {
+                                  foreach (var item in question.OrderingItems.OrderBy(i => i.CorrectOrder))
+                                  {
+                                    <li class="list-group-item">@item.Text</li>
+                                  }
+                                }
+                              </ol>
+                            </div>
+                          }
+                          else if (Model.QuestionType.ToLower() == "shortanswer" ||
+                          Model.QuestionType.ToLower() == "fillintheblank" ||
+                          Model.QuestionType.ToLower() == "open")
+                          {
+                            <div class="alert alert-secondary mt-3">
+                              <strong>الإجابة المتوقعة: </strong>
+                              @(question.Answer ?? (question.SampleAnswer ?? "لا توجد إجابة محددة"))
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <a href="@Url.Action("Library")" class="btn btn-outline-secondary">
+      <i class="bx bx-arrow-back me-1"></i> العودة للمكتبة
+    </a>
+  </div>
+</div>
+
+@functions {
+  string GetQuestionTypeDisplay(string questionType)
+  {
+    return questionType?.ToLower() switch
+    {
+      "mcq" => "اختيار من متعدد",
+      "tf" => "صح / خطأ",
+      "truefalse" => "صح / خطأ",
+      "open" => "إجابة مفتوحة",
+      "fillintheblank" => "ملء الفراغات",
+      "ordering" => "ترتيب",
+      "matching" => "مطابقة",
+      "multiselect" => "اختيار متعدد",
+      "shortanswer" => "إجابة قصيرة",
+      _ => questionType
+    };
+  }
+
+  string GetDifficultyDisplay(string difficulty)
+  {
+    return difficulty?.ToLower() switch
+    {
+      "easy" => "سهل",
+      "medium" => "متوسط",
+      "hard" => "صعب",
+      _ => difficulty
+    };
+  }
+}
+
+@section Scripts {
+  <script>
+    $(document).ready(function () {
+      // أنماط خاصة للنماذج داخل القائمة المنسدلة
+      $(".dropdown-item-form").css({
+        "padding": "0",
+        "margin": "0"
+      });
+    });
+  </script>
+}

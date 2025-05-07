@@ -1,0 +1,259 @@
+@model PublishExamViewModel
+
+@{
+    ViewData["Title"] = "نشر الامتحان";
+}
+
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4">
+        <span class="text-muted fw-light">الامتحانات /</span> نشر الامتحان
+    </h4>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 text-primary">
+                        <i class="bx bx-share-alt me-2"></i>
+                        نشر وإرسال إشعارات الامتحان
+                    </h5>
+                    <a href="@Url.Action("Details", new { id = Model.ExamId })" class="btn btn-outline-secondary btn-sm">
+                        <i class="bx bx-arrow-back me-1"></i> العودة
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form asp-action="ConfirmPublishExam" method="post" id="publishForm"
+                        data-exam-name="@Model.ExamName"
+                        data-exam-id="@Model.ExamId"
+                        data-start-date="@Model.StartDate.ToString("yyyy/MM/dd")"
+                        data-end-date="@Model.EndDate.ToString("yyyy/MM/dd")">
+
+                        <input type="hidden" asp-for="ExamId" />
+                        <input type="hidden" asp-for="ExamName" />
+                        <input type="hidden" asp-for="JobName" />
+                        <input type="hidden" asp-for="StartDate" />
+                        <input type="hidden" asp-for="EndDate" />
+                        <input type="hidden" asp-for="ApplicantsCount" />
+
+                        <div class="row mb-4">
+                            <div class="col-lg-6">
+                                <div class="card bg-primary bg-opacity-10 border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="avatar avatar-md bg-primary">
+                                                <i class="bx bx-file-find text-white fs-3"></i>
+                                            </div>
+                                            <div class="ms-3">
+                                                <h5 class="mb-0">@Model.ExamName</h5>
+                                                <span class="text-muted">امتحان للوظيفة: @Model.JobName</span>
+                                            </div>
+                                        </div>
+
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2 d-flex align-items-center">
+                                                <i class="bx bx-calendar-event text-primary me-2"></i>
+                                                <span>من: <strong>@Model.StartDate.ToString("yyyy/MM/dd HH:mm")</strong></span>
+                                            </li>
+                                            <li class="mb-2 d-flex align-items-center">
+                                                <i class="bx bx-calendar-x text-primary me-2"></i>
+                                                <span>إلى: <strong>@Model.EndDate.ToString("yyyy/MM/dd HH:mm")</strong></span>
+                                            </li>
+                                            <li class="d-flex align-items-center">
+                                                <i class="bx bx-user-circle text-primary me-2"></i>
+                                                <span>المتقدمين المؤهلين: <strong>@Model.ApplicantsCount متقدم</strong></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="card bg-white border shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-semibold mb-3 d-flex align-items-center">
+                                            <i class="bx bx-bulb text-warning me-2"></i>
+                                            ماذا سيحدث بعد النشر؟
+                                        </h6>
+                                        <ol class="ps-3 mb-0">
+                                            <li class="mb-2">سيتم تغيير حالة الامتحان إلى "منشور"</li>
+                                            <li class="mb-2">سيكون الامتحان متاحاً للمتقدمين وفقاً لتاريخ البدء والانتهاء</li>
+                                            <li class="mb-2">سيظهر الامتحان في قائمة الامتحانات المتاحة للمتقدمين المؤهلين</li>
+                                            <li>يمكنك إرسال إشعارات للمتقدمين عبر الرسائل النصية (اختياري)</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 border rounded p-4 position-relative">
+                            <div class="position-absolute top-0 start-50 translate-middle">
+                                <span class="badge bg-primary px-3 py-2">خيارات الإشعارات</span>
+                            </div>
+
+                            <div class="form-check form-switch mb-4 mt-2">
+                                <input class="form-check-input" type="checkbox" id="sendSmsNotification" asp-for="SendSmsNotification">
+                                <label class="form-check-label fw-semibold" for="sendSmsNotification">
+                                    إرسال إشعار بالرسائل النصية للمتقدمين
+                                </label>
+                                <div id="smsCountInfo" class="mt-1 ms-4 text-muted">
+                                    <i class="bx bx-info-circle me-1"></i>
+                                    سيتم إرسال <span class="text-primary fw-semibold">@Model.ApplicantsCount</span> رسالة نصية للمتقدمين المؤهلين
+                                </div>
+                            </div>
+
+                            <div id="smsOptions" class="mt-4">
+                                <div class="alert alert-warning d-flex align-items-center mb-3">
+                                    <i class="bx bx-bell fs-4 me-2"></i>
+                                    <div>
+                                        سيتم إرسال الرسائل النصية إلى <strong>@Model.ApplicantsCount متقدم</strong> على الرقم المسجل لديهم فور نشر الامتحان.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold" for="NotificationText">
+                                        <i class="bx bx-message-edit me-1"></i>
+                                        نص رسالة الإشعار:
+                                    </label>
+                                    <textarea class="form-control" id="NotificationText" name="NotificationText"
+                                        rows="4">مرحباً {اسم_المتقدم}، لديك امتحان "{اسم_الامتحان}" متاح من {تاريخ_البدء} إلى {تاريخ_الانتهاء}. يمكنك إجراء الامتحان في أي وقت خلال هذه الفترة. رابط الامتحان: {رابط_الامتحان}</textarea>
+                                    <div class="form-text mt-2">
+                                        <i class="bx bx-code-alt me-1"></i>
+                                        <strong>الرموز المتاحة:</strong> {اسم_المتقدم} - {اسم_الامتحان} - {رابط_الامتحان} - {تاريخ_البدء} - {تاريخ_الانتهاء}
+                                    </div>
+                                </div>
+
+                                <div class="mb-0">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bx bx-mobile me-1"></i>
+                                        معاينة الرسالة:
+                                    </label>
+                                    <div class="d-flex">
+                                        <div class="mobile-preview shadow-sm ms-auto me-auto">
+                                            <div class="mobile-header">
+                                                <div class="text-center text-white small">الرسائل</div>
+                                            </div>
+                                            <div class="mobile-body p-3">
+                                                <div class="text-end small text-muted mb-2">اليوم @DateTime.Now.ToString("HH:mm")</div>
+                                                <div class="message-bubble mb-0" id="message-preview">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <a href="@Url.Action("Details", new { id = Model.ExamId })" class="btn btn-outline-secondary me-2">
+                                <i class="bx bx-x me-1"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bx bx-share-alt me-1"></i> نشر الامتحان وإرسال الإشعارات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// كود جافا سكريبت تقليدي بدون أي تعبيرات Razor
+document.addEventListener('DOMContentLoaded', function() {
+    // العناصر
+    const form = document.getElementById('publishForm');
+    const smsOptions = document.getElementById('smsOptions');
+    const smsCountInfo = document.getElementById('smsCountInfo');
+    const notificationText = document.getElementById('NotificationText');
+    const messagePreview = document.getElementById('message-preview');
+    const sendSmsCheckbox = document.getElementById('sendSmsNotification');
+
+    // قراءة البيانات من سمات البيانات (data attributes)
+    const examName = form.dataset.examName;
+    const examId = form.dataset.examId;
+    const startDate = form.dataset.startDate;
+    const endDate = form.dataset.endDate;
+
+    // تحديث معاينة الرسالة
+    function updatePreview() {
+        let template = notificationText.value;
+
+        // استبدال القيم
+        template = template.replace(/{اسم_المتقدم}/g, 'أحمد');
+        template = template.replace(/{اسم_الامتحان}/g, examName);
+        template = template.replace(/{تاريخ_البدء}/g, startDate);
+        template = template.replace(/{تاريخ_الانتهاء}/g, endDate);
+        template = template.replace(/{رابط_الامتحان}/g, 'https://example.com/exams/' + examId);
+
+        messagePreview.textContent = template;
+    }
+
+    // تحديث أول مرة
+    updatePreview();
+
+    // تحديث عند تغيير النص
+    notificationText.addEventListener('input', updatePreview);
+
+    // تبديل حالة إرسال الرسائل
+    function toggleSmsOptions() {
+        if (sendSmsCheckbox.checked) {
+            smsOptions.style.display = 'block';
+            smsCountInfo.style.display = 'block';
+        } else {
+            smsOptions.style.display = 'none';
+            smsCountInfo.style.display = 'none';
+        }
+    }
+
+    // تحديث الحالة عند التحميل
+    toggleSmsOptions();
+
+    // تحديث الحالة عند التغيير
+    sendSmsCheckbox.addEventListener('change', toggleSmsOptions);
+
+    // التحقق قبل الإرسال
+    form.addEventListener('submit', function(e) {
+        if (sendSmsCheckbox.checked && notificationText.value.trim() === '') {
+            e.preventDefault();
+            alert('الرجاء إدخال نص رسالة الإشعار');
+            notificationText.focus();
+        }
+    });
+});
+</script>
+}
+
+<style>
+    .mobile-preview {
+        width: 280px;
+        border: 8px solid #333;
+        border-radius: 24px;
+        overflow: hidden;
+        background-color: #f5f5f5;
+    }
+
+    .mobile-header {
+        background-color: #333;
+        padding: 8px;
+    }
+
+    .mobile-body {
+        height: 260px;
+        overflow-y: auto;
+    }
+
+    .message-bubble {
+        background-color: #DCF8C6;
+        padding: 8px 12px;
+        border-radius: 12px;
+        border-top-right-radius: 4px;
+        position: relative;
+        max-width: 95%;
+        margin-left: auto;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+</style>
