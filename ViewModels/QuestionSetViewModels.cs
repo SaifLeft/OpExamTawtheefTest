@@ -8,7 +8,6 @@ namespace TawtheefTest.ViewModels
 {
   public class OpExamQuestionSetViewModel
   {
-    public int Id { get; set; }
 
     [Required(ErrorMessage = "الرجاء إدخال اسم مجموعة الأسئلة")]
     [Display(Name = "اسم مجموعة الأسئلة")]
@@ -46,10 +45,10 @@ namespace TawtheefTest.ViewModels
     public string Language { get; set; } = "Arabic";
 
     // خصائص إضافية للتعامل مع نموذج QuestionSetsController
-    public string Topic { get; set; }
-    public string LinkUrl { get; set; }
-    public string YoutubeUrl { get; set; }
-    public string FileReference { get; set; }
+    public string? Topic { get; set; }
+    public string? LinkUrl { get; set; }
+    public string? YoutubeUrl { get; set; }
+    public string? FileReference { get; set; }
     public int? OptionsCount { get; set; }
     public int? NumberOfRows { get; set; }
     public int? NumberOfCorrectOptions { get; set; }

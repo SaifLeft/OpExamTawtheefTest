@@ -2,6 +2,7 @@
 @using System.IO
 @using TawtheefTest.Data.Structure
 @using System.Linq
+@using TawtheefTest.Enum
 @{
   ViewData["title"] = "تفاصيل مجموعة الأسئلة";
 }
@@ -156,6 +157,20 @@
                 var contentSource = Model.ContentSources.First();
                 <div class="col-md-12">
                   <div class="badge bg-label-dark mb-2">@GetContentTypeDisplay(contentSource.ContentSourceType)</div>
+
+                  @if (contentSource.ContentSourceType?.ToLower() == "document" && contentSource.UploadedFile != null)
+                  {
+                    <div class="p-3 border rounded bg-light d-flex align-items-center">
+                      <i class="bx bx-file me-2 text-primary fs-4"></i>
+                      <div class="flex-grow-1">
+                        <strong>@contentSource.UploadedFile.FileName</strong>
+                        <span class="text-muted d-block">(@GetFileSizeDisplay(contentSource.UploadedFile.FileSize))</span>
+                      </div>
+                      <a href="@Url.Action("DownloadDocument", new { id = Model.Id })" class="btn btn-primary btn-sm" target="_blank">
+                        <i class="bx bx-download me-1"></i> تنزيل المستند
+                      </a>
+                    </div>
+                  }
 
                   @if (!string.IsNullOrEmpty(contentSource.Content))
                   {
@@ -414,15 +429,15 @@
     };
   }
 
-  string GetLanguageDisplay(string language)
-  {
-    return language?.ToLower() switch
+    string GetLanguageDisplay(QuestionSetLanguage language)
     {
-      "arabic" => "العربية",
-      "english" => "الإنجليزية",
-      _ => language
-    };
-  }
+        return language switch
+        {
+            QuestionSetLanguage.Arabic => "العربية",
+            QuestionSetLanguage.English => "الإنجليزية",
+            _ => language.ToString()
+        };
+    }
 
   string GetDifficultyDisplay(string difficulty)
   {

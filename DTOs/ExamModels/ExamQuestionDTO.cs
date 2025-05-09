@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace TawtheefTest.DTOs.ExamModels
 {
-  public class QuestionDTO
+  public class ExamQuestionDTO
   {
     public int Id { get; set; }
     public int SequenceNumber { get; set; }

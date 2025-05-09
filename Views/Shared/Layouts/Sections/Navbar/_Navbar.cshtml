@@ -1,6 +1,11 @@
 @{
   TempData.Keep();
   ViewData["containerNav"] = (ViewData["containerNav"] ??= "container-fluid");
+
+  // الحصول على معرف المرشح من الجلسة إن وجد
+  var candidateId = Context.Session.GetInt32("CandidateId");
+  var candidateName = Context.Session.GetString("CandidateName") ?? "زائر";
+  var isLoggedIn = candidateId.HasValue;
 }
 
 <nav class="layout-navbar navbar navbar-expand-xl align-items-center bg-navbar-theme" id="layout-navbar">
@@ -50,10 +55,44 @@
 
 
       <ul class="navbar-nav flex-row align-items-center ms-auto">
+        @if (isLoggedIn)
+        {
+          <!-- روابط الاختبارات -->
+          <li class="nav-item me-2">
+            <a class="nav-link" asp-controller="CandidateExams" asp-action="Index">
+              <i class="bx bx-list-check me-1"></i>
+              <span>الاختبارات المتاحة</span>
+            </a>
+          </li>
+          <li class="nav-item me-2">
+            <a class="nav-link" asp-controller="CandidateExams" asp-action="MyExams">
+              <i class="bx bx-history me-1"></i>
+              <span>اختباراتي</span>
+            </a>
+          </li>
+        }
+        else
+        {
+          <!-- رابط تسجيل الدخول -->
+          <li class="nav-item me-2">
+            <a class="nav-link btn btn-primary text-white" asp-controller="Auth" asp-action="Login">
+              <i class="bx bx-log-in-circle me-1"></i>
+              <span>تسجيل الدخول</span>
+            </a>
+          </li>
+          <!-- رابط التسجيل -->
+          <li class="nav-item me-2">
+            <a class="nav-link btn btn-outline-primary" asp-controller="Auth" asp-action="Register">
+              <i class="bx bx-user-plus me-1"></i>
+              <span>التسجيل</span>
+            </a>
+          </li>
+        }
+
         <!-- User -->
         <li class="nav-item navbar-dropdown dropdown-user dropdown">
           <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
-            <div class="avatar avatar-online">
+            <div class="avatar @(isLoggedIn ? "avatar-online" : "")">
               <img src="~/img/avatars/1.png" alt class="h-auto rounded-circle">
             </div>
           </a>
@@ -62,13 +101,13 @@
               <a class="dropdown-item" href="javascript:void(0);">
                 <div class="d-flex">
                   <div class="flex-shrink-0 me-3">
-                    <div class="avatar avatar-online">
+                    <div class="avatar @(isLoggedIn ? "avatar-online" : "")">
                       <img src="~/img/avatars/1.png" alt class="h-auto rounded-circle">
                     </div>
                   </div>
                   <div class="flex-grow-1">
-                    <span class="fw-semibold d-block">John Doe</span>
-                    <small>Admin</small>
+                    <span class="fw-semibold d-block">@candidateName</span>
+                    <small>@(isLoggedIn ? "مرشح" : "زائر")</small>
                   </div>
                 </div>
               </a>
@@ -76,36 +115,45 @@
             <li>
               <div class="dropdown-divider"></div>
             </li>
-            <li>
-              <a class="dropdown-item" href="javascript:void(0);">
-                <i class="bx bx-user me-2"></i>
-                <span class="align-middle">My Profile</span>
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="javascript:void(0);">
-                <i class="bx bx-cog me-2"></i>
-                <span class="align-middle">Settings</span>
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="javascript:void(0);">
-                <span class="d-flex align-items-center align-middle">
-                  <i class="flex-shrink-0 bx bx-credit-card me-2"></i>
-                  <span class="flex-grow-1 align-middle">Billing</span>
-                  <span class="flex-shrink-0 badge badge-center rounded-pill bg-danger w-px-20 h-px-20">4</span>
-                </span>
-              </a>
-            </li>
-            <li>
-              <div class="dropdown-divider"></div>
-            </li>
-            <li>
-              <a class="dropdown-item" href="javascript:void(0);">
-                <i class="bx bx-power-off me-2"></i>
-                <span class="align-middle">Log Out</span>
-              </a>
-            </li>
+            @if (isLoggedIn)
+            {
+              <li>
+                <a class="dropdown-item" asp-controller="CandidateExams" asp-action="MyExams">
+                  <i class="bx bx-user me-2"></i>
+                  <span class="align-middle">ملفي الشخصي</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" asp-controller="CandidateExams" asp-action="Index">
+                  <i class="bx bx-list-check me-2"></i>
+                  <span class="align-middle">الاختبارات المتاحة</span>
+                </a>
+              </li>
+              <li>
+                <div class="dropdown-divider"></div>
+              </li>
+              <li>
+                <a class="dropdown-item" asp-controller="Auth" asp-action="Logout">
+                  <i class="bx bx-power-off me-2"></i>
+                  <span class="align-middle">تسجيل الخروج</span>
+                </a>
+              </li>
+            }
+            else
+            {
+              <li>
+                <a class="dropdown-item" asp-controller="Auth" asp-action="Login">
+                  <i class="bx bx-log-in me-2"></i>
+                  <span class="align-middle">تسجيل الدخول</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" asp-controller="Auth" asp-action="Register">
+                  <i class="bx bx-user-plus me-2"></i>
+                  <span class="align-middle">تسجيل جديد</span>
+                </a>
+              </li>
+            }
           </ul>
         </li>
         <!--/ User -->

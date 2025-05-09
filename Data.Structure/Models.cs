@@ -83,8 +83,13 @@ namespace TawtheefTest.Data.Structure
 
     [ForeignKey("QuestionSetId")]
     public virtual QuestionSet QuestionSet { get; set; } = null!;
-
+    [Required]
+    public ContentSourceStatus Status { get; set; } = ContentSourceStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [StringLength(1000)]
+    public string? ErrorMessage { get; set; }
+    public DateTime? ProcessedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
   }
 
   public class UploadedFile
@@ -196,6 +201,9 @@ namespace TawtheefTest.Data.Structure
 
     public int? Duration { get; set; } // Duration in minutes
 
+    // النسبة المئوية للنجاح
+    public decimal? PassPercentage { get; set; } = 60;
+
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
 
@@ -218,18 +226,17 @@ namespace TawtheefTest.Data.Structure
 
     [Required]
     public int ExamId { get; set; }
+    [Required]
+    public int QuestionSetId { get; set; }
+
+    // Order of the question set in the exam
+    public int DisplayOrder { get; set; }
 
     [ForeignKey("ExamId")]
     public virtual Exam Exam { get; set; } = null!;
 
-    [Required]
-    public int QuestionSetId { get; set; }
-
     [ForeignKey("QuestionSetId")]
     public virtual QuestionSet QuestionSet { get; set; } = null!;
-
-    // Order of the question set in the exam
-    public int DisplayOrder { get; set; }
   }
 
   public class Question
@@ -252,11 +259,15 @@ namespace TawtheefTest.Data.Structure
     public int Index { get; set; }
 
     [Required]
+    [StringLength(100)]
+    public string QuestionType { get; set; } = string.Empty;
+
+    [Required]
     [StringLength(1000)]
     public string QuestionText { get; set; } = string.Empty;
 
-    [Required]
-    public string QuestionType { get; set; }
+    // ترتيب عرض السؤال في الاختبار
+    public int DisplayOrder { get; set; }
 
     // For multiple choice questions
     public virtual ICollection<QuestionOption> Options { get; set; } = new List<QuestionOption>();
@@ -405,6 +416,15 @@ namespace TawtheefTest.Data.Structure
 
     public decimal? Score { get; set; }
 
+    // إجمالي عدد الأسئلة في الاختبار
+    public int TotalQuestions { get; set; }
+
+    // عدد الأسئلة التي تم الإجابة عليها
+    public int CompletedQuestions { get; set; }
+
+    // هل تم استبدال سؤال خلال هذا الاختبار
+    public bool QuestionReplaced { get; set; } = false;
+
     // Navigation properties
     public virtual ICollection<CandidateAnswer> CandidateAnswers { get; set; } = new List<CandidateAnswer>();
 
@@ -444,6 +464,9 @@ namespace TawtheefTest.Data.Structure
     public string? OrderingJson { get; set; } // For ordering questions
 
     public bool? IsCorrect { get; set; }
+
+    // تعليم السؤال للمراجعة لاحقاً
+    public bool IsFlagged { get; set; } = false;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }

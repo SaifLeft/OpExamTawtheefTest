@@ -3,6 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using System.Threading.Tasks;
 using TawtheefTest.Services;
+using AutoMapper;
+using System;
+using System.Linq;
+using TawtheefTest.ViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace TawtheefTest.Controllers
 {
@@ -10,16 +15,25 @@ namespace TawtheefTest.Controllers
   {
     private readonly ApplicationDbContext _context;
     private readonly IOTPService _otpService;
+    private readonly IMapper _mapper;
+    private readonly INotificationService _notificationService;
 
-    public AuthController(ApplicationDbContext context, IOTPService otpService)
+    public AuthController(ApplicationDbContext context, IOTPService otpService, IMapper mapper, INotificationService notificationService)
     {
       _context = context;
       _otpService = otpService;
+      _mapper = mapper;
+      _notificationService = notificationService;
     }
 
     // GET: Auth/Login
     public IActionResult Login()
     {
+      // التحقق إذا كان المستخدم مسجل دخول مسبقاً
+      if (HttpContext.Session.GetInt32("CandidateId") != null)
+      {
+        return RedirectToAction("Index", "CandidateExams");
+      }
       return View();
     }
 
@@ -29,28 +43,43 @@ namespace TawtheefTest.Controllers
     {
       if (string.IsNullOrEmpty(phoneNumber))
       {
-        TempData["ErrorMessage"] = "Phone number is required.";
+        TempData["ErrorMessage"] = "رقم الهاتف مطلوب.";
         return RedirectToAction(nameof(Login));
       }
 
-      // Check if the candidate with the phone number exists
+      // التحقق من صحة تنسيق رقم الهاتف
+      if (!int.TryParse(phoneNumber, out int phoneNumberInt))
+      {
+        TempData["ErrorMessage"] = "صيغة رقم الهاتف غير صحيحة.";
+        return RedirectToAction(nameof(Login));
+      }
+
+      // البحث عن المرشح برقم الهاتف
       var candidate = await _context.Candidates
+          .Include(c => c.Job)
           .FirstOrDefaultAsync(c => c.Phone.ToString() == phoneNumber);
 
       if (candidate == null)
       {
-        TempData["ErrorMessage"] = "No candidate found with this phone number.";
+        TempData["ErrorMessage"] = "لم يتم العثور على مرشح بهذا الرقم.";
         return RedirectToAction(nameof(Login));
       }
 
-      // Generate and send OTP
-      var otpCode = await _otpService.GenerateAndSendOTP(int.Parse(phoneNumber));
+      // التحقق من حالة المرشح
+      if (!candidate.IsActive)
+      {
+        TempData["ErrorMessage"] = "هذا الحساب غير نشط. يرجى الاتصال بالإدارة.";
+        return RedirectToAction(nameof(Login));
+      }
 
-      TempData["SuccessMessage"] = "OTP sent to your phone number.";
+      // إنشاء وإرسال رمز OTP
+      var otpCode = await _otpService.GenerateAndSendOTP(phoneNumberInt);
+
+      TempData["SuccessMessage"] = "تم إرسال رمز التحقق إلى رقم هاتفك.";
       TempData["PhoneNumber"] = phoneNumber;
 
-      // For demo purposes only, we're storing the OTP in TempData
-      // In a real application, this would be sent via SMS and not stored in session
+      // للعرض التجريبي فقط، نقوم بتخزين الرمز في TempData
+      // في التطبيق الحقيقي، سيتم إرساله عبر الرسائل القصيرة SMS وليس تخزينه في الجلسة
       TempData["OTPCode"] = otpCode;
 
       return RedirectToAction(nameof(VerifyOTP));
@@ -67,7 +96,7 @@ namespace TawtheefTest.Controllers
 
       ViewData["PhoneNumber"] = phoneNumber;
       TempData.Keep("PhoneNumber");
-      TempData.Keep("OTPCode"); // For demo purposes only
+      TempData.Keep("OTPCode"); // للعرض التجريبي فقط
 
       return View();
     }
@@ -78,52 +107,121 @@ namespace TawtheefTest.Controllers
     {
       if (string.IsNullOrEmpty(otpCode))
       {
-        TempData["ErrorMessage"] = "OTP code is required.";
-        return RedirectToAction(nameof(VerifyOTP));
-      }
-
-      // Check if the OTP code matches the one sent
-      var sentOtpCode = TempData["OTPCode"]?.ToString();
-      if (string.IsNullOrEmpty(sentOtpCode) || sentOtpCode != otpCode)
-      {
-        TempData["ErrorMessage"] = "Invalid OTP code.";
-        return RedirectToAction(nameof(VerifyOTP));
-      }
-
-      // Verify OTP
-      bool isValid = await _otpService.VerifyOTPAsync(int.Parse(phoneNumber), otpCode);
-
-      if (!isValid)
-      {
-        TempData["ErrorMessage"] = "Invalid OTP or OTP has expired. Please try again.";
+        TempData["ErrorMessage"] = "رمز التحقق مطلوب.";
         TempData["PhoneNumber"] = phoneNumber;
         return RedirectToAction(nameof(VerifyOTP));
       }
 
-      // Get candidate
+      // التحقق من تطابق رمز التحقق مع الرمز المرسل
+      var sentOtpCode = TempData["OTPCode"]?.ToString();
+      if (string.IsNullOrEmpty(sentOtpCode) || sentOtpCode != otpCode)
+      {
+        TempData["ErrorMessage"] = "رمز التحقق غير صحيح.";
+        TempData["PhoneNumber"] = phoneNumber;
+        return RedirectToAction(nameof(VerifyOTP));
+      }
+
+      // التحقق من صلاحية رمز التحقق
+      bool isValid = await _otpService.VerifyOTPAsync(int.Parse(phoneNumber), otpCode);
+
+      if (!isValid)
+      {
+        TempData["ErrorMessage"] = "رمز التحقق غير صالح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.";
+        TempData["PhoneNumber"] = phoneNumber;
+        return RedirectToAction(nameof(VerifyOTP));
+      }
+
+      // الحصول على بيانات المرشح
       var candidate = await _context.Candidates
+          .Include(c => c.Job)
           .FirstOrDefaultAsync(c => c.Phone.ToString() == phoneNumber);
 
       if (candidate == null)
       {
-        TempData["ErrorMessage"] = "No candidate found with this phone number.";
+        TempData["ErrorMessage"] = "لم يتم العثور على مرشح بهذا الرقم.";
         return RedirectToAction(nameof(Login));
       }
 
-      // Store candidate information in session
+      // تسجيل آخر تسجيل دخول
+      candidate.UpdatedAt = DateTime.UtcNow;
+      await _context.SaveChangesAsync();
+
+      // تخزين معلومات المرشح في الجلسة
       HttpContext.Session.SetInt32("CandidateId", candidate.Id);
       HttpContext.Session.SetString("CandidateName", candidate.Name);
+      HttpContext.Session.SetInt32("JobId", candidate.JobId);
+      HttpContext.Session.SetString("JobTitle", candidate.Job?.Title ?? "");
 
+      // إنشاء إشعار ترحيبي للمرشح
+      await _notificationService.CreateNotificationAsync(
+          candidate.Id,
+          "مرحباً بعودتك!",
+          $"مرحباً {candidate.Name}، تم تسجيل دخولك بنجاح. لديك {await _context.CandidateExams.CountAsync(ce => ce.CandidateId == candidate.Id && ce.Status == "InProgress")} اختبارات قيد التنفيذ.",
+          "success"
+      );
+
+      TempData["SuccessMessage"] = $"مرحباً {candidate.Name}، تم تسجيل دخولك بنجاح.";
       return RedirectToAction("Index", "CandidateExams");
     }
 
     // GET: Auth/Logout
     public IActionResult Logout()
     {
-      // Clear session
+      // مسح الجلسة
       HttpContext.Session.Clear();
 
+      TempData["SuccessMessage"] = "تم تسجيل الخروج بنجاح.";
       return RedirectToAction(nameof(Login));
+    }
+
+    // GET: Auth/Register
+    public IActionResult Register()
+    {
+      ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title");
+      return View();
+    }
+
+    // POST: Auth/Register
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(CreateCandidatesVM model)
+    {
+      if (ModelState.IsValid)
+      {
+        // التحقق من عدم وجود رقم هاتف مسجل مسبقاً
+        if (await _context.Candidates.AnyAsync(c => c.Phone == model.Phone))
+        {
+          ModelState.AddModelError("Phone", "هذا الرقم مسجل بالفعل.");
+          ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title", model.JobId);
+          return View(model);
+        }
+
+        var candidate = new Candidate
+        {
+          Name = model.Name,
+          Phone = model.Phone,
+          JobId = model.JobId,
+          IsActive = true,
+          CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Add(candidate);
+        await _context.SaveChangesAsync();
+
+        // إنشاء إشعار ترحيبي للمرشح
+        await _notificationService.CreateNotificationAsync(
+            candidate.Id,
+            "مرحباً بك في منصة الاختبارات",
+            $"مرحباً {candidate.Name}، نرحب بك في منصة اختبارات المرشحين. يمكنك الآن تسجيل الدخول وبدء الاختبارات المتاحة لك.",
+            "info"
+        );
+
+        TempData["SuccessMessage"] = "تم تسجيلك بنجاح. يمكنك الآن تسجيل الدخول.";
+        return RedirectToAction(nameof(Login));
+      }
+
+      ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title", model.JobId);
+      return View(model);
     }
   }
 }

@@ -1,8 +1,17 @@
+using System.ComponentModel;
+
 namespace TawtheefTest.Enum
 {
 
   // Enums
   public enum QuestionSetStatus
+  {
+    Pending,
+    Processing,
+    Completed,
+    Failed
+  }
+  public enum ContentSourceStatus
   {
     Pending,
     Processing,
@@ -24,8 +33,11 @@ namespace TawtheefTest.Enum
 
   public enum ExamStatus
   {
+    [Description("قيد الاعداد")]
     Draft,
+    [Description("تم نشر الاختبار")]
     Published,
+    [Description("مكتمل")]
     Archived
   }
 
@@ -35,6 +47,12 @@ namespace TawtheefTest.Enum
     InProgress,
     Completed,
     Abandoned
+  }
+
+  public enum QuestionSetLanguage
+  {
+    Arabic,
+    English,
   }
 
   public enum QuestionTypeEnum

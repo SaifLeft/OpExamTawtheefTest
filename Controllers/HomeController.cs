@@ -72,22 +72,27 @@ namespace TawtheefTest.Controllers
                 CreatedDate = j.CreatedAt
               })
               .ToListAsync(),
-
-        // أحدث المرشحين
-        RecentCandidates = await _context.Candidates
-              .OrderByDescending(c => c.CreatedAt)
-              .Take(5)
-              .Select(c => new CandidateViewModel
-              {
-                Candidate = new CandidateDTO
-                {
-                  Id = c.Id,
-                  Name = c.Name,
-                  JobId = c.JobId
-                }
-              })
-              .ToListAsync()
       };
+
+      // أحدث المرشحين - تمت معالجتها بشكل منفصل
+      var recentCandidates = await _context.Candidates
+          .Include(c => c.Job)
+          .OrderByDescending(c => c.CreatedAt)
+          .Take(5)
+          .ToListAsync();
+
+      dashboardModel.RecentCandidates = recentCandidates
+          .Select(c => new CandidateViewModel
+          {
+            Id = c.Id,
+            Name = c.Name,
+            Phone = c.Phone,
+            JobId = c.JobId,
+            JobTitle = c.Job != null ? c.Job.Title : string.Empty,
+            IsActive = c.IsActive,
+            CreatedAt = c.CreatedAt
+          })
+          .ToList();
 
       return View(dashboardModel);
     }

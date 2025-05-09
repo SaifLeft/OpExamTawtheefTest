@@ -26,6 +26,7 @@ namespace TawtheefTest.Data.Structure
     public DbSet<OptionChoice> OptionChoices { get; set; } = null!;
     public DbSet<MatchingPair> MatchingPairs { get; set; } = null!;
     public DbSet<OrderingItem> OrderingItems { get; set; } = null!;
+    public DbSet<Notification> Notifications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -434,6 +435,30 @@ namespace TawtheefTest.Data.Structure
             .HasDefaultValueSql("GETUTCDATE()");
       });
 
+      // Notification Entity Configuration
+      modelBuilder.Entity<Notification>(entity =>
+      {
+        entity.HasKey(e => e.Id);
+
+        entity.Property(e => e.Title)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        entity.Property(e => e.Message)
+            .IsRequired();
+
+        entity.Property(e => e.Type)
+            .HasMaxLength(50)
+            .HasDefaultValue("info");
+
+        entity.Property(e => e.CreatedAt)
+            .HasDefaultValueSql("GETUTCDATE()");
+
+        entity.HasOne(e => e.Candidate)
+            .WithMany()
+            .HasForeignKey(e => e.CandidateId)
+            .OnDelete(DeleteBehavior.Cascade);
+      });
 
       modelBuilder.Entity<Candidate>()
           .HasIndex(e => e.Phone)

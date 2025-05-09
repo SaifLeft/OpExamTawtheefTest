@@ -117,7 +117,7 @@ namespace TawtheefTest.Controllers
       // جلب الأسئلة للاختبار
       var questions = exam.Questions
           .OrderBy(q => q.Index)
-          .Select(q => new QuestionDTO
+          .Select(q => new ExamQuestionDTO
           {
             Id = q.Id,
             SequenceNumber = q.Index,
@@ -167,7 +167,7 @@ namespace TawtheefTest.Controllers
     // POST: Exams/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateExamDto model)
+    public async Task<IActionResult> Create(CreateExamViewModel model)
     {
       if (ModelState.IsValid)
       {
@@ -177,10 +177,12 @@ namespace TawtheefTest.Controllers
           Description = model.Description,
           JobId = model.JobId,
           Duration = model.Duration,
-          StartDate = model.StartDate,
-          EndDate = model.EndDate,
+          StartDate = model.ExamStartDate,
+          EndDate = model.ExamEndDate,
           Status = ExamStatus.Draft,
-          CreatedAt = DateTime.UtcNow
+          CreatedAt = DateTime.UtcNow,
+          ShowResultsImmediately = model.ShowResultsImmediately,
+          SendExamLinkToApplicants = model.SendExamLinkToApplicants
         };
 
         _context.Add(exam);
@@ -190,7 +192,7 @@ namespace TawtheefTest.Controllers
         return RedirectToAction(nameof(Details), new { id = exam.Id });
       }
 
-      ViewData["JobId"] = new SelectList(_context.Jobs, "Id", "Title", model.JobId);
+      ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title", model.JobId);
       return View(model);
     }
 
@@ -208,7 +210,7 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var examDto = new ExamDto
+      var examDto = new EditExamDTO
       {
         Id = exam.Id,
         Name = exam.Name,
@@ -226,7 +228,7 @@ namespace TawtheefTest.Controllers
     // POST: Exams/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ExamDto examDto)
+    public async Task<IActionResult> Edit(int id, EditExamDTO examDto)
     {
       if (id != examDto.Id)
       {
@@ -238,6 +240,7 @@ namespace TawtheefTest.Controllers
         try
         {
           var exam = await _context.Exams.FindAsync(id);
+
           if (exam == null)
           {
             return NotFound();
@@ -416,7 +419,7 @@ namespace TawtheefTest.Controllers
           .Where(e => e.JobId == id)
           .Include(e => e.Job)
           .Include(e => e.Questions)
-          .Select(e => new DTOs.ExamModels.ExamListDTO
+          .Select(e => new ExamListDTO
           {
             Id = e.Id,
             Name = e.Name,
@@ -466,7 +469,8 @@ namespace TawtheefTest.Controllers
             QuestionCount = eqs.QuestionSet.QuestionCount,
             Status = eqs.QuestionSet.Status,
             StatusDescription = GetStatusDescription(eqs.QuestionSet.Status),
-            CreatedAt = eqs.QuestionSet.CreatedAt
+            CreatedAt = eqs.QuestionSet.CreatedAt,
+            UpdatedAt = eqs.QuestionSet.UpdatedAt,
           })
           .ToList();
 
@@ -501,7 +505,7 @@ namespace TawtheefTest.Controllers
 
       var questions = exam.Questions
           .OrderBy(q => q.Index)
-          .Select(q => new QuestionDTO
+          .Select(q => new ExamQuestionDTO
           {
             Id = q.Id,
             SequenceNumber = q.Index,

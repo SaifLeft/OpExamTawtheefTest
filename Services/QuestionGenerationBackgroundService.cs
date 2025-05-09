@@ -32,7 +32,7 @@ namespace TawtheefTest.Services
       {
         try
         {
-          await ProcessPendingQuestionSets();
+         // await ProcessPendingQuestionSets();
         }
         catch (Exception ex)
         {

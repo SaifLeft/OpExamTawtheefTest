@@ -1,476 +1,531 @@
+@using TawtheefTest.Enum
 @model ExamDetailsDTO
 
 @{
   ViewData["Title"] = "تفاصيل الامتحان";
+  TempData.Clear();
 }
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">الامتحانات /</span> تفاصيل الامتحان
-    </h4>
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light">الامتحانات /</span> تفاصيل الامتحان
+  </h4>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bx bx-check-circle me-2"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  @if (TempData["SuccessMessage"] != null)
+  {
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bx bx-check-circle me-2"></i> @TempData["SuccessMessage"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  }
+
+  @if (TempData["ErrorMessage"] != null)
+  {
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bx bx-error-circle me-2"></i> @TempData["ErrorMessage"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  }
+
+  @if (TempData["StatusDebug"] != null)
+  {
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+      <i class="bx bx-info-circle me-2"></i> <strong>معلومات التصحيح:</strong> @TempData["StatusDebug"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  }
+  <!-- بطاقات إحصائيات الامتحان -->
+  <div class="row g-4 mb-4 mt-2">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between">
+            <div class="content-left">
+              <span>أنواع الأسئلة</span>
+              <div class="d-flex align-items-center my-2">
+                <h4 class="mb-0 me-2">0</h4>
+              </div>
+              <span class="text-muted">نوع مختلف من الأسئلة</span>
+            </div>
+            <div class="avatar">
+              <span class="avatar-initial rounded bg-label-primary">
+                <i class="bx bx-category fs-4"></i>
+              </span>
+            </div>
+          </div>
         </div>
-    }
+      </div>
+    </div>
 
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bx bx-error-circle me-2"></i> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between">
+            <div class="content-left">
+              <span>إجمالي الأسئلة</span>
+              <div class="d-flex align-items-center my-2">
+                <h4 class="mb-0 me-2">0</h4>
+              </div>
+              <span class="text-muted">سؤال في جميع المجموعات</span>
+            </div>
+            <div class="avatar">
+              <span class="avatar-initial rounded bg-label-warning">
+                <i class="bx bx-question-mark fs-4"></i>
+              </span>
+            </div>
+          </div>
         </div>
-    }
+      </div>
+    </div>
 
-    @if (TempData["StatusDebug"] != null)
-    {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <i class="bx bx-info-circle me-2"></i> <strong>معلومات التصحيح:</strong> @TempData["StatusDebug"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between">
+            <div class="content-left">
+              <span>مجموعات مكتملة</span>
+              <div class="d-flex align-items-center my-2">
+                <h4 class="mb-0 me-2">0</h4>
+              </div>
+              <span class="text-muted">مجموعات تم معالجتها بنجاح</span>
+            </div>
+            <div class="avatar">
+              <span class="avatar-initial rounded bg-label-success">
+                <i class="bx bx-check-circle fs-4"></i>
+              </span>
+            </div>
+          </div>
         </div>
-    }
+      </div>
+    </div>
 
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <div class="card-title mb-0">
-                            <h5 class="mb-0 text-primary">@Model.Name</h5>
-                            @if (!string.IsNullOrEmpty(Model.Description))
-                            {
-                                <p class="text-muted mt-1 mb-0">@Model.Description</p>
-                            }
-                        </div>
-                    </div>
-                    <div>
-                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-outline-primary me-1">
-                            <i class="bx bx-edit-alt me-1"></i> تعديل
-                        </a>
-                        <a href="@Url.Action("PreviewExam", new { id = Model.Id })" class="btn btn-outline-info me-1">
-                            <i class="bx bx-play-circle me-1"></i> معاينة
-                        </a>
-                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
-                            <i class="bx bx-arrow-back me-1"></i> العودة
-                        </a>
-                    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between">
+            <div class="content-left">
+              <span>إجمالي المجموعات</span>
+              <div class="d-flex align-items-center my-2">
+                <h4 class="mb-0 me-2">0</h4>
+              </div>
+              <span class="text-muted">مجموعة أسئلة في الامتحان</span>
+            </div>
+            <div class="avatar">
+              <span class="avatar-initial rounded bg-label-info">
+                <i class="bx bx-collection fs-4"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- نهاية بطاقات إحصائيات الامتحان -->
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="card-title header-elements">
+            <div class="card-title mb-0">
+              <h5 class="mb-0 text-primary">@Model.Name</h5>
+              @if (!string.IsNullOrEmpty(Model.Description))
+              {
+                <p class="text-muted mt-1 mb-0">@Model.Description</p>
+              }
+            </div>
+            <div class="card-title-elements ms-auto">
+              <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-outline-primary me-1">
+                <i class="bx bx-edit-alt me-1"></i> تعديل
+              </a>
+              <a href="@Url.Action("PreviewExam", new { id = Model.Id })" class="btn btn-outline-info me-1">
+                <i class="bx bx-play-circle me-1"></i> معاينة
+              </a>
+              <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                <i class="bx bx-arrow-back me-1"></i> العودة
+              </a>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-4">
+              <div class="card h-px-450 shadow-sm">
+                <div class="card-header bg-light py-2">
+                  <h6 class="fw-semibold mb-0">
+                    <i class="bx bx-info-circle me-1 text-primary"></i> معلومات الامتحان
+                  </h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8 mb-4">
-                            <div class="row">
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100 shadow-sm">
-                                        <div class="card-header bg-light py-2">
-                                            <h6 class="fw-semibold mb-0">
-                                                <i class="bx bx-info-circle me-1 text-primary"></i> معلومات الامتحان
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <dl class="row mb-0">
-                                                <dt class="col-sm-4">الاسم:</dt>
-                                                <dd class="col-sm-8">@Model.Name</dd>
+                  <dl class="row mb-0">
+                    <dt class="col-sm-4">الاسم:</dt>
+                    <dd class="col-sm-8">@Model.Name</dd>
 
-                                                <dt class="col-sm-4">الوظيفة:</dt>
-                                                <dd class="col-sm-8">@Model.JobName</dd>
+                    <dt class="col-sm-4">الوظيفة:</dt>
+                    <dd class="col-sm-8">@Model.JobName</dd>
 
-                                                <dt class="col-sm-4">المدة:</dt>
-                                                <dd class="col-sm-8">@Model.Duration دقيقة</dd>
+                    <dt class="col-sm-4">المدة:</dt>
+                    <dd class="col-sm-8">@Model.Duration دقيقة</dd>
 
-                                                <dt class="col-sm-4">تاريخ الإنشاء:</dt>
-                                                <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy/MM/dd HH:mm")</dd>
+                    <dt class="col-sm-4">تاريخ الإنشاء:</dt>
+                    <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy/MM/dd HH:mm")</dd>
 
-                                                <dt class="col-sm-4">عدد الأسئلة:</dt>
-                                                <dd class="col-sm-8">@(ViewBag.Questions?.Count ?? 0) سؤال</dd>
+                    <dt class="col-sm-4">عدد الأسئلة:</dt>
+                    <dd class="col-sm-8">@(ViewBag.Questions?.Count ?? 0) سؤال</dd>
 
-                                                <dt class="col-sm-4">المجموعات:</dt>
-                                                <dd class="col-sm-8">@(Model.QuestionSets?.Count ?? 0) مجموعة</dd>
-                                            </dl>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100 shadow-sm">
-                                        <div class="card-header bg-light py-2">
-                                            <h6 class="fw-semibold mb-0">
-                                                <i class="bx bx-time me-1 text-primary"></i> إعدادات الوقت
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <dl class="row mb-0">
-                                                <dt class="col-sm-4">تاريخ البدء:</dt>
-                                                <dd class="col-sm-8">@Model.ExamStartDate.ToString("yyyy/MM/dd HH:mm")</dd>
+                    <dt class="col-sm-4">المجموعات:</dt>
+                    <dd class="col-sm-8">@(Model.QuestionSets?.Count ?? 0) مجموعة</dd>
 
-                                                <dt class="col-sm-4">تاريخ الانتهاء:</dt>
-                                                <dd class="col-sm-8">@Model.ExamEndDate.ToString("yyyy/MM/dd HH:mm")</dd>
+                    <dt class="col-sm-4">الحالة:</dt>
+                    <dd class="col-sm-8">@Model.Status</dd>
 
-                                                <dt class="col-sm-4">عرض النتائج:</dt>
-                                                <dd class="col-sm-8">
-                                                    @if (Model.ShowResultsImmediately)
-                                                    {
-                                                        <span class="badge bg-label-success">نعم</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-label-secondary">لا</span>
-                                                    }
-                                                </dd>
-
-                                                <dt class="col-sm-4">إرسال الروابط:</dt>
-                                                <dd class="col-sm-8">
-                                                    @if (Model.SendExamLinkToApplicants)
-                                                    {
-                                                        <span class="badge bg-label-success">نعم</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-label-secondary">لا</span>
-                                                    }
-                                                </dd>
-                                            </dl>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="card h-100 shadow-sm border-primary">
-                                <div class="card-header bg-primary text-white py-2">
-                                    <h6 class="fw-semibold mb-0">
-                                        <i class="bx bx-share-alt me-1"></i> حالة نشر الامتحان
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    @{
-                                        var examStatus = Model.Status.ToString();
-                                        var currentTime = DateTime.Now;
-                                        var examActive = currentTime >= Model.ExamStartDate && currentTime <= Model.ExamEndDate;
-                                    }
-
-                                    <div class="text-center mb-3">
-                                        @if (examStatus == "Published")
-                                        {
-                                            <div class="d-flex flex-column align-items-center mb-3">
-                                                <div class="avatar avatar-lg mb-2">
-                                                    <span class="avatar-initial rounded-circle bg-success">
-                                                        <i class="bx bx-check fs-3"></i>
-                                                    </span>
-                                                </div>
-                                                <h5 class="mb-1">الامتحان منشور</h5>
-                                                @if (examActive)
-                                                {
-                                                    <span class="badge bg-label-success mb-2">نشط حالياً</span>
-                                                }
-                                                else if (currentTime < Model.ExamStartDate)
-                                                {
-                                                    <span class="badge bg-label-info mb-2">سيبدأ قريباً</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-label-dark mb-2">منتهي</span>
-                                                }
-                                            </div>
-                                            <a href="@Url.Action("TogglePublishStatus", new { id = Model.Id })" class="btn btn-outline-danger w-100">
-                                                <i class="bx bx-x-circle me-1"></i> إلغاء النشر
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <div class="d-flex flex-column align-items-center mb-3">
-                                                <div class="avatar avatar-lg mb-2">
-                                                    <span class="avatar-initial rounded-circle bg-secondary">
-                                                        <i class="bx bx-time fs-3"></i>
-                                                    </span>
-                                                </div>
-                                                <h5 class="mb-2">الامتحان غير منشور</h5>
-                                                <p class="text-muted mb-2">لن يتمكن المتقدمون من رؤية هذا الامتحان حتى يتم نشره</p>
-                                            </div>
-                                            <div class="d-grid gap-2">
-                                                <a href="@Url.Action("PublishExam", new { id = Model.Id })" class="btn btn-success">
-                                                    <i class="bx bx-share-alt me-1"></i> نشر مع إشعارات
-                                                </a>
-                                                <a href="@Url.Action("TogglePublishStatus", new { id = Model.Id })" class="btn btn-outline-primary">
-                                                    <i class="bx bx-check-circle me-1"></i> نشر فقط
-                                                </a>
-                                            </div>
-                                        }
-                                    </div>
-
-                                    @if (examStatus == "Published")
-                                    {
-                                        <div class="mt-4">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span>رابط الامتحان:</span>
-                                            </div>
-                                            <div class="input-group mb-3">
-                                                <input type="text" class="form-control" value="@Url.Action("TakeExam", "Applicants", new { id = Model.Id }, "https")" id="examLink" readonly />
-                                                <button class="btn btn-outline-primary" type="button" id="copyExamLink">
-                                                    <i class="bx bx-copy"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+                    <div class="divider divider-info">
+                      <div class="divider-text"><i class="bx bx-time me-1 text-primary"></i> إعدادات الوقت</div>
                     </div>
+                    <dt class="col-sm-4">تاريخ البدء:</dt>
+                    <dd class="col-sm-8">@Model.ExamStartDate.ToString("yyyy/MM/dd HH:mm")</dd>
 
-                    <div class="divider">
-                        <div class="divider-text">مجموعات الأسئلة</div>
+                    <dt class="col-sm-4">تاريخ الانتهاء:</dt>
+                    <dd class="col-sm-8">@Model.ExamEndDate.ToString("yyyy/MM/dd HH:mm")</dd>
+
+                    <dt class="col-sm-4">عرض النتائج:</dt>
+                    <dd class="col-sm-8">
+                      @if (Model.ShowResultsImmediately)
+                      {
+                        <span class="badge bg-label-success">نعم</span>
+                      }
+                      else
+                      {
+                        <span class="badge bg-label-secondary">لا</span>
+                      }
+                    </dd>
+
+                    <dt class="col-sm-4">إرسال الروابط:</dt>
+                    <dd class="col-sm-8">
+                      @if (Model.SendExamLinkToApplicants)
+                      {
+                        <span class="badge bg-label-success">نعم</span>
+                      }
+                      else
+                      {
+                        <span class="badge bg-label-secondary">لا</span>
+                      }
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+              <div class="card h-px-450 shadow-sm">
+                <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                  <h6 class="fw-semibold mb-0">
+                    <i class="bx bx-collection me-1 text-primary"></i> مجموعات الأسئلة
+                  </h6>
+                  <a href="@Url.Action("QuestionSets", "Exams", new { id = Model.Id })" class="btn btn-primary btn-xs">
+                    <i class="bx bx-list-ul"></i>
+                  </a>
+                </div>
+                <div class="card-body p-0">
+                  @if (Model.QuestionSets == null || Model.QuestionSets.Count == 0)
+                  {
+                    <div class="alert alert-info m-3 mb-0">
+                      <i class="bx bx-info-circle me-1"></i>
+                      لا توجد مجموعات أسئلة في هذا الامتحان
                     </div>
-
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="fw-semibold">مجموعات الأسئلة في الامتحان</h6>
+                  }
+                  else
+                  {
+                    <div class="list-group list-group-flush">
+                      @foreach (var questionSet in Model.QuestionSets)
+                      {
+                        <a href="@Url.Action("Details", "QuestionSets", new { id = questionSet.Id })"
+                          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                          <div>
+                            <h6 class="mb-1">@questionSet.Name</h6>
                             <div>
-                                <a href="@Url.Action("QuestionSets", "Exams", new { id = Model.Id })" class="btn btn-info btn-sm me-1">
-                                    <i class="bx bx-list-ul me-1"></i> عرض كل المجموعات
-                                </a>
-                                <a href="@Url.Action("Create", "QuestionSets", new { examId = Model.Id })" class="btn btn-primary btn-sm">
-                                    <i class="bx bx-plus me-1"></i> إضافة مجموعة
-                                </a>
+                              <span class="badge bg-label-primary">@GetQuestionTypeDisplay(questionSet.QuestionType)</span>
+                              <span class="badge bg-label-info ms-1">@questionSet.QuestionCount سؤال</span>
                             </div>
-                        </div>
+                          </div>
+                          <i class="bx bx-chevron-right text-muted"></i>
+                        </a>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
 
-                        @if (Model.QuestionSets == null || Model.QuestionSets.Count == 0)
+            <div class="col-md-4 mb-4">
+              <div class="card h-px-450 shadow-sm border-primary">
+                <div class="card-header bg-light py-2">
+                  <h6 class="fw-semibold mb-0">
+                    <i class="bx bx-share-alt me-1"></i> حالة نشر الامتحان
+                  </h6>
+                </div>
+                <div class="card-body">
+                  @{
+                    bool IsExamInProgress = DateTime.Now >= Model.ExamStartDate && DateTime.Now <= Model.ExamEndDate;
+                  }
+                  <div class="text-center mb-3">
+                    @if (Model.Status == ExamStatus.Published)
+                    {
+                      <div class="d-flex flex-column align-items-center mb-3">
+                        <div class="avatar avatar-lg mb-2">
+                          <span class="avatar-initial rounded-circle bg-success">
+                            <i class="bx bx-check fs-3"></i>
+                          </span>
+                        </div>
+                        <h5 class="mb-1">الامتحان منشور</h5>
+                        @if (IsExamInProgress)
                         {
-                            <div class="alert alert-info text-center">
-                                <i class="bx bx-info-circle me-1"></i>
-                                لا توجد مجموعات أسئلة في هذا الامتحان. قم بإضافة مجموعة أسئلة جديدة.
-                            </div>
+                          <span class="badge bg-label-success mb-2">نشط حالياً</span>
+                        }
+                        else if (DateTime.Now < Model.ExamStartDate)
+                        {
+                          <span class="badge bg-label-info mb-2">سيبدأ قريباً</span>
                         }
                         else
                         {
-                            <div class="row g-3">
-                                @foreach (var questionSet in Model.QuestionSets)
-                                {
-                                    <div class="col-md-6 col-lg-4">
-                                        <div class="card h-100 shadow-sm border-0 cursor-pointer hover-shadow"
-                                             onclick="location.href='@Url.Action("Details", "QuestionSets", new { id = questionSet.Id })'">
-                                            <div class="card-body">
-                                                @{
-                                                    var (statusClass, statusText) = GetStatusDisplay(questionSet.Status);
-                                                }
-                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <h6 class="card-title mb-0 text-truncate">@questionSet.Name</h6>
-                                                    <span class="badge rounded-pill bg-@statusClass">@statusText</span>
-                                                </div>
-                                                <p class="card-text small text-muted mb-3 text-truncate">@(string.IsNullOrEmpty(questionSet.Description) ? "بدون وصف" : questionSet.Description)</p>
-                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <span class="badge bg-label-primary">@GetQuestionTypeDisplay(questionSet.QuestionType)</span>
-                                                    <span class="badge bg-label-info">@questionSet.QuestionCount سؤال</span>
-                                                </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <span class="badge bg-label-secondary">@GetDifficultyDisplay(questionSet.Difficulty ?? "غير محدد")</span>
-                                                    <span class="badge bg-label-warning">@(questionSet.CreatedAt.ToString("yyyy/MM/dd"))</span>
-                                                </div>
-                                            </div>
-                                            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-                                                <a href="@Url.Action("Details", "QuestionSets", new { id = questionSet.Id })" class="btn btn-sm btn-primary">
-                                                    <i class="bx bx-show-alt me-1"></i> عرض
-                                                </a>
-                                                <div>
-                                                    <a href="@Url.Action("Edit", "QuestionSets", new { id = questionSet.Id })" class="btn btn-sm btn-outline-primary me-1">
-                                                        <i class="bx bx-edit-alt"></i>
-                                                    </a>
-                                                    <a href="@Url.Action("Delete", "QuestionSets", new { id = questionSet.Id })" class="btn btn-sm btn-outline-danger">
-                                                        <i class="bx bx-trash"></i>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
+                          <span class="badge bg-label-dark mb-2">منتهي</span>
                         }
-                    </div>
-
-                    @if (ViewBag.Questions != null && ViewBag.Questions.Count > 0)
-                    {
-                        <div class="divider">
-                            <div class="divider-text">الأسئلة المضافة إلى الامتحان</div>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-semibold mb-0">الأسئلة في الامتحان (@ViewBag.Questions.Count)</h6>
-
-                                <a href="@Url.Action("ExamQuestions", "Exams", new { id = Model.Id })" class="btn btn-info btn-sm">
-                                    <i class="bx bx-list-ul me-1"></i> عرض كل الأسئلة
-                                </a>
-                            </div>
-
-                            @if (ViewBag.Questions == null || ViewBag.Questions.Count == 0)
-                            {
-                                <div class="alert alert-info text-center">
-                                    <i class="bx bx-info-circle me-1"></i>
-                                    لا توجد أسئلة مضافة للامتحان. يمكنك إضافة الأسئلة من مجموعات الأسئلة.
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="accordion" id="examQuestionsAccordion">
-                                    @{ var displayQuestions = ViewBag.Questions.Count > 5 ? ((IEnumerable<dynamic>)ViewBag.Questions).Take(5).ToList() : ViewBag.Questions; }
-                                    @foreach (var question in displayQuestions)
-                                    {
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#question-@question.Id" aria-expanded="false">
-                                                    <span class="me-2">@question.SequenceNumber.</span> @question.QuestionText
-                                                </button>
-                                            </h2>
-                                            <div id="question-@question.Id" class="accordion-collapse collapse">
-                                                <div class="accordion-body">
-                                                    <div class="question-details">
-                                                        <div class="question-options">
-                                                            @if (question.Options != null && question.Options.Count > 0)
-                                                            {
-                                                                <div class="mb-3">
-                                                                    <h6 class="text-muted">الخيارات:</h6>
-                                                                    <ul class="list-group">
-                                                                        @foreach (var option in question.Options)
-                                                                        {
-                                                                            <li class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
-                                                                                @if (option.IsCorrect)
-                                                                                {
-                                                                                    <i class="bx bx-check-circle me-1 text-success"></i>
-                                                                                }
-                                                                                @option.Text
-                                                                            </li>
-                                                                        }
-                                                                    </ul>
-                                                                </div>
-                                                            }
-                                                            else if (question.TrueFalseAnswer.HasValue)
-                                                            {
-                                                                <div class="mb-3">
-                                                                    <h6 class="text-muted">الإجابة الصحيحة:</h6>
-                                                                    <div class="badge bg-success">@(question.TrueFalseAnswer.Value ? "صحيح" : "خطأ")</div>
-                                                                </div>
-                                                            }
-                                                            else if (!string.IsNullOrEmpty(question.Answer))
-                                                            {
-                                                                <div class="mb-3">
-                                                                    <h6 class="text-muted">الإجابة الصحيحة:</h6>
-                                                                    <div class="p-2 border rounded bg-light">@question.Answer</div>
-                                                                </div>
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-
-                                @if (ViewBag.Questions.Count > 5)
-                                {
-                                    <div class="text-center mt-3">
-                                        <a href="@Url.Action("ExamQuestions", "Exams", new { id = Model.Id })" class="btn btn-outline-primary btn-sm">
-                                            <i class="bx bx-list-ul me-1"></i> عرض كل الأسئلة (@ViewBag.Questions.Count)
-                                        </a>
-                                    </div>
-                                }
-                            }
-                        </div>
+                      </div>
+                      <a href="@Url.Action("TogglePublishStatus", new { id = Model.Id })"
+                        class="btn btn-outline-danger w-100">
+                        <i class="bx bx-x-circle me-1"></i> إلغاء النشر
+                      </a>
                     }
+                    else
+                    {
+                      <div class="d-flex flex-column align-items-center mb-3">
+                        <div class="avatar avatar-lg mb-2">
+                          <span class="avatar-initial rounded-circle bg-secondary">
+                            <i class="bx bx-time fs-3"></i>
+                          </span>
+                        </div>
+                        <h5 class="mb-2">الامتحان غير منشور</h5>
+                        <p class="text-muted mb-2">لن يتمكن المتقدمون من رؤية هذا الامتحان حتى يتم نشره</p>
+                      </div>
+                      <div class="d-grid gap-2">
+                        <a href="@Url.Action("PublishExam", new { id = Model.Id })" class="btn btn-success">
+                          <i class="bx bx-share-alt me-1"></i> نشر مع إشعارات
+                        </a>
+                        <a href="@Url.Action("TogglePublishStatus", new { id = Model.Id })"
+                          class="btn btn-outline-primary">
+                          <i class="bx bx-check-circle me-1"></i> نشر فقط
+                        </a>
+                      </div>
+                    }
+                  </div>
+                  @if (Model.Status == ExamStatus.Published)
+                  {
+                    <div class="mt-4">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>رابط الامتحان:</span>
+                      </div>
+                      <div class="input-group mb-3">
+                        <input type="text" class="form-control"
+                          value="@Url.Action("TakeExam", "Applicants", new { id = Model.Id }, "https")" id="examLink"
+                          readonly />
+                        <button class="btn btn-outline-primary" type="button" id="copyExamLink">
+                          <i class="bx bx-copy"></i>
+                        </button>
+                      </div>
+                    </div>
+                  }
                 </div>
+              </div>
             </div>
+          </div>
+          @if (ViewBag.Questions != null && ViewBag.Questions.Count > 0)
+          {
+            <div class="divider">
+              <div class="divider-text">الأسئلة المضافة إلى الامتحان</div>
+            </div>
+
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-semibold mb-0">الأسئلة في الامتحان (@ViewBag.Questions.Count)</h6>
+
+                <a href="@Url.Action("ExamQuestions", "Exams", new { id = Model.Id })" class="btn btn-info btn-sm">
+                  <i class="bx bx-list-ul me-1"></i> عرض كل الأسئلة
+                </a>
+              </div>
+
+              @if (ViewBag.Questions == null || ViewBag.Questions.Count == 0)
+              {
+                <div class="alert alert-info text-center">
+                  <i class="bx bx-info-circle me-1"></i>
+                  لا توجد أسئلة مضافة للامتحان. يمكنك إضافة الأسئلة من مجموعات الأسئلة.
+                </div>
+              }
+              else
+              {
+                <div class="accordion" id="examQuestionsAccordion">
+                  @{
+                    var displayQuestions = ViewBag.Questions.Count > 5 ?
+                    ((IEnumerable<dynamic>)ViewBag.Questions).Take(5).ToList() : ViewBag.Questions;
+                  }
+                  @foreach (var question in displayQuestions)
+                  {
+                    <div class="accordion-item">
+                      <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                          data-bs-target="#question-@question.Id" aria-expanded="false">
+                          <span class="me-2">@question.SequenceNumber.</span> @question.QuestionText
+                        </button>
+                      </h2>
+                      <div id="question-@question.Id" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                          <div class="question-details">
+                            <div class="question-options">
+                              @if (question.Options != null && question.Options.Count > 0)
+                              {
+                                <div class="mb-3">
+                                  <h6 class="text-muted">الخيارات:</h6>
+                                  <ul class="list-group">
+                                    @foreach (var option in question.Options)
+                                    {
+                                      <li class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
+                                        @if (option.IsCorrect)
+                                        {
+                                          <i class="bx bx-check-circle me-1 text-success"></i>
+                                        }
+                                        @option.Text
+                                      </li>
+                                    }
+                                  </ul>
+                                </div>
+                              }
+                              else if (question.TrueFalseAnswer.HasValue)
+                              {
+                                <div class="mb-3">
+                                  <h6 class="text-muted">الإجابة الصحيحة:</h6>
+                                  <div class="badge bg-success">@(question.TrueFalseAnswer.Value ? "صحيح" : "خطأ")</div>
+                                </div>
+                              }
+                              else if (!string.IsNullOrEmpty(question.Answer))
+                              {
+                                <div class="mb-3">
+                                  <h6 class="text-muted">الإجابة الصحيحة:</h6>
+                                  <div class="p-2 border rounded bg-light">@question.Answer</div>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                @if (ViewBag.Questions.Count > 5)
+                {
+                  <div class="text-center mt-3">
+                    <a href="@Url.Action("ExamQuestions", "Exams", new { id = Model.Id })"
+                      class="btn btn-outline-primary btn-sm">
+                      <i class="bx bx-list-ul me-1"></i> عرض كل الأسئلة (@ViewBag.Questions.Count)
+                    </a>
+                  </div>
+                }
+              }
+            </div>
+          }
         </div>
+      </div>
     </div>
+  </div>
+
+
 </div>
 
 @section Scripts {
-    <script>
-        $(document).ready(function() {
-            // إغلاق التنبيهات تلقائياً بعد 5 ثوان
-            setTimeout(function() {
-                $('.alert').alert('close');
-            }, 5000);
+  <script>
+    $(document).ready(function () {
+      // إغلاق التنبيهات تلقائياً بعد 5 ثوان
+      setTimeout(function () {
+        $('.alert').alert('close');
+      }, 5000);
 
-            // نسخ رابط الامتحان
-            $("#copyExamLink").on("click", function() {
-                var examLink = document.getElementById("examLink");
-                examLink.select();
-                document.execCommand("copy");
+      // نسخ رابط الامتحان
+      $("#copyExamLink").on("click", function () {
+        var examLink = document.getElementById("examLink");
+        examLink.select();
+        document.execCommand("copy");
 
-                var $btn = $(this);
-                $btn.html('<i class="bx bx-check"></i>');
-                setTimeout(function() {
-                    $btn.html('<i class="bx bx-copy"></i>');
-                }, 2000);
-            });
+        var $btn = $(this);
+        $btn.html('<i class="bx bx-check"></i>');
+        setTimeout(function () {
+          $btn.html('<i class="bx bx-copy"></i>');
+        }, 2000);
+      });
 
-            // إضافة تأثير تفاعلي لبطاقات مجموعات الأسئلة
-            $(".hover-shadow").hover(
-                function() {
-                    $(this).addClass("shadow");
-                },
-                function() {
-                    $(this).removeClass("shadow");
-                }
-            );
-        });
-    </script>
+      // إضافة تأثير تفاعلي لبطاقات مجموعات الأسئلة
+      $(".hover-shadow").hover(
+        function () {
+          $(this).addClass("shadow");
+        },
+        function () {
+          $(this).removeClass("shadow");
+        }
+      );
+    });
+  </script>
 }
 
 @functions {
-    string GetQuestionTypeDisplay(string questionType)
+  string GetQuestionTypeDisplay(string questionType)
+  {
+    return questionType?.ToLower() switch
     {
-        return questionType?.ToLower() switch
-        {
-            "mcq" => "اختيار من متعدد",
-            "tf" => "صح / خطأ",
-            "open" => "إجابة مفتوحة",
-            "fillintheblank" => "ملء الفراغات",
-            "ordering" => "ترتيب",
-            "matching" => "مطابقة",
-            "multiselect" => "اختيار متعدد",
-            "shortanswer" => "إجابة قصيرة",
-            _ => questionType
-        };
-    }
+      "mcq" => "اختيار من متعدد",
+      "tf" => "صح / خطأ",
+      "open" => "إجابة مفتوحة",
+      "fillintheblank" => "ملء الفراغات",
+      "ordering" => "ترتيب",
+      "matching" => "مطابقة",
+      "multiselect" => "اختيار متعدد",
+      "shortanswer" => "إجابة قصيرة",
+      _ => questionType
+    };
+  }
 
-    string GetContentTypeDisplay(string contentType)
+  string GetContentTypeDisplay(string contentType)
+  {
+    return contentType?.ToLower() switch
     {
-        return contentType?.ToLower() switch
-        {
-            "topic" => "موضوع",
-            "text" => "نص",
-            "link" => "رابط",
-            "youtube" => "يوتيوب",
-            "document" => "مستند",
-            "image" => "صورة",
-            "audio" => "صوت",
-            "video" => "فيديو",
-            _ => contentType
-        };
-    }
+      "topic" => "موضوع",
+      "text" => "نص",
+      "link" => "رابط",
+      "youtube" => "يوتيوب",
+      "document" => "مستند",
+      "image" => "صورة",
+      "audio" => "صوت",
+      "video" => "فيديو",
+      _ => contentType
+    };
+  }
 
-    string GetDifficultyDisplay(string difficulty)
+  string GetDifficultyDisplay(string difficulty)
+  {
+    return difficulty?.ToLower() switch
     {
-        return difficulty?.ToLower() switch
-        {
-            "easy" => "سهل",
-            "medium" => "متوسط",
-            "hard" => "صعب",
-            "auto" => "تلقائي",
-            _ => difficulty
-        };
-    }
+      "easy" => "سهل",
+      "medium" => "متوسط",
+      "hard" => "صعب",
+      "auto" => "تلقائي",
+      _ => difficulty
+    };
+  }
 
-    (string badge, string text) GetStatusDisplay(TawtheefTest.Enum.QuestionSetStatus status)
+  (string badge, string text) GetStatusDisplay(QuestionSetStatus status)
+  {
+    return status switch
     {
-        return status switch
-        {
-            TawtheefTest.Enum.QuestionSetStatus.Pending => ("warning", "في الانتظار"),
-            TawtheefTest.Enum.QuestionSetStatus.Processing => ("info", "قيد المعالجة"),
-            TawtheefTest.Enum.QuestionSetStatus.Completed => ("success", "مكتمل"),
-            TawtheefTest.Enum.QuestionSetStatus.Failed => ("danger", "فشل"),
-            _ => ("secondary", status.ToString())
-        };
-    }
+      QuestionSetStatus.Pending => ("warning", "في الانتظار"),
+      QuestionSetStatus.Processing => ("info", "قيد المعالجة"),
+      QuestionSetStatus.Completed => ("success", "مكتمل"),
+      QuestionSetStatus.Failed => ("danger", "فشل"),
+      _ => ("secondary", status.ToString())
+    };
+  }
 }

@@ -16,26 +16,55 @@ namespace TawtheefTest.Infrastructure
       CreateMap<Job, JobDTO>();
       CreateMap<Exam, ExamDTO>();
       CreateMap<Candidate, CandidateDTO>();
-      CreateMap<Question, QuestionDTO>();
+      CreateMap<Question, ExamQuestionDTO>();
       CreateMap<QuestionOption, QuestionOptionDTO>();
       CreateMap<OTPVerification, OTPVerificationDto>();
       CreateMap<CandidateAnswer, CandidateAnswerDTO>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty));
+
+      // تخطيط CandidateExam إلى CandidateExamViewModel
       CreateMap<CandidateExam, CandidateExamViewModel>()
           .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Candidate.Name))
-          .ForMember(dest => dest.ExamName, opt => opt.MapFrom(src => src.Exam.Name))
-          .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Exam.Job.Title))
-          .ForMember(dest => dest.QuestionType, opt => opt.MapFrom(src => src.Exam.Questions.FirstOrDefault().QuestionType))
-          .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(src => src.Status == "Completed"));
+          .ForMember(dest => dest.ExamTitle, opt => opt.MapFrom(src => src.Exam.Name))
+          .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Exam.Job.Title))
+          .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Exam.Duration ?? 60))
+          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.TotalQuestions > 0
+              ? src.TotalQuestions
+              : src.Exam.Questions.Count))
+          .ForMember(dest => dest.CompletedQuestions, opt => opt.MapFrom(src => src.CompletedQuestions > 0
+              ? src.CompletedQuestions
+              : src.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count()));
+
+      // تخطيط Exam إلى ExamForCandidateViewModel
       CreateMap<Exam, ExamForCandidateViewModel>()
           .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Job.Title))
-          .ForMember(dest => dest.QuestionType, opt => opt.MapFrom(src => src.Questions.FirstOrDefault().QuestionType));
-      CreateMap<CandidateExam, CandidateExamResultViewModel>();
+          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.Questions.Count))
+          .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60));
+
+      // تخطيط CandidateExam إلى CandidateExamResultViewModel
+      CreateMap<CandidateExam, CandidateExamResultViewModel>()
+          .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Candidate.Name))
+          .ForMember(dest => dest.ExamTitle, opt => opt.MapFrom(src => src.Exam.Name))
+          .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Exam.Job.Title))
+          .ForMember(dest => dest.Duration, opt => opt.MapFrom(src =>
+              src.StartTime.HasValue && src.EndTime.HasValue
+                  ? src.EndTime.Value - src.StartTime.Value
+                  : TimeSpan.FromMinutes(src.Exam.Duration ?? 0)))
+          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.TotalQuestions > 0
+              ? src.TotalQuestions
+              : src.Exam.Questions.Count))
+          .ForMember(dest => dest.CompletedQuestions, opt => opt.MapFrom(src => src.CompletedQuestions > 0
+              ? src.CompletedQuestions
+              : src.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count()));
+
+      // تخطيط CandidateAnswer إلى CandidateAnswerViewModel
       CreateMap<CandidateAnswer, CandidateAnswerViewModel>()
           .ForMember(dest => dest.QuestionText, opt => opt.MapFrom(src => src.Question.QuestionText))
           .ForMember(dest => dest.QuestionType, opt => opt.MapFrom(src => src.Question.QuestionType))
-          .ForMember(dest => dest.CorrectAnswer, opt => opt.MapFrom(src => src.Question.Answer))
-          .ForMember(dest => dest.Answer, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty));
+          .ForMember(dest => dest.CorrectAnswerText, opt => opt.MapFrom(src => src.Question.Answer))
+          .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty))
+          .ForMember(dest => dest.SubmittedAt, opt => opt.MapFrom(src => src.UpdatedAt ?? src.CreatedAt));
+
       CreateMap<QuestionOption, CandidateQuestionOptionViewModel>();
 
       // للتعامل مع نماذج توليد الأسئلة
@@ -57,11 +86,15 @@ namespace TawtheefTest.Infrastructure
       CreateMap<MatchingPair, MatchingPairViewModel>();
       CreateMap<OrderingItem, OrderingItemViewModel>();
 
+      // تخطيط Notification إلى NotificationViewModel
+      CreateMap<Notification, NotificationViewModel>()
+          .ForMember(dest => dest.TimeSince, opt => opt.MapFrom(src => GetTimeSince(src.CreatedAt)));
+
       // Map from DTOs to Data Models
       CreateMap<JobDTO, Job>();
       CreateMap<ExamDTO, Exam>();
       CreateMap<CandidateDTO, Candidate>();
-      CreateMap<QuestionDTO, Question>();
+      CreateMap<ExamQuestionDTO, Question>();
       CreateMap<QuestionOptionDTO, QuestionOption>();
       CreateMap<CandidateAnswerDTO, CandidateAnswer>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText));
@@ -72,7 +105,9 @@ namespace TawtheefTest.Infrastructure
       CreateMap<OTPVerificationDto, OTPVerification>();
 
       // Map from Data Models to ViewModels
-      CreateMap<Candidate, CandidateViewModel>();
+      CreateMap<Candidate, CandidateViewModel>()
+          .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Job != null ? src.Job.Title : null));
+
       CreateMap<QuestionSet, QuestionSetDetailsViewModel>()
           .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
           .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSets.FirstOrDefault().ExamId));
@@ -84,15 +119,19 @@ namespace TawtheefTest.Infrastructure
       CreateMap<ExamDTO, ExamViewModel>();
       CreateMap<JobDTO, JobViewModel>();
       CreateMap<CandidateDTO, CandidateViewModel>();
-      CreateMap<QuestionDTO, QuestionViewModel>();
+      CreateMap<ExamQuestionDTO, QuestionViewModel>();
       CreateMap<QuestionOptionDTO, OptionViewModel>();
       CreateMap<CandidateAnswerDTO, CandidateAnswerViewModel>()
           .ForMember(dest => dest.QuestionText, opt => opt.Ignore())
           .ForMember(dest => dest.QuestionType, opt => opt.Ignore())
-          .ForMember(dest => dest.CorrectAnswer, opt => opt.Ignore())
-          .ForMember(dest => dest.Options, opt => opt.Ignore())
-          .ForMember(dest => dest.Answer, opt => opt.MapFrom(src => src.AnswerText));
+          .ForMember(dest => dest.CorrectAnswerText, opt => opt.Ignore())
+          .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText));
       CreateMap<OTPVerificationDto, OTPVerificationViewModel>();
+
+      // إضافة تخطيط JobDTO إلى EditJobViewModel
+      CreateMap<JobDTO, EditJobViewModel>();
+      // إضافة تخطيط EditJobViewModel إلى JobDTO
+      CreateMap<EditJobViewModel, JobDTO>();
 
       CreateMap<QuestionSetDto, QuestionSetDetailsViewModel>();
       CreateMap<QuestionSetDto, QuestionSetStatusViewModel>();
@@ -104,10 +143,10 @@ namespace TawtheefTest.Infrastructure
       CreateMap<ExamViewModel, ExamDTO>();
       CreateMap<JobViewModel, JobDTO>();
       CreateMap<CandidateViewModel, CandidateDTO>();
-      CreateMap<QuestionViewModel, QuestionDTO>();
+      CreateMap<QuestionViewModel, ExamQuestionDTO>();
       CreateMap<OptionViewModel, QuestionOptionDTO>();
       CreateMap<CandidateAnswerViewModel, CandidateAnswerDTO>()
-          .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.Answer));
+          .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText));
       CreateMap<CreateExamViewModel, CreateExamDTO>();
       CreateMap<OTPVerificationViewModel, OTPVerificationDto>();
       CreateMap<OTPRequestViewModel, OTPRequestDto>();
@@ -137,6 +176,32 @@ namespace TawtheefTest.Infrastructure
         Enum.QuestionSetStatus.Failed => "فشل",
         _ => "غير معروف"
       };
+    }
+
+    private string GetTimeSince(DateTime dateTime)
+    {
+      var span = DateTime.UtcNow - dateTime;
+
+      if (span.TotalDays > 7)
+      {
+        return $"{dateTime.ToString("yyyy-MM-dd")}";
+      }
+      else if (span.TotalDays > 1)
+      {
+        return $"منذ {(int)span.TotalDays} يوم";
+      }
+      else if (span.TotalHours > 1)
+      {
+        return $"منذ {(int)span.TotalHours} ساعة";
+      }
+      else if (span.TotalMinutes > 1)
+      {
+        return $"منذ {(int)span.TotalMinutes} دقيقة";
+      }
+      else
+      {
+        return "منذ لحظات";
+      }
     }
   }
 }

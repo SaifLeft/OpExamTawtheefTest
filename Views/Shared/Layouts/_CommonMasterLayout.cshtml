@@ -49,23 +49,6 @@
   <!-- Page Scripts-->
   @RenderSection("PageScripts", required: false)
 
-  <!-- Global Alert Handler Script -->
-  <script>
-    $(document).ready(function () {
-      // تأكد من إضافة فئة 'fade show' للتنبيهات
-      $('.alert:not(.fade)').addClass('fade show');
-
-      // إضافة أزرار إغلاق إذا لم تكن موجودة
-      $('.alert:not(:has(.btn-close))').append(
-        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'
-      );
-
-      // إغلاق التنبيهات تلقائياً بعد 5 ثوان
-      setTimeout(function () {
-        $('.alert').alert('close');
-      }, 5000);
-    });
-  </script>
 
   <!-- Scripts Section -->
   @RenderSection("Scripts", required: false)

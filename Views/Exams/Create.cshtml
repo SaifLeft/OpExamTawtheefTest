@@ -4,6 +4,7 @@
   ViewData["title"] = "إنشاء امتحان جديد";
 }
 
+
 <div class="container-xxl flex-grow-1 container-p-y">
   <h4 class="fw-bold py-3 mb-4">
     <span class="text-muted fw-light">الامتحانات /</span> إنشاء امتحان جديد
@@ -40,8 +41,7 @@
 
             <div class="mb-4">
               <label asp-for="Description" class="form-label fw-semibold">وصف الامتحان</label>
-              <textarea asp-for="Description" class="form-control" rows="3"
-                placeholder="أدخل وصفاً للامتحان (اختياري)"></textarea>
+              <textarea asp-for="Description" class="form-control" rows="3" placeholder="أدخل وصفاً للامتحان (اختياري)"></textarea>
               <span asp-validation-for="Description" class="text-danger"></span>
             </div>
 
@@ -64,7 +64,8 @@
                 <div class="mb-3">
                   <label for="ExamStartDate" class="form-label fw-semibold">تاريخ بدء الامتحان <span
                       class="text-danger">*</span></label>
-                  <input type="datetime-local" id="ExamStartDate" name="ExamStartDate" class="form-control" required />
+                  <input type="text" id="ExamStartDate" name="ExamStartDate" class="form-control flatpickr-datetime"
+                    placeholder="اختر تاريخ ووقت البدء" required />
                   <div class="form-text">وقت بدء اتاحة الامتحان للمتقدمين</div>
                 </div>
               </div>
@@ -72,7 +73,8 @@
                 <div class="mb-3">
                   <label for="ExamEndDate" class="form-label fw-semibold">تاريخ انتهاء الامتحان <span
                       class="text-danger">*</span></label>
-                  <input type="datetime-local" id="ExamEndDate" name="ExamEndDate" class="form-control" required />
+                  <input type="text" id="ExamEndDate" name="ExamEndDate" class="form-control flatpickr-datetime"
+                    placeholder="اختر تاريخ ووقت الانتهاء" required />
                   <div class="form-text">وقت انتهاء اتاحة الامتحان للمتقدمين</div>
                 </div>
               </div>
@@ -129,8 +131,22 @@
     </div>
   </div>
 </div>
+@section PageStyles {
+  <!-- مكتبة Flatpickr لمختار التاريخ والوقت -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css" />
+}
 
 @section Scripts {
+  <!-- مكتبة Flatpickr لمختار التاريخ والوقت -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/ar.js"></script>
+
+  <!-- مكتبات التحقق jQuery Validation -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@4.0.0/dist/jquery.validate.unobtrusive.min.js"></script>
+
   <script>
     $(document).ready(function () {
       // إعداد التحقق من الفورم
@@ -144,22 +160,51 @@
         }
       });
 
-      // إعداد قيم التواريخ الافتراضية
-      var today = new Date();
-      var nextWeek = new Date(today);
-      nextWeek.setDate(today.getDate() + 7);
+      // إعداد مختار التاريخ والوقت (Flatpickr)
+      var arabicConfig = {
+        locale: {
+          firstDayOfWeek: 6, // السبت هو أول يوم في الأسبوع
+          weekdays: {
+            shorthand: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],
+            longhand: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+          },
+          months: {
+            shorthand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+            longhand: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+          }
+        },
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        disableMobile: "true",
+        allowInput: true,
+        position: "auto right",
+        monthSelectorType: "dropdown",
+        yearSelectorType: "dropdown"
+      };
 
-      // تنسيق التواريخ للحقول
-      function formatDateForInput(date) {
-        return date.getFullYear() + '-' +
-          String(date.getMonth() + 1).padStart(2, '0') + '-' +
-          String(date.getDate()).padStart(2, '0') + 'T' +
-          String(date.getHours()).padStart(2, '0') + ':' +
-          String(date.getMinutes()).padStart(2, '0');
-      }
+      // تهيئة مختار تاريخ ووقت بدء الامتحان
+      var startDatePicker = flatpickr("#ExamStartDate", {
+        ...arabicConfig,
+        defaultDate: new Date(),
+        onChange: function (selectedDates, dateStr, instance) {
+          // تحديث الحد الأدنى لتاريخ انتهاء الامتحان
+          if (selectedDates.length > 0) {
+            endDatePicker.set("minDate", selectedDates[0]);
+          }
+        }
+      });
 
-      $('#ExamStartDate').val(formatDateForInput(today));
-      $('#ExamEndDate').val(formatDateForInput(nextWeek));
+      // تهيئة مختار تاريخ ووقت انتهاء الامتحان
+      var endDatePicker = flatpickr("#ExamEndDate", {
+        ...arabicConfig,
+        defaultDate: function () {
+          var date = new Date();
+          date.setDate(date.getDate() + 7);
+          return date;
+        }(),
+        minDate: new Date()
+      });
 
       // تفعيل select2 للتحسين
       if ($.fn.select2) {

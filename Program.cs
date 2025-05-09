@@ -1,3 +1,4 @@
+using ITAM.Service;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.Infrastructure;
@@ -22,10 +23,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOTPService, OTPService>();
 builder.Services.AddTransient<IOpExamsService, OpExamsService>();
+builder.Services.AddTransient<IFileMangmanent, FileMangmanent>();
 builder.Services.AddTransient<IOpExamQuestionGenerationService, OpExamQuestionGenerationService>();
 builder.Services.AddTransient<IQuestionSetLibraryService, QuestionSetLibraryService>();
 builder.Services.AddScoped<IQuestionGenerationService, QuestionGenerationService>();
 builder.Services.AddScoped<IJobService, JobService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Register background service
 builder.Services.AddHostedService<QuestionGenerationBackgroundService>();
@@ -64,7 +67,7 @@ app.Use(async (context, next) =>
 {
   if (!context.Session.Keys.Contains("layoutInitialized"))
   {
-    context.Session.SetString("appName", "OpExams Tawtheef");
+    context.Session.SetString("appName", "نظام اختبارات التوظيف");
     context.Session.SetString("productPage", "https://example.com");
     context.Session.SetString("layoutInitialized", "true");
   }

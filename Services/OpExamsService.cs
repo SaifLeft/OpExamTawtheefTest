@@ -37,33 +37,33 @@ namespace TawtheefTest.Services
       _httpClient.DefaultRequestHeaders.Add("api-key", _apiKey);
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestions(string topic, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestions(string topic, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation - in a real implementation, would use data models internally
       // and map to DTOs when returning
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsFromText(string text, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsFromText(string text, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsFromLink(string link, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsFromLink(string link, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsFromYoutube(string youtubeLink, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsFromYoutube(string youtubeLink, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
     public async Task<string> UploadFile(Stream fileStream, string fileName)
@@ -72,46 +72,46 @@ namespace TawtheefTest.Services
       return Guid.NewGuid().ToString();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsFromDocument(string documentId, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsFromDocument(string documentId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsFromImage(string imageId, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsFromImage(string imageId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsFromAudio(string audioId, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsFromAudio(string audioId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsFromVideo(string videoId, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsFromVideo(string videoId, string questionType,
         string language, string difficulty, int questionCount, int optionsCount)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsWithOrderingOrMatching(string topic, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsWithOrderingOrMatching(string topic, string questionType,
         string language, string difficulty, int questionCount, int numberOfRows)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
-    public async Task<List<QuestionDTO>> GenerateQuestionsWithMultiSelect(string topic, string questionType,
+    public async Task<List<ExamQuestionDTO>> GenerateQuestionsWithMultiSelect(string topic, string questionType,
         string language, string difficulty, int questionCount, int optionsCount, int numberOfCorrectOptions)
     {
       // Placeholder implementation
-      return new List<QuestionDTO>();
+      return new List<ExamQuestionDTO>();
     }
 
     public async Task GenerateQuestionsAsync(int questionSetId)

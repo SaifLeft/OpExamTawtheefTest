@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using TawtheefTest.Data.Structure;
 using TawtheefTest.Enum;
 using TawtheefTest.ViewModels;
 
@@ -12,7 +13,7 @@ namespace TawtheefTest.DTOs
     public string Name { get; set; }
     public string Description { get; set; }
     public string QuestionType { get; set; }
-    public string Language { get; set; }
+    public QuestionSetLanguage Language { get; set; }
     public string Difficulty { get; set; }
     public int QuestionCount { get; set; }
     public int? OptionsCount { get; set; }
@@ -21,10 +22,10 @@ namespace TawtheefTest.DTOs
     public string ErrorMessage { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ProcessedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public int QuestionsGenerated { get; set; }
     public int ExamId { get; set; }
-    public IEnumerable<ContentSourceViewModel> ContentSources { get; set; }
-    public IEnumerable<QuestionDto> Questions { get; set; }
+   
     public int UsageCount { get; set; }
     public List<string> UsedInExams { get; set; }
     [JsonIgnore]
@@ -55,6 +56,9 @@ namespace TawtheefTest.DTOs
         _ => "question-circle"
       };
     }
+
+    public IEnumerable<ContentSourceViewModel> ContentSources { get; set; }
+    public IEnumerable<QuestionDto> Questions { get; set; }
   }
 
   public class QuestionDto
