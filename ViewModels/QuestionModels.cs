@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 
 namespace TawtheefTest.ViewModels
 {
@@ -19,7 +19,14 @@ namespace TawtheefTest.ViewModels
     public string ErrorMessage { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ProcessedAt { get; set; }
-    public IEnumerable<ContentSourceViewModel> ContentSources { get; set; }
+
+    // خصائص مصدر المحتوى مباشرة بدلاً من ContentSources
+    public string ContentSourceType { get; set; }
+    public string Content { get; set; }
+    public string Url { get; set; }
+    public string FileName { get; set; }
+    public string FileUploadedCode { get; set; }
+
     public IEnumerable<QuestionViewModel> Questions { get; set; }
     public int ExamId { get; set; }
   }
@@ -34,24 +41,6 @@ namespace TawtheefTest.ViewModels
     public DateTime CreatedAt { get; set; }
     public DateTime? ProcessedAt { get; set; }
     public int QuestionsGenerated { get; set; }
-  }
-
-  public class ContentSourceViewModel
-  {
-    public int Id { get; set; }
-    public string ContentSourceType { get; set; }
-    public string Content { get; set; }
-    public string Url { get; set; }
-    public UploadedFileViewModel UploadedFile { get; set; }
-  }
-
-  public class UploadedFileViewModel
-  {
-    public int Id { get; set; }
-    public string FileName { get; set; }
-    public string FileType { get; set; }
-    public string ContentType { get; set; }
-    public long FileSize { get; set; }
   }
 
   public class QuestionViewModel

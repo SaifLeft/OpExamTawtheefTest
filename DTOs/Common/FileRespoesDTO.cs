@@ -10,5 +10,6 @@ namespace TawtheefTest.DTOs.Common
     public byte[] FileBytes { get; set; }
     public string FileExtension { get; set; }
     public string Text { get; set; }
+    public string FileContentType { get; internal set; }
   }
 }

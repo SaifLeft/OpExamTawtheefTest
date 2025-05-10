@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TawtheefTest.DTOs;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 
 namespace TawtheefTest.DTOs.ExamModels
 {

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace TawtheefTest.DTOs.OpExam
@@ -29,7 +30,7 @@ namespace TawtheefTest.DTOs.OpExam
     public int? NumberOfRows { get; set; }
 
     [JsonPropertyName("numberOfCorrectOptions")]
-    public string NumberOfCorrectOptions { get; set; } = "auto";
+    public string? NumberOfCorrectOptions { get; set; } = "auto";
   }
 
   public class SourceContent
@@ -109,6 +110,23 @@ namespace TawtheefTest.DTOs.OpExam
 
     [JsonPropertyName("instructionText")]
     public string InstructionText { get; set; }
+  }
+
+  public class OpExamTFQuestionResponse
+  {
+    public string title { get; set; }
+    [JsonPropertyName("questions")]
+    public List<TFQuestion> Questions { get; set; }
+  }
+
+  public class TFQuestion
+  {
+    public int Index { get; set; }
+    [JsonPropertyName("question")]
+    public string QuestionText { get; set; }
+    [JsonPropertyName("answer")]
+    public bool Answer { get; set; }
+    public string id { get; set; }
   }
 
   #endregion

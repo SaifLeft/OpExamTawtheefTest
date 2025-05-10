@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 
 namespace TawtheefTest.Data.Structure
 {
@@ -18,8 +18,6 @@ namespace TawtheefTest.Data.Structure
     public DbSet<QuestionOption> QuestionOptions { get; set; } = null!;
     public DbSet<QuestionSet> QuestionSets { get; set; } = null!;
     public DbSet<ExamQuestionSet> ExamQuestionSets { get; set; } = null!;
-    public DbSet<ContentSource> ContentSources { get; set; } = null!;
-    public DbSet<UploadedFile> UploadedFiles { get; set; } = null!;
     public DbSet<CandidateExam> CandidateExams { get; set; } = null!;
     public DbSet<CandidateAnswer> CandidateAnswers { get; set; } = null!;
     public DbSet<OTPVerification> OTPVerifications { get; set; } = null!;
@@ -154,11 +152,6 @@ namespace TawtheefTest.Data.Structure
             .HasForeignKey(q => q.QuestionSetId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        entity.HasMany(e => e.ContentSources)
-            .WithOne(cs => cs.QuestionSet)
-            .HasForeignKey(cs => cs.QuestionSetId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         entity.HasMany(e => e.ExamQuestionSets)
             .WithOne(eqs => eqs.QuestionSet)
             .HasForeignKey(eqs => eqs.QuestionSetId)
@@ -259,58 +252,7 @@ namespace TawtheefTest.Data.Structure
             .OnDelete(DeleteBehavior.Cascade);
       });
 
-      // ContentSource Entity Configuration
-      modelBuilder.Entity<ContentSource>(entity =>
-      {
-        entity.HasKey(e => e.Id);
 
-        entity.Property(e => e.Content)
-            .HasMaxLength(10000);
-
-        entity.Property(e => e.Url)
-            .HasMaxLength(1000);
-
-        entity.Property(e => e.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
-
-        entity.HasOne(e => e.QuestionSet)
-            .WithMany(qs => qs.ContentSources)
-            .HasForeignKey(e => e.QuestionSetId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        entity.HasOne(e => e.UploadedFile)
-            .WithMany(uf => uf.ContentSources)
-            .HasForeignKey(e => e.UploadedFileId)
-            .OnDelete(DeleteBehavior.SetNull);
-      });
-
-      // UploadedFile Entity Configuration
-      modelBuilder.Entity<UploadedFile>(entity =>
-      {
-        entity.HasKey(e => e.Id);
-
-        entity.Property(e => e.FileName)
-            .IsRequired()
-            .HasMaxLength(1000);
-
-        entity.Property(e => e.FileId)
-            .IsRequired()
-            .HasMaxLength(1000);
-
-        entity.Property(e => e.ContentType)
-            .HasMaxLength(100);
-
-        entity.Property(e => e.FilePath)
-            .HasMaxLength(1000);
-
-        entity.Property(e => e.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
-
-        entity.HasMany(e => e.ContentSources)
-            .WithOne(cs => cs.UploadedFile)
-            .HasForeignKey(cs => cs.UploadedFileId)
-            .OnDelete(DeleteBehavior.SetNull);
-      });
 
       // CandidateExam Entity Configuration
       modelBuilder.Entity<CandidateExam>(entity =>

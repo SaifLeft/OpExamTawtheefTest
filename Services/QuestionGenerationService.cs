@@ -6,24 +6,36 @@ using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
+using ITAM.Service;
+using TawtheefTest.DTOs.Common;
 
 namespace TawtheefTest.Services
 {
+  public interface IQuestionGenerationService
+  {
+    Task<bool> AddQuestionsToExamAsync(int questionSetId, int examId);
+    Task<int> CreateQuestionSetAsync(CreateQuestionSetDto model);
+    Task<QuestionSetDto> GetQuestionSetDetailsAsync(int questionSetId);
+    Task<QuestionSetDto> GetQuestionSetStatusAsync(int questionSetId);
+    Task<bool> RegenerateQuestions(int questionSetId);
+    Task<bool> RetryQuestionGenerationAsync(int questionSetId);
+  }
+
   public class QuestionGenerationService : IQuestionGenerationService
   {
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
-    private readonly IOpExamsService _opExamsService;
+    private readonly IFileMangmanent _file;
 
     public QuestionGenerationService(
         ApplicationDbContext context,
         IMapper mapper,
-        IOpExamsService opExamsService)
+        IFileMangmanent file)
     {
       _context = context;
       _mapper = mapper;
-      _opExamsService = opExamsService;
+      _file = file;
     }
 
     public async Task<int> CreateQuestionSetAsync(CreateQuestionSetDto model)
@@ -37,11 +49,19 @@ namespace TawtheefTest.Services
         Language = model.Language,
         Difficulty = model.Difficulty,
         QuestionCount = model.QuestionCount,
-        OptionsCount = model.OptionsCount,
-        NumberOfRows = model.NumberOfRows,
+        OptionsCount = model.OptionsCount, // "optionsCount": number // available for multiple choice and true/false
+        NumberOfRows = model.NumberOfRows, // "numberOfRows": number // available for matching and ordering
         NumberOfCorrectOptions = model.NumberOfCorrectOptions,
         Status = QuestionSetStatus.Pending,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.UtcNow,
+        ContentSourceType = model.ContentSourceType,
+        FileName = model.FileName,
+        Content = model.TextContent ?? model.Topic,
+        Url = model.LinkUrl ?? model.YoutubeUrl,
+        ErrorMessage = null,
+        ProcessedAt = null,
+        UpdatedAt = null,
+        
       };
 
       _context.QuestionSets.Add(questionSet);
@@ -61,91 +81,6 @@ namespace TawtheefTest.Services
         await _context.SaveChangesAsync();
       }
 
-      // إنشاء مصدر المحتوى حسب النوع المحدد
-      ContentSource contentSource = null;
-
-      if (!string.IsNullOrEmpty(model.Topic))
-      {
-        contentSource = new ContentSource
-        {
-          ContentSourceType = ContentSourceType.Topic.ToString(),
-          Content = model.Topic,
-          QuestionSetId = questionSet.Id,
-          CreatedAt = DateTime.UtcNow
-        };
-      }
-      else if (!string.IsNullOrEmpty(model.TextContent))
-      {
-        contentSource = new ContentSource
-        {
-          ContentSourceType = ContentSourceType.Text.ToString(),
-          Content = model.TextContent,
-          QuestionSetId = questionSet.Id,
-          CreatedAt = DateTime.UtcNow
-        };
-      }
-      else if (!string.IsNullOrEmpty(model.LinkUrl))
-      {
-        contentSource = new ContentSource
-        {
-          ContentSourceType = ContentSourceType.Link.ToString(),
-          Url = model.LinkUrl,
-          QuestionSetId = questionSet.Id,
-          CreatedAt = DateTime.UtcNow
-        };
-      }
-      else if (!string.IsNullOrEmpty(model.YoutubeUrl))
-      {
-        contentSource = new ContentSource
-        {
-          ContentSourceType = ContentSourceType.Youtube.ToString(),
-          Url = model.YoutubeUrl,
-          QuestionSetId = questionSet.Id,
-          CreatedAt = DateTime.UtcNow
-        };
-      }
-      else if (model.UploadedFileId.HasValue)
-      {
-        var uploadedFile = await _context.UploadedFiles.FindAsync(model.UploadedFileId.Value);
-        if (uploadedFile != null)
-        {
-          string contentSourceType;
-
-          // تحديد نوع المصدر بناءً على نوع الملف
-          switch (uploadedFile.FileType)
-          {
-            case nameof(FileType.Document):
-              contentSourceType = ContentSourceType.Document.ToString();
-              break;
-            case nameof(FileType.Image):
-              contentSourceType = ContentSourceType.Image.ToString();
-              break;
-            case nameof(FileType.Audio):
-              contentSourceType = ContentSourceType.Audio.ToString();
-              break;
-            case nameof(FileType.Video):
-              contentSourceType = ContentSourceType.Video.ToString();
-              break;
-            default:
-              contentSourceType = ContentSourceType.Document.ToString();
-              break;
-          }
-
-          contentSource = new ContentSource
-          {
-            ContentSourceType = contentSourceType,
-            UploadedFileId = uploadedFile.Id,
-            QuestionSetId = questionSet.Id,
-            CreatedAt = DateTime.UtcNow
-          };
-        }
-      }
-
-      if (contentSource != null)
-      {
-        _context.ContentSources.Add(contentSource);
-        await _context.SaveChangesAsync();
-      }
 
       return questionSet.Id;
     }
@@ -153,8 +88,6 @@ namespace TawtheefTest.Services
     public async Task<QuestionSetDto> GetQuestionSetStatusAsync(int questionSetId)
     {
       var questionSet = await _context.QuestionSets
-          .Include(qs => qs.ContentSources)
-              .ThenInclude(cs => cs.UploadedFile)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
       if (questionSet == null)
@@ -168,8 +101,6 @@ namespace TawtheefTest.Services
     public async Task<QuestionSetDto> GetQuestionSetDetailsAsync(int questionSetId)
     {
       var questionSet = await _context.QuestionSets
-          .Include(qs => qs.ContentSources)
-              .ThenInclude(cs => cs.UploadedFile)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.Options)
           .Include(qs => qs.Questions)
@@ -214,6 +145,36 @@ namespace TawtheefTest.Services
       questionSet.ErrorMessage = null;
       questionSet.ProcessedAt = null;
       await _context.SaveChangesAsync();
+
+      return true;
+    }
+
+    public async Task<bool> RegenerateQuestions(int questionSetId)
+    {
+      var questionSet = await _context.QuestionSets
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.Options)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.OrderingItems)
+          .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
+
+      if (questionSet == null)
+      {
+        return false;
+      }
+
+      // حذف الأسئلة الحالية
+      _context.Questions.RemoveRange(questionSet.Questions);
+      await _context.SaveChangesAsync();
+
+      // تحديث حالة مجموعة الأسئلة
+      questionSet.Status = QuestionSetStatus.Pending;
+      questionSet.ProcessedAt = null;
+      questionSet.UpdatedAt = DateTime.UtcNow;
+      await _context.SaveChangesAsync();
+
 
       return true;
     }
@@ -271,5 +232,6 @@ namespace TawtheefTest.Services
 
       return maxOrder + 1;
     }
+
   }
 }

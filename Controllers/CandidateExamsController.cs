@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.ViewModels;
 using TawtheefTest.DTOs;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 using AutoMapper;
 using System;
 using System.Collections.Generic;

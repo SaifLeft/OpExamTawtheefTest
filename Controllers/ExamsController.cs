@@ -7,7 +7,7 @@ using TawtheefTest.ViewModels;
 using TawtheefTest.DTOs;
 using System.Threading.Tasks;
 using System.Linq;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 using TawtheefTest.DTOs.ExamModels;
 
 namespace TawtheefTest.Controllers
@@ -15,12 +15,10 @@ namespace TawtheefTest.Controllers
   public class ExamsController : Controller
   {
     private readonly ApplicationDbContext _context;
-    private readonly IOpExamsService _opExamsService;
 
-    public ExamsController(ApplicationDbContext context, IOpExamsService opExamsService)
+    public ExamsController(ApplicationDbContext context)
     {
       _context = context;
-      _opExamsService = opExamsService;
     }
 
     // GET: Exams
@@ -336,16 +334,9 @@ namespace TawtheefTest.Controllers
       _context.QuestionSets.Add(questionSet);
       await _context.SaveChangesAsync();
 
-      // Create content source
-      var contentSource = new ContentSource
-      {
-        ContentSourceType = ContentSourceType.Topic.ToString(),
-        Content = topic,
-        QuestionSetId = questionSet.Id,
-        CreatedAt = DateTime.UtcNow
-      };
-
-      _context.ContentSources.Add(contentSource);
+      // تعيين مصدر المحتوى مباشرة
+      questionSet.ContentSourceType = ContentSourceType.Topic.ToString();
+      questionSet.Content = topic;
       await _context.SaveChangesAsync();
 
       // Link question set to exam
@@ -359,8 +350,6 @@ namespace TawtheefTest.Controllers
       _context.ExamQuestionSets.Add(examQuestionSet);
       await _context.SaveChangesAsync();
 
-      // Generate questions
-      await _opExamsService.GenerateQuestionsAsync(questionSet.Id);
 
       TempData["SuccessMessage"] = "تم بدء عملية توليد الأسئلة";
       return RedirectToAction(nameof(Details), new { id });

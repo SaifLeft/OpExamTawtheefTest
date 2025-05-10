@@ -4,224 +4,159 @@
   ViewData["Title"] = "إنشاء مجموعة أسئلة جديدة";
 }
 
-@await Html.PartialAsync("_QuestionSetStyles")
+<div class="container">
+  <h1 class="mb-4">@ViewData["Title"]</h1>
 
-<div class="container-xxl flex-grow-1 container-p-y">
-  <h4 class="fw-bold py-3 mb-4">
-    <span class="text-muted fw-light">إدارة الأسئلة /</span> إنشاء مجموعة أسئلة جديدة
-  </h4>
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form asp-action="Create" enctype="multipart/form-data" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-  <div class="row">
-    <div class="col-12">
-      <div class="card question-set-card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">بيانات مجموعة الأسئلة</h5>
-          <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
-            <i class="bx bx-arrow-back me-1"></i> العودة للقائمة
-          </a>
+        <div class="row mb-4">
+          <div class="col-12">
+            <h4>معلومات أساسية</h4>
+            <hr />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" placeholder="أدخل اسم مجموعة الأسئلة" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <input asp-for="Description" class="form-control" placeholder="أدخل وصفًا مختصرًا (اختياري)" />
+          </div>
+          <div class="col-md-4 mb-3">
+            <label asp-for="QuestionType" class="form-label"></label>
+            <select asp-for="QuestionType" class="form-select" id="questionType">
+              @foreach (var item in ViewBag.QuestionTypes)
+              {
+                <option value="@item.Value">@item.Text</option>
+              }
+            </select>
+            <span asp-validation-for="QuestionType" class="text-danger"></span>
+            <div class="form-text">اختر نوع الأسئلة التي تريد إنشاءها</div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label asp-for="Language" class="form-label"></label>
+            <select asp-for="Language" class="form-select">
+              <option value="Arabic">العربية</option>
+              <option value="English">الإنجليزية</option>
+            </select>
+            <span asp-validation-for="Language" class="text-danger"></span>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label asp-for="Difficulty" class="form-label"></label>
+            <select asp-for="Difficulty" class="form-select">
+              @foreach (var item in ViewBag.DifficultyLevels)
+              {
+                <option value="@item.Value">@item.Text</option>
+              }
+            </select>
+            <span asp-validation-for="Difficulty" class="text-danger"></span>
+          </div>
         </div>
-        <div class="card-body">
-          <form asp-action="Create" enctype="multipart/form-data" id="createQuestionSetForm">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
 
-            <input type="hidden" asp-for="ExamId" />
+        <div class="row mb-4">
+          <div class="col-12">
+            <h4>إعدادات الأسئلة</h4>
+            <hr />
+          </div>
+          <div class="col-md-4 mb-3">
+            <label asp-for="QuestionCount" class="form-label"></label>
+            <input asp-for="QuestionCount" class="form-control" type="number" min="1" max="100" />
+            <span asp-validation-for="QuestionCount" class="text-danger"></span>
+            <div class="form-text">عدد الأسئلة المطلوب توليدها (1-100)</div>
+          </div>
 
-            <div class="row">
-              <div class="col-md-8">
-                <div class="mb-3">
-                  <label asp-for="Name" class="form-label">
-                    <i class="bx bx-tag-alt me-1 text-primary"></i>
-                    اسم المجموعة
-                  </label>
-                  <input asp-for="Name" class="form-control" placeholder="أدخل اسماً مميزاً لمجموعة الأسئلة" />
-                  <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label asp-for="Language" class="form-label">
-                    <i class="bx bx-globe me-1 text-primary"></i>
-                    اللغة
-                  </label>
-                  <select asp-for="Language" class="form-select">
-                    <option value="Arabic">العربية</option>
-                    <option value="English">الإنجليزية</option>
-                  </select>
-                  <span asp-validation-for="Language" class="text-danger"></span>
-                </div>
-              </div>
-            </div>
+          <div class="col-md-4 mb-3 options-count">
+            <label asp-for="OptionsCount" class="form-label"></label>
+            <input asp-for="OptionsCount" class="form-control" type="number" min="2" max="10" value="4" />
+            <span asp-validation-for="OptionsCount" class="text-danger"></span>
+            <div class="form-text">عدد الخيارات لكل سؤال (2-10)</div>
+          </div>
 
-            <div class="mb-3">
-              <label asp-for="Description" class="form-label">
-                <i class="bx bx-info-circle me-1 text-primary"></i>
-                وصف المجموعة
-              </label>
-              <textarea asp-for="Description" class="form-control" rows="3"
-                placeholder="أدخل وصفاً توضيحياً لمجموعة الأسئلة"></textarea>
-              <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
+          <div class="col-md-4 mb-3 correct-options-count" style="display:none;">
+            <label asp-for="NumberOfCorrectOptions" class="form-label"></label>
+            <input asp-for="NumberOfCorrectOptions" class="form-control" type="number" min="1" max="5" value="2" />
+            <span asp-validation-for="NumberOfCorrectOptions" class="text-danger"></span>
+            <div class="form-text">عدد الخيارات الصحيحة لكل سؤال (1-5)</div>
+          </div>
 
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label asp-for="QuestionType" class="form-label">
-                    <i class="bx bx-question-mark me-1 text-primary"></i>
-                    نوع الأسئلة
-                  </label>
-                  <select asp-for="QuestionType" class="form-select" id="questionType"
-                    asp-items="ViewBag.QuestionTypes">
-                    <option value="">-- اختر نوع الأسئلة --</option>
-                  </select>
-                  <span asp-validation-for="QuestionType" class="text-danger"></span>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label asp-for="Difficulty" class="form-label">
-                    <i class="bx bx-slider me-1 text-primary"></i>
-                    مستوى الصعوبة
-                  </label>
-                  <select asp-for="Difficulty" class="form-select" asp-items="ViewBag.DifficultyLevels">
-                    <option value="">-- اختر مستوى الصعوبة --</option>
-                  </select>
-                  <span asp-validation-for="Difficulty" class="text-danger"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label asp-for="QuestionCount" class="form-label">
-                    <i class="bx bx-list-ol me-1 text-primary"></i>
-                    عدد الأسئلة
-                  </label>
-                  <div class="input-group">
-                    <input asp-for="QuestionCount" class="form-control" type="number" min="1" max="100" value="10" />
-                    <span class="input-group-text">سؤال</span>
-                  </div>
-                  <span asp-validation-for="QuestionCount" class="text-danger"></span>
-                  <small class="text-muted">يمكنك تحديد من 1 إلى 100 سؤال</small>
-                </div>
-              </div>
-              <div class="col-md-4" id="optionsCountGroup">
-                <div class="mb-3">
-                  <label asp-for="OptionsCount" class="form-label">
-                    <i class="bx bx-list-check me-1 text-primary"></i>
-                    عدد الخيارات
-                  </label>
-                  <div class="input-group">
-                    <input asp-for="OptionsCount" class="form-control" type="number" min="2" max="6" value="4" />
-                    <span class="input-group-text">خيار</span>
-                  </div>
-                  <span asp-validation-for="OptionsCount" class="text-danger"></span>
-                </div>
-              </div>
-              <div class="col-md-4" id="correctOptionsGroup" style="display: none;">
-                <div class="mb-3">
-                  <label asp-for="NumberOfCorrectOptions" class="form-label">
-                    <i class="bx bx-check-circle me-1 text-primary"></i>
-                    عدد الإجابات الصحيحة
-                  </label>
-                  <div class="input-group">
-                    <input asp-for="NumberOfCorrectOptions" class="form-control" type="number" min="1" max="4"
-                      value="2" />
-                    <span class="input-group-text">إجابة</span>
-                  </div>
-                  <span asp-validation-for="NumberOfCorrectOptions" class="text-danger"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h6 class="form-section-title"><i class="bx bx-link me-1"></i> مصدر المحتوى</h6>
-
-              <div class="mb-3">
-                <label asp-for="ContentSourceType" class="form-label">
-                  نوع مصدر المحتوى
-                </label>
-                <select asp-for="ContentSourceType" class="form-select" asp-items="ViewBag.ContentSourceTypes"
-                  id="contentSourceType">
-                  <option value="">-- اختر نوع مصدر المحتوى --</option>
-                </select>
-                <span asp-validation-for="ContentSourceType" class="text-danger"></span>
-              </div>
-
-              <div id="textContentGroup" class="content-source-group mb-3 d-none">
-                <label asp-for="TextContent" class="form-label">النص</label>
-                <textarea asp-for="TextContent" class="form-control" rows="6"
-                  placeholder="أدخل النص الذي تريد توليد الأسئلة منه..."></textarea>
-                <span asp-validation-for="TextContent" class="text-danger"></span>
-                <small class="text-muted d-block mt-1">
-                  <i class="bx bx-info-circle me-1"></i>
-                  كلما كان النص أكثر تفصيلاً، كانت الأسئلة المولدة أكثر دقة وجودة
-                </small>
-              </div>
-
-              <div id="topicGroup" class="content-source-group mb-3 d-none">
-                <label asp-for="Topic" class="form-label">الموضوع</label>
-                <input type="text" asp-for="Topic" class="form-control"
-                  placeholder="أدخل الموضوع الرئيسي الذي تريد توليد أسئلة عنه..." />
-                <span asp-validation-for="Topic" class="text-danger"></span>
-                <small class="text-muted d-block mt-1">
-                  <i class="bx bx-info-circle me-1"></i>
-                  حدد موضوعاً محدداً بدقة للحصول على أفضل النتائج
-                </small>
-              </div>
-
-              <div id="linkGroup" class="content-source-group mb-3 d-none">
-                <label asp-for="LinkUrl" class="form-label">الرابط</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bx bx-link"></i></span>
-                  <input type="url" asp-for="LinkUrl" class="form-control" placeholder="https://example.com/page" />
-                </div>
-                <span asp-validation-for="LinkUrl" class="text-danger"></span>
-                <small class="text-muted d-block mt-1">
-                  <i class="bx bx-info-circle me-1"></i>
-                  يجب أن يكون الرابط متاحاً للوصول العام
-                </small>
-              </div>
-
-              <div id="youtubeGroup" class="content-source-group mb-3 d-none">
-                <label asp-for="YoutubeUrl" class="form-label">رابط فيديو يوتيوب</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="bx bxl-youtube text-danger"></i></span>
-                  <input type="url" asp-for="YoutubeUrl" class="form-control"
-                    placeholder="https://www.youtube.com/watch?v=..." />
-                </div>
-                <span asp-validation-for="YoutubeUrl" class="text-danger"></span>
-                <small class="text-muted d-block mt-1">
-                  <i class="bx bx-info-circle me-1"></i>
-                  سيتم استخدام محتوى الفيديو لتوليد الأسئلة
-                </small>
-              </div>
-
-              <div id="fileUploadGroup" class="content-source-group mb-3 d-none">
-                <label asp-for="File" class="form-label">الملف</label>
-                <input asp-for="File" class="form-control" type="file" />
-                <span asp-validation-for="File" class="text-danger"></span>
-                <div class="progress mt-2" style="display: none;" id="uploadProgressBar">
-                  <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                </div>
-                <small class="text-muted d-block mt-1">
-                  <i class="bx bx-info-circle me-1"></i>
-                  الملفات المدعومة: PDF، Word، Excel، PowerPoint، صور (JPG، PNG)، ملفات صوتية (MP3)، فيديو (MP4)
-                </small>
-              </div>
-            </div>
-
-            <div class="mt-4 d-flex justify-content-between">
-              <button type="submit" class="btn btn-primary px-4">
-                <i class="bx bx-plus me-1"></i> إنشاء وتوليد الأسئلة
-              </button>
-              <a href="@Url.Action("Index", "QuestionSets")" class="btn btn-outline-secondary">
-                <i class="bx bx-arrow-back me-1"></i> إلغاء
-              </a>
-            </div>
-          </form>
+          <div class="col-md-4 mb-3 rows-count" style="display:none;">
+            <label asp-for="NumberOfRows" class="form-label"></label>
+            <input asp-for="NumberOfRows" class="form-control" type="number" min="2" max="10" value="4" />
+            <span asp-validation-for="NumberOfRows" class="text-danger"></span>
+            <div class="form-text">عدد العناصر في أسئلة المطابقة أو الترتيب (2-10)</div>
+          </div>
         </div>
-      </div>
+
+        <div class="row mb-4">
+          <div class="col-12">
+            <h4>مصدر المحتوى</h4>
+            <hr />
+          </div>
+          <div class="col-md-12 mb-3">
+            <label asp-for="ContentSourceType" class="form-label"></label>
+            <select asp-for="ContentSourceType" class="form-select" id="contentSourceType">
+              @foreach (var item in ViewBag.ContentSourceTypes)
+              {
+                <option value="@item.Value">@item.Text</option>
+              }
+            </select>
+            <span asp-validation-for="ContentSourceType" class="text-danger"></span>
+            <div class="form-text">اختر مصدر المحتوى لتوليد الأسئلة منه</div>
+          </div>
+
+          <div class="col-md-12 mb-3 content-section" id="topic-content" style="display:none;">
+            <label asp-for="Topic" class="form-label"></label>
+            <input asp-for="Topic" class="form-control" placeholder="أدخل الموضوع الرئيسي لتوليد الأسئلة حوله" />
+            <span asp-validation-for="Topic" class="text-danger"></span>
+            <div class="form-text">حدد موضوعًا محددًا لتوليد أسئلة حوله (مثال: تاريخ دولة الإمارات، علم الفيزياء، إلخ)
+            </div>
+          </div>
+
+          <div class="col-md-12 mb-3 content-section" id="text-content" style="display:none;">
+            <label asp-for="TextContent" class="form-label"></label>
+            <textarea asp-for="TextContent" class="form-control" rows="6"
+              placeholder="أدخل النص الذي تريد توليد الأسئلة منه"></textarea>
+            <span asp-validation-for="TextContent" class="text-danger"></span>
+            <div class="form-text">أدخل نصًا مفصلاً لتوليد الأسئلة منه (500-5000 حرف للحصول على أفضل النتائج)</div>
+          </div>
+
+          <div class="col-md-12 mb-3 content-section" id="link-content" style="display:none;">
+            <label asp-for="LinkUrl" class="form-label"></label>
+            <input asp-for="LinkUrl" class="form-control" placeholder="https://example.com/article" />
+            <span asp-validation-for="LinkUrl" class="text-danger"></span>
+            <div class="form-text">أدخل رابط صفحة ويب لتوليد الأسئلة من محتواها</div>
+          </div>
+
+          <div class="col-md-12 mb-3 content-section" id="youtube-content" style="display:none;">
+            <label asp-for="YoutubeUrl" class="form-label"></label>
+            <input asp-for="YoutubeUrl" class="form-control" placeholder="https://www.youtube.com/watch?v=xxxxx" />
+            <span asp-validation-for="YoutubeUrl" class="text-danger"></span>
+            <div class="form-text">أدخل رابط فيديو يوتيوب لتوليد الأسئلة من محتواه</div>
+          </div>
+
+          <div class="col-md-12 mb-3 content-section" id="file-content" style="display:none;">
+            <label asp-for="File" class="form-label"></label>
+            <input asp-for="File" class="form-control" type="file" />
+            <span asp-validation-for="File" class="text-danger"></span>
+            <div class="form-text content-file-help">اختر ملفًا لتوليد الأسئلة من محتواه</div>
+          </div>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle me-1"></i>إنشاء مجموعة الأسئلة
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+              <i class="bi bi-x-circle me-1"></i>إلغاء
+            </a>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -230,115 +165,86 @@
   @{
     await Html.RenderPartialAsync("_ValidationScriptsPartial");
   }
+
   <script>
     $(document).ready(function () {
-      // تبديل حقول مصدر المحتوى
-      function toggleContentSources() {
-        const sourceType = $('#contentSourceType').val();
+      // إظهار/إخفاء حقول مصدر المحتوى
+      function updateContentSections() {
+        $('.content-section').hide();
+        var selected = $('#contentSourceType').val();
 
-        $('.content-source-group').addClass('d-none');
-
-        switch (sourceType) {
-          case 'text':
-            $('#textContentGroup').removeClass('d-none');
-            break;
+        switch (selected) {
           case 'topic':
-            $('#topicGroup').removeClass('d-none');
+            $('#topic-content').show();
+            break;
+          case 'text':
+            $('#text-content').show();
             break;
           case 'link':
-            $('#linkGroup').removeClass('d-none');
+            $('#link-content').show();
             break;
           case 'youtube':
-            $('#youtubeGroup').removeClass('d-none');
+            $('#youtube-content').show();
             break;
+          default:
+            // للملفات (وثيقة، صورة، صوت، فيديو)
+            $('#file-content').show();
+            updateFileHelpText(selected);
+            break;
+        }
+      }
+
+      // تحديث نص المساعدة لمدخل الملف
+      function updateFileHelpText(type) {
+        var helpText = '';
+        switch (type) {
           case 'document':
+            helpText = 'اختر ملف PDF أو Word لتوليد الأسئلة من محتواه (الحد الأقصى 10 ميجابايت)';
+            break;
           case 'image':
+            helpText = 'اختر صورة لتوليد الأسئلة منها (JPG, PNG, GIF - الحد الأقصى 5 ميجابايت)';
+            break;
           case 'audio':
+            helpText = 'اختر ملف صوتي لتوليد الأسئلة من محتواه (MP3, WAV - الحد الأقصى 10 ميجابايت)';
+            break;
           case 'video':
-            $('#fileUploadGroup').removeClass('d-none');
+            helpText = 'اختر ملف فيديو لتوليد الأسئلة من محتواه (MP4, AVI - الحد الأقصى 25 ميجابايت)';
+            break;
+        }
+        $('.content-file-help').text(helpText);
+      }
+
+      // إظهار/إخفاء حقول خيارات نوع السؤال
+      function updateQuestionTypeFields() {
+        var selected = $('#questionType').val();
+
+        // إخفاء جميع حقول الخيارات الخاصة
+        $('.options-count, .correct-options-count, .rows-count').hide();
+
+        switch (selected) {
+          case 'MCQ':
+            $('.options-count').show();
+            break;
+          case 'multiSelect':
+            $('.options-count').show();
+            $('.correct-options-count').show();
+            break;
+          case 'matching':
+          case 'ordering':
+            $('.rows-count').show();
             break;
         }
       }
 
-      // تبديل حقول نوع السؤال
-      function toggleQuestionTypeOptions() {
-        const questionType = $('#questionType').val();
+      // تحديث عند تغيير نوع مصدر المحتوى
+      $('#contentSourceType').change(updateContentSections);
 
-        // إظهار/إخفاء عدد الخيارات
-        if (questionType === 'MCQ' || questionType === 'TF') {
-          $('#optionsCountGroup').show();
-          $('#correctOptionsGroup').hide();
-        } else if (questionType === 'multiSelect') {
-          $('#optionsCountGroup').show();
-          $('#correctOptionsGroup').show();
-        } else {
-          $('#optionsCountGroup').hide();
-          $('#correctOptionsGroup').hide();
-        }
+      // تحديث عند تغيير نوع السؤال
+      $('#questionType').change(updateQuestionTypeFields);
 
-        // ضبط قيم افتراضية
-        if (questionType === 'TF') {
-          $('#OptionsCount').val(2);
-        } else if (questionType === 'MCQ') {
-          $('#OptionsCount').val(4);
-        }
-      }
-
-      // تحديث قيمة عدد الإجابات الصحيحة
-      function updateCorrectOptionsMax() {
-        const optionsCount = parseInt($('#OptionsCount').val());
-        const correctOptionsInput = $('#NumberOfCorrectOptions');
-
-        const currentValue = parseInt(correctOptionsInput.val());
-        correctOptionsInput.attr('max', optionsCount);
-
-        if (currentValue > optionsCount) {
-          correctOptionsInput.val(optionsCount);
-        }
-      }
-
-      // عند تغيير نوع مصدر المحتوى
-      $('#contentSourceType').change(toggleContentSources);
-
-      // عند تغيير نوع السؤال
-      $('#questionType').change(toggleQuestionTypeOptions);
-
-      // عند تغيير عدد الخيارات
-      $('#OptionsCount').change(updateCorrectOptionsMax);
-
-      // تشغيل الدوال عند تحميل الصفحة
-      toggleContentSources();
-      toggleQuestionTypeOptions();
-
-      // أنيميشن عند الإرسال
-      $('#createQuestionSetForm').submit(function () {
-        const sourceType = $('#contentSourceType').val();
-
-        // التحقق من إدخال جميع الحقول المطلوبة
-        if ($(this)[0].checkValidity()) {
-          const btn = $(this).find('button[type="submit"]');
-          btn.prop('disabled', true);
-          btn.html('<i class="bx bx-loader-circle bx-spin me-1"></i> جاري إنشاء مجموعة الأسئلة...');
-
-          if (sourceType === 'document' || sourceType === 'image' || sourceType === 'audio' || sourceType === 'video') {
-            $('#uploadProgressBar').show();
-
-            // محاكاة تقدم رفع الملف
-            let progress = 0;
-            const interval = setInterval(function () {
-              progress += 5;
-              if (progress <= 90) {
-                $('#uploadProgressBar .progress-bar').css('width', progress + '%');
-              } else {
-                clearInterval(interval);
-              }
-            }, 300);
-          }
-        }
-      });
-
-      // تلميحات المساعدة
-      $('[data-toggle="tooltip"]').tooltip();
+      // تنفيذ عند تحميل الصفحة
+      updateContentSections();
+      updateQuestionTypeFields();
     });
   </script>
 }

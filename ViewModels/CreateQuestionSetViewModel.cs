@@ -9,7 +9,7 @@ namespace TawtheefTest.ViewModels
     public string Name { get; set; }
 
     [Display(Name = "وصف المجموعة")]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     [Required(ErrorMessage = "نوع الأسئلة مطلوب")]
     [Display(Name = "نوع الأسئلة")]
@@ -60,7 +60,5 @@ namespace TawtheefTest.ViewModels
 
     [Display(Name = "الملف")]
     public IFormFile? File { get; set; }
-
-    public int ExamId { get; set; }
   }
 }

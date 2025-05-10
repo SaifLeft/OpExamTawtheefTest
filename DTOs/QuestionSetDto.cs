@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using TawtheefTest.Data.Structure;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 using TawtheefTest.ViewModels;
 
 namespace TawtheefTest.DTOs
@@ -24,8 +24,6 @@ namespace TawtheefTest.DTOs
     public DateTime? ProcessedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public int QuestionsGenerated { get; set; }
-    public int ExamId { get; set; }
-   
     public int UsageCount { get; set; }
     public List<string> UsedInExams { get; set; }
     [JsonIgnore]
@@ -57,7 +55,13 @@ namespace TawtheefTest.DTOs
       };
     }
 
-    public IEnumerable<ContentSourceViewModel> ContentSources { get; set; }
+    // خصائص مصدر المحتوى مباشرة
+    public string ContentSourceType { get; set; }
+    public string Content { get; set; }
+    public string Url { get; set; }
+    public string FileName { get; set; }
+    public string FileUploadedCode { get; set; }
+
     public IEnumerable<QuestionDto> Questions { get; set; }
   }
 

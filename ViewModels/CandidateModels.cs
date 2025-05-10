@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using TawtheefTest.DTOs.ExamModels;
 using System;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 
 namespace TawtheefTest.ViewModels
 {

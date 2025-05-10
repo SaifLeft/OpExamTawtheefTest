@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 
 namespace TawtheefTest.Data.Structure
 {
@@ -59,68 +59,8 @@ namespace TawtheefTest.Data.Structure
     public virtual ICollection<CandidateExam> CandidateExams { get; set; } = new List<CandidateExam>();
   }
 
-  public class ContentSource
-  {
-    [Key]
-    public int Id { get; set; }
 
-    [Required]
-    public string ContentSourceType { get; set; }
 
-    [StringLength(10000)]
-    public string? Content { get; set; }
-
-    [StringLength(1000)]
-    public string? Url { get; set; }
-
-    public int? UploadedFileId { get; set; }
-
-    [ForeignKey("UploadedFileId")]
-    public virtual UploadedFile? UploadedFile { get; set; }
-
-    [Required]
-    public int QuestionSetId { get; set; }
-
-    [ForeignKey("QuestionSetId")]
-    public virtual QuestionSet QuestionSet { get; set; } = null!;
-    [Required]
-    public ContentSourceStatus Status { get; set; } = ContentSourceStatus.Pending;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    [StringLength(1000)]
-    public string? ErrorMessage { get; set; }
-    public DateTime? ProcessedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-  }
-
-  public class UploadedFile
-  {
-    [Key]
-    public int Id { get; set; }
-
-    [Required]
-    [StringLength(1000)]
-    public string FileName { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(1000)]
-    public string FileId { get; set; } = string.Empty;
-
-    [Required]
-    public string FileType { get; set; }
-
-    [StringLength(100)]
-    public string ContentType { get; set; } = string.Empty;
-
-    public long FileSize { get; set; }
-
-    [StringLength(1000)]
-    public string? FilePath { get; set; }
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    // Navigation properties
-    public virtual ICollection<ContentSource> ContentSources { get; set; } = new List<ContentSource>();
-  }
 
   public class QuestionSet
   {
@@ -136,15 +76,15 @@ namespace TawtheefTest.Data.Structure
 
     // Question generation settings
     [Required]
-    public string QuestionType { get; set; }
+    public string QuestionType { get; set; } // 'MCQ' | 'TF' | 'open' | 'fillInTheBlank' | 'ordering' | 'matching' | 'multiSelect' | 'shortAnswer'
 
     [Required]
     [StringLength(50)]
-    public string Language { get; set; } = "English";
+    public string Language { get; set; }
 
     [Required]
     [StringLength(20)]
-    public string Difficulty { get; set; } = "easy";
+    public string Difficulty { get; set; }
 
     [Required]
     [Range(1, 100)]
@@ -157,27 +97,28 @@ namespace TawtheefTest.Data.Structure
     public int? NumberOfRows { get; set; }
 
     [Range(1, 10)]
-    public int? NumberOfCorrectOptions { get; set; }
+    public string? NumberOfCorrectOptions { get; set; }
+    // source Content
+    public string ContentSourceType { get; set; } = string.Empty; // Topic/Text/Link/Youtube/Document/Image/Audio/Video
+    public string? Content { get; set; } // For Topic/Text
+    public string? FileName { get; set; } // For Document/Image/Audio/Video
+    public string? FileUploadedCode { get; set; } // For Document/Image/Audio/Video
+    [StringLength(1000)]
+    public string? Url { get; set; } // For Link/Youtube
+    [StringLength(10000)]
 
-    // Processing status
     [Required]
     public QuestionSetStatus Status { get; set; } = QuestionSetStatus.Pending;
-
-    // Error details if processing failed
     [StringLength(1000)]
     public string? ErrorMessage { get; set; }
-
-    // Navigation properties
-    public virtual ICollection<ContentSource> ContentSources { get; set; } = new List<ContentSource>();
-    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
-    public virtual ICollection<ExamQuestionSet> ExamQuestionSets { get; set; } = new List<ExamQuestionSet>();
-
-    // Timestamps
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ProcessedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-  }
 
+    // Navigation properties
+    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
+    public virtual ICollection<ExamQuestionSet> ExamQuestionSets { get; set; } = new List<ExamQuestionSet>();
+  }
   public class Exam
   {
     [Key]
@@ -385,7 +326,6 @@ namespace TawtheefTest.Data.Structure
     [StringLength(1000)]
     public string Text { get; set; } = string.Empty;
 
-    [Required]
     public int CorrectOrder { get; set; }
 
     public int DisplayOrder { get; set; }

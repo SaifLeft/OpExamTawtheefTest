@@ -1,572 +1,532 @@
+@using TawtheefTest.Enums
 @model TawtheefTest.DTOs.QuestionSetDto
-@using System.IO
-@using TawtheefTest.Data.Structure
-@using System.Linq
-@using TawtheefTest.Enum
+
 @{
-  ViewData["title"] = "تفاصيل مجموعة الأسئلة";
+    ViewData["Title"] = "تفاصيل مجموعة الأسئلة";
 }
 
-@await Html.PartialAsync("_QuestionSetStyles")
-
-<div class="container-xxl flex-grow-1 container-p-y">
-  <h4 class="fw-bold py-3 mb-4">
-    <span class="text-muted fw-light">إدارة الأسئلة /</span> تفاصيل مجموعة الأسئلة
-  </h4>
-
-  <div class="row">
-    <div class="col-12">
-      <div class="card question-set-card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <div>
-            <h5 class="mb-0">@Model.Name</h5>
-            <span class="badge rounded-pill status-badge bg-@GetStatusBadge(Model.Status) mt-1">@Model.StatusDescription</span>
-          </div>
-          <div>
-            @if (Model.Status != TawtheefTest.Enum.QuestionSetStatus.Processing)
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>تفاصيل مجموعة الأسئلة</h1>
+        <div>
+            @if (Model.Status != QuestionSetStatus.Processing)
             {
-              <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-outline-primary action-button">
-                <i class="bx bx-edit-alt me-1"></i> تعديل
-              </a>
-            }
-            @if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Failed)
-            {
-              <form asp-action="Retry" method="post" class="d-inline">
-                <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" class="btn btn-warning action-button">
-                  <i class="bx bx-refresh me-1"></i> إعادة المحاولة
-                </button>
-              </form>
-            }
-            <a href="@Url.Action("Index")" class="btn btn-outline-secondary action-button">
-              <i class="bx bx-arrow-back me-1"></i> العودة
-            </a>
-          </div>
-        </div>
-        <div class="card-body">
-          @if (TempData["SuccessMessage"] != null)
-          {
-            <div class="alert alert-success alert-dismissible mb-3" role="alert">
-              <i class="bx bx-check-circle me-1"></i>
-              @TempData["SuccessMessage"]
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          }
-
-          @if (TempData["ErrorMessage"] != null)
-          {
-            <div class="alert alert-danger alert-dismissible mb-3" role="alert">
-              <i class="bx bx-error-circle me-1"></i>
-              @TempData["ErrorMessage"]
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          }
-
-          <div class="row mb-4">
-            <div class="col-md-6">
-              <div class="details-section">
-                <h6 class="details-title"><i class="bx bx-info-circle me-1"></i> معلومات أساسية</h6>
-                <dl class="row mb-0">
-                  <dt class="col-sm-4 text-muted">الوصف:</dt>
-                  <dd class="col-sm-8">
-                    @if (string.IsNullOrEmpty(Model.Description))
-                    {
-                      <span class="text-muted"><em>لا يوجد وصف</em></span>
-                    }
-                    else
-                    {
-                      <div class="description-container">@Model.Description</div>
-                    }
-                  </dd>
-
-                  <dt class="col-sm-4 text-muted">الاختبار:</dt>
-                  <dd class="col-sm-8">
-                    <a href="@Url.Action("Details", "Exams", new { id = Model.ExamId })" class="btn btn-sm btn-outline-primary">
-                      <i class="bx bx-link-external me-1"></i> عرض الاختبار
-                    </a>
-                  </dd>
-
-                  <dt class="col-sm-4 text-muted">تاريخ الإنشاء:</dt>
-                  <dd class="col-sm-8">
-                    <i class="bx bx-calendar me-1"></i> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")
-                  </dd>
-
-                  @if (Model.ProcessedAt.HasValue)
-                  {
-                    <dt class="col-sm-4 text-muted">تاريخ الاكتمال:</dt>
-                    <dd class="col-sm-8">
-                      <i class="bx bx-calendar-check me-1"></i> @Model.ProcessedAt.Value.ToString("yyyy/MM/dd HH:mm")
-                    </dd>
-                    <dt class="col-sm-4 text-muted">الوقت المستغرق:</dt>
-                    <dd class="col-sm-8">
-                      <i class="bx bx-time me-1"></i> @FormatTimeSpan(Model.ProcessedAt.Value - Model.CreatedAt)
-                    </dd>
-                  }
-                </dl>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="details-section">
-                <h6 class="details-title"><i class="bx bx-cog me-1"></i> إعدادات الأسئلة</h6>
-                <dl class="row mb-0">
-                  <dt class="col-sm-5 text-muted">نوع الأسئلة:</dt>
-                  <dd class="col-sm-7">
-                    <span class="badge bg-label-primary">@GetQuestionTypeDisplay(Model.QuestionType)</span>
-                  </dd>
-
-                  <dt class="col-sm-5 text-muted">اللغة:</dt>
-                  <dd class="col-sm-7">
-                    <span class="badge bg-label-info">@GetLanguageDisplay(Model.Language)</span>
-                  </dd>
-
-                  <dt class="col-sm-5 text-muted">مستوى الصعوبة:</dt>
-                  <dd class="col-sm-7">
-                    <span class="badge bg-label-@GetDifficultyColor(Model.Difficulty)">@GetDifficultyDisplay(Model.Difficulty)</span>
-                  </dd>
-
-                  <dt class="col-sm-5 text-muted">عدد الأسئلة:</dt>
-                  <dd class="col-sm-7">
-                    @if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
-                    {
-                      <div class="progress mb-1" style="height: 10px;">
-                        <div class="progress-bar bg-success" role="progressbar"
-                          style="width: @(Model.QuestionsGenerated * 100 / Model.QuestionCount)%;"
-                          aria-valuenow="@Model.QuestionsGenerated" aria-valuemin="0" aria-valuemax="@Model.QuestionCount">
-                        </div>
-                      </div>
-                      <small>@Model.QuestionsGenerated / @Model.QuestionCount (@(Model.QuestionsGenerated * 100 / Model.QuestionCount)%)</small>
-                    }
-                    else
-                    {
-                      <span>@Model.QuestionCount</span>
-                    }
-                  </dd>
-
-                  <dt class="col-sm-5 text-muted">عدد الخيارات:</dt>
-                  <dd class="col-sm-7">@Model.OptionsCount</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          <div class="details-section">
-            <h6 class="details-title"><i class="bx bx-link me-1"></i> مصدر المحتوى</h6>
-            <div class="row">
-              @if (Model.ContentSources != null && Model.ContentSources.Any())
-              {
-                var contentSource = Model.ContentSources.First();
-                <div class="col-md-12">
-                  <div class="badge bg-label-dark mb-2">@GetContentTypeDisplay(contentSource.ContentSourceType)</div>
-
-                  @if (contentSource.ContentSourceType?.ToLower() == "document" && contentSource.UploadedFile != null)
-                  {
-                    <div class="p-3 border rounded bg-light d-flex align-items-center">
-                      <i class="bx bx-file me-2 text-primary fs-4"></i>
-                      <div class="flex-grow-1">
-                        <strong>@contentSource.UploadedFile.FileName</strong>
-                        <span class="text-muted d-block">(@GetFileSizeDisplay(contentSource.UploadedFile.FileSize))</span>
-                      </div>
-                      <a href="@Url.Action("DownloadDocument", new { id = Model.Id })" class="btn btn-primary btn-sm" target="_blank">
-                        <i class="bx bx-download me-1"></i> تنزيل المستند
-                      </a>
-                    </div>
-                  }
-
-                  @if (!string.IsNullOrEmpty(contentSource.Content))
-                  {
-                    <div class="p-3 border rounded bg-light">
-                      @contentSource.Content
-                    </div>
-                  }
-
-                  @if (!string.IsNullOrEmpty(contentSource.Url))
-                  {
-                    <div class="p-3 border rounded bg-light d-flex align-items-center">
-                      <i class="bx bx-link-external me-2 text-primary fs-4"></i>
-                      <a href="@contentSource.Url" target="_blank" class="text-primary">@contentSource.Url</a>
-                    </div>
-                  }
-
-                  @* @if (contentSource.UploadedFile != null)
-                  {
-                    <div class="p-3 border rounded bg-light d-flex align-items-center">
-                      <i class="bx @GetFileIcon(contentSource.UploadedFile.FileName) me-2 text-primary fs-4"></i>
-                      <div>
-                        <strong>@contentSource.UploadedFile.FileName</strong>
-                        <span class="text-muted d-block">(@GetFileSizeDisplay(contentSource.UploadedFile.FileSize))</span>
-                      </div>
-                    </div>
-                  } *@
-                </div>
-              }
-              else
-              {
-                <div class="col-md-12">
-                  <div class="alert alert-warning">
-                    <i class="bx bx-error-circle me-1"></i> لا يوجد مصدر محتوى لهذه المجموعة
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-
-          <div class="questions-section">
-            <h6 class="details-title">
-              <i class="bx bx-question-mark me-1"></i> الأسئلة المولدة
-              @if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
-              {
-                <div class="float-end">
-                  <a href="@Url.Action("AddToExam", new { id = Model.Id })" class="btn btn-primary btn-sm">
-                    <i class="bx bx-plus me-1"></i> إضافة الأسئلة للاختبار
-                  </a>
-                </div>
-              }
-            </h6>
-
-            @if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Pending || Model.Status == TawtheefTest.Enum.QuestionSetStatus.Processing)
-            {
-              <div class="alert alert-info text-center processing-container">
-                <i class="bx bx-loader-circle bx-spin processing-icon"></i>
-                <p class="fs-5">الأسئلة قيد المعالجة. يرجى الانتظار...</p>
-                <div class="mt-3">
-                  <button type="button" class="btn btn-primary" onclick="location.reload();">
-                    <i class="bx bx-refresh me-1"></i> تحديث الصفحة
-                  </button>
-                </div>
-              </div>
-            }
-            else if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Failed)
-            {
-              <div class="alert alert-danger text-center processing-container">
-                <i class="bx bx-error-circle processing-icon"></i>
-                <p class="fs-5">حدث خطأ أثناء توليد الأسئلة</p>
-                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                {
-                  <div class="mt-2 mb-3 border rounded p-3 bg-light text-start">
-                    @Model.ErrorMessage
-                  </div>
-                }
-                <div class="mt-3">
-                  <form asp-action="Retry" method="post" class="d-inline">
-                    <input type="hidden" name="id" value="@Model.Id" />
-                    <button type="submit" class="btn btn-warning">
-                      <i class="bx bx-refresh me-1"></i> إعادة المحاولة
+                <div class="btn-group me-2">
+                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-gear"></i> الإجراءات
                     </button>
-                  </form>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#regenerateWarningModal">
+                                <i class="bi bi-arrow-clockwise"></i> إعادة توليد الأسئلة
+                            </a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#shuffleOptionsModal">
+                                <i class="bi bi-shuffle"></i> خلط الأسئلة/الخيارات
+                            </a></li>
+                        <!-- عناصر أخرى في القائمة -->
+                    </ul>
                 </div>
-              </div>
             }
-            else if (Model.Questions == null || !Model.Questions.Any())
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-right"></i> العودة للقائمة
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">معلومات المجموعة</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">الاسم:</dt>
+                        <dd class="col-sm-8">@Model.Name</dd>
+
+                        <dt class="col-sm-4">الوصف:</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Description) ? "لا يوجد" : Model.Description)</dd>
+
+                        <dt class="col-sm-4">نوع الأسئلة:</dt>
+                        <dd class="col-sm-8">
+                            @(Model.QuestionType switch {
+                                "MCQ" => "اختيار من متعدد",
+                                "TF" => "صح / خطأ",
+                                "open" => "إجابة مفتوحة",
+                                "fillInTheBlank" => "ملء الفراغات",
+                                "ordering" => "ترتيب",
+                                "matching" => "مطابقة",
+                                "multiSelect" => "اختيار متعدد",
+                                "shortAnswer" => "إجابة قصيرة",
+                                _ => Model.QuestionType
+                            })
+                        </dd>
+
+                        <dt class="col-sm-4">اللغة:</dt>
+                        <dd class="col-sm-8">@(Model.Language == QuestionSetLanguage.Arabic ? "العربية" : "الإنجليزية")</dd>
+
+                        <dt class="col-sm-4">الصعوبة:</dt>
+                        <dd class="col-sm-8">
+                            @(Model.Difficulty switch {
+                                "easy" => "سهل",
+                                "medium" => "متوسط",
+                                "hard" => "صعب",
+                                "auto" => "تلقائي",
+                                _ => Model.Difficulty
+                            })
+                        </dd>
+
+                        <dt class="col-sm-4">الحالة:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge @Model.StatusClass">
+                                <i class="bi bi-@Model.StatusIcon"></i>
+                                @(Model.Status switch {
+                                    QuestionSetStatus.Pending => "قيد الانتظار",
+                                    QuestionSetStatus.Processing => "قيد المعالجة",
+                                    QuestionSetStatus.Completed => "مكتملة",
+                                    QuestionSetStatus.Failed => "فشل",
+                                    _ => "غير معروفة"
+                                })
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">تاريخ الإنشاء:</dt>
+                        <dd class="col-sm-8">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+
+                        @if (Model.ProcessedAt.HasValue)
+                        {
+                            <dt class="col-sm-4">تاريخ المعالجة:</dt>
+                            <dd class="col-sm-8">@Model.ProcessedAt.Value.ToString("yyyy-MM-dd HH:mm")</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">الإجراءات</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+
+                        @if (Model.Status == QuestionSetStatus.Completed)
+                        {
+                            <a href="@Url.Action("AddToExam", new { id = Model.Id })" class="btn btn-outline-success">
+                                <i class="bi bi-link"></i> إضافة إلى اختبار
+                            </a>
+                            <a href="@Url.Action("Clone", "QuestionSets", new { id = Model.Id })" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="إنشاء نسخة من هذه المجموعة">
+                                <i class="bi bi-files"></i> نسخ المجموعة
+                            </a>
+                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#regenerateModal">
+                                <i class="bi bi-arrow-repeat"></i> إعادة توليد الأسئلة
+                            </button>
+                        }
+                        else if (Model.Status == QuestionSetStatus.Failed)
+                        {
+                            <form asp-action="Retry" asp-route-id="@Model.Id" method="post">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-arrow-repeat"></i> إعادة المحاولة
+                                </button>
+                            </form>
+                        }
+                        else if (Model.Status == QuestionSetStatus.Processing)
+                        {
+                            <button type="button" class="btn btn-secondary" disabled>
+                                <i class="bi bi-hourglass-split"></i> قيد المعالجة...
+                            </button>
+                        }
+                        else if (Model.Status == QuestionSetStatus.Pending)
+                        {
+                            <button type="button" class="btn btn-secondary mt-2" disabled>
+                                <i class="bi bi-hourglass-split"></i> قيد الانتظار...
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            @if (Model.Status == QuestionSetStatus.Processing)
             {
-              <div class="alert alert-warning text-center processing-container">
-                <i class="bx bx-info-circle processing-icon"></i>
-                <p class="fs-5">لم يتم توليد أسئلة بعد</p>
-              </div>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center p-5">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">جاري التحميل...</span>
+                        </div>
+                        <h5>جاري توليد الأسئلة...</h5>
+                        <p class="text-muted">يرجى الانتظار، قد تستغرق هذه العملية بضع دقائق.</p>
+                        <div class="mt-3">
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.Status == QuestionSetStatus.Failed)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center p-5">
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+                        <h5>فشل في توليد الأسئلة</h5>
+                        <p class="text-muted">@(string.IsNullOrEmpty(Model.ErrorMessage) ? "حدث خطأ أثناء توليد الأسئلة. يرجى المحاولة مرة أخرى." : Model.ErrorMessage)</p>
+                        <form asp-action="Retry" asp-route-id="@Model.Id" method="post" class="mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-arrow-repeat"></i> إعادة المحاولة
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (Model.Status == QuestionSetStatus.Completed && Model.Questions != null && Model.Questions.Any())
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">الأسئلة (@Model.QuestionsGenerated / @Model.QuestionCount)</h5>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#shuffleOptionsModal">
+                                <i class="bi bi-shuffle"></i> خلط الخيارات
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="accordion" id="questionsAccordion">
+                            @foreach (var question in Model.Questions)
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading@(question.Index + 1)">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse@(question.Id)" aria-expanded="false" aria-controls="collapse@(question.Id)">
+                                            <span class="fw-bold me-2">@question.Index.</span> @Html.Raw(question.QuestionText ?? question.InstructionText)
+                                        </button>
+                                    </h2>
+                                    <div id="collapse@(question.Id)" class="accordion-collapse collapse" aria-labelledby="heading@(question.Id)" data-bs-parent="#questionsAccordion">
+                                        <div class="accordion-body">
+                                            @if (question.QuestionType == "MCQ" || question.QuestionType == "multiSelect")
+                                            {
+                                                <h6 class="mb-3">الخيارات:</h6>
+                                                <div class="list-group">
+                                                    @foreach (var option in question.Options)
+                                                    {
+                                                        <div class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
+                                                            @if (option.IsCorrect)
+                                                            {
+                                                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                            }
+                                                            @option.Text
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else if (question.QuestionType == "TF")
+                                            {
+                                                <h6 class="mb-3">الإجابة الصحيحة:</h6>
+                                                <div class="alert @(question.TrueFalseAnswer == true ? "alert-success" : "alert-danger")">
+                                                    @(question.TrueFalseAnswer == true ? "صحيح" : "خطأ")
+                                                </div>
+                                            }
+                                            else if (question.QuestionType == "open" || question.QuestionType == "shortAnswer")
+                                            {
+                                                <h6 class="mb-3">الإجابة النموذجية:</h6>
+                                                <div class="alert alert-info">
+                                                    @Html.Raw(question.Answer)
+                                                </div>
+                                            }
+                                            else if (question.QuestionType == "fillInTheBlank")
+                                            {
+                                                <h6 class="mb-3">الكلمات المفقودة:</h6>
+                                                <div class="alert alert-info">
+                                                    @Html.Raw(question.Answer)
+                                                </div>
+                                            }
+                                            else if (question.QuestionType == "matching")
+                                            {
+                                                <h6 class="mb-3">أزواج المطابقة:</h6>
+                                                <div class="list-group">
+                                                    @foreach (var pair in question.MatchingPairs)
+                                                    {
+                                                        <div class="list-group-item">
+                                                            <div class="row">
+                                                                <div class="col-5 border-end">@pair.LeftSide</div>
+                                                                <div class="col-2 text-center"><i class="bi bi-arrow-right"></i></div>
+                                                                <div class="col-5">@pair.RightSide</div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else if (question.QuestionType == "ordering")
+                                            {
+                                                @if (!string.IsNullOrEmpty(question.InstructionText))
+                                                {
+                                                    <div class="mt-3">
+                                                        <h6>تعليمات:</h6>
+                                                        <p class="text-muted">@Html.Raw(question.InstructionText)</p>
+                                                    </div>
+                                                }
+                                                <div class="row">
+                                                    <div class="col-6 mb-3">
+                                                        <h6 class="mb-3">الترتيب الصحيح:</h6>
+                                                        <div class="list-group">
+                                                            @foreach (var item in question.OrderingItems.Where(ss => ss.DisplayOrder == 0).OrderBy(i => i.CorrectOrder))
+                                                            {
+                                                                <div class="list-group-item">
+                                                                    <span class="badge bg-primary me-2">@item.CorrectOrder</span>
+                                                                    @item.Text
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 mb-3">
+                                                        <h6 class="mb-3">ترتيب العرض للمتقدمين:</h6>
+                                                        <div class="list-group">
+                                                            @foreach (var item in question.OrderingItems.Where(ss=>ss.CorrectOrder == 0).OrderBy(i => i.CorrectOrder))
+                                                            {
+                                                                <div class="list-group-item">
+                                                                    <span class="badge bg-primary me-2">@item.DisplayOrder</span>
+                                                                    @item.Text
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
             }
             else
             {
-              <div class="row mb-3">
-                <div class="col-12 d-flex justify-content-between align-items-center">
-                  <div class="input-group" style="max-width: 300px;">
-                    <span class="input-group-text"><i class="bx bx-search"></i></span>
-                    <input type="text" id="questionSearchInput" class="form-control" placeholder="البحث في الأسئلة...">
-                  </div>
-                  <div>
-                    <button class="btn btn-sm btn-outline-primary" id="expandAllBtn">
-                      <i class="bx bx-expand-alt me-1"></i> توسيع الكل
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" id="collapseAllBtn">
-                      <i class="bx bx-collapse-alt me-1"></i> طي الكل
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="accordion" id="questionsAccordion">
-                @foreach (var question in Model.Questions)
-                {
-                  <div class="accordion-item question-item-container">
-                    <h2 class="accordion-header">
-                      <button class="accordion-button collapsed question-button" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#question-@question.Id" aria-expanded="false">
-                        <div class="d-flex align-items-center w-100">
-                          <span class="badge bg-primary me-2">@question.Index</span>
-                          <span class="question-text">@question.QuestionText</span>
-                          <span class="badge bg-label-primary ms-auto">@GetQuestionTypeDisplay(question.QuestionType)</span>
-                        </div>
-                      </button>
-                    </h2>
-                    <div id="question-@question.Id" class="accordion-collapse collapse">
-                      <div class="accordion-body">
-                        <div class="row">
-                          <div class="col-12">
-                            @if (question.QuestionType?.ToLower() == "mcq" || question.QuestionType?.ToLower() == "tf" ||
-                                            question.QuestionType?.ToLower() == "multiselect")
-                            {
-                              <div class="mb-3">
-                                <strong class="d-block mb-2">الخيارات:</strong>
-                                <div class="question-options">
-                                  @foreach (var option in question.Options)
-                                  {
-                                    <div class="form-check mb-2">
-                                      <input class="form-check-input" type="radio" disabled @(option.IsCorrect ? "checked" : "")>
-                                      <label class="form-check-label @(option.IsCorrect ? "correct-option" : "")">
-                                        @option.Text
-                                        @if (option.IsCorrect)
-                                        {
-                                          <i class="bx bx-check text-success ms-1"></i>
-                                        }
-                                      </label>
-                                    </div>
-                                  }
-                                </div>
-                              </div>
-                            }
-
-                            @if (question.QuestionType?.ToLower() == "fillintheblank")
-                            {
-                              <div class="mb-3">
-                                <strong class="d-block mb-2">النص الكامل:</strong>
-                                <div class="p-3 border rounded bg-light">
-                                  @(question.QuestionText)
-                                </div>
-                              </div>
-                              <div class="mb-3">
-                                <strong class="d-block mb-2">الإجابة الصحيحة:</strong>
-                                <div class="badge bg-success">@(question.Answer)</div>
-                              </div>
-                            }
-
-                            @if (question.QuestionType?.ToLower() == "open" || question.QuestionType?.ToLower() == "shortanswer")
-                            {
-                              <div class="mb-3">
-                                <strong class="d-block mb-2">الإجابة النموذجية:</strong>
-                                <div class="p-3 border rounded bg-light">
-                                  @(question.Answer)
-                                </div>
-                              </div>
-                            }
-
-                            @if (question.QuestionType?.ToLower() == "ordering")
-                            {
-                              <div class="mb-3">
-                                <strong class="d-block mb-2">الترتيب الصحيح:</strong>
-                                <ol class="list-group list-group-numbered">
-                                  @if (question.CorrectlyOrdered != null)
-                                  {
-                                    foreach (var text in question.CorrectlyOrdered)
-                                    {
-                                      <li class="list-group-item">@text</li>
-                                    }
-                                  }
-                                </ol>
-                              </div>
-                              <div class="mb-3">
-                                <strong class="d-block mb-2">نص التعليمات:</strong>
-                                <div class="p-3 border rounded bg-light">
-                                  @(question.InstructionText ?? "رتب العناصر في الترتيب الصحيح")
-                                </div>
-                              </div>
-                            }
-
-                            @if (question.QuestionType?.ToLower() == "matching")
-                            {
-                              <div class="mb-3">
-                                <strong class="d-block mb-2">أزواج المطابقة:</strong>
-                                <div class="table-responsive">
-                                  <table class="table table-bordered">
-                                    <thead>
-                                      <tr>
-                                        <th width="50%">العنصر الأيسر</th>
-                                        <th width="50%">العنصر الأيمن</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      @if (question.MatchingPairs != null)
-                                      {
-                                        foreach (var pair in question.MatchingPairs)
-                                        {
-                                          <tr>
-                                            <td>@pair.LeftSide</td>
-                                            <td>@pair.RightSide</td>
-                                          </tr>
-                                        }
-                                      }
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            }
-                          </div>
-                        </div>
-                      </div>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center p-5">
+                        <i class="bi bi-hourglass text-warning fs-1 mb-3"></i>
+                        <h5>في انتظار توليد الأسئلة</h5>
+                        <p class="text-muted">سيتم توليد الأسئلة قريبًا. يمكنك تحديث الصفحة للتحقق من الحالة.</p>
                     </div>
-                  </div>
-                }
-              </div>
+                </div>
             }
-          </div>
+
+            @if (!string.IsNullOrEmpty(Model.ContentSourceType))
+            {
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">مصدر المحتوى</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">نوع المصدر:</dt>
+                            <dd class="col-sm-9">
+                                @(Model.ContentSourceType.ToLower() switch {
+                                    "text" => "نص",
+                                    "topic" => "موضوع",
+                                    "link" => "رابط",
+                                    "youtube" => "يوتيوب",
+                                    "document" => "مستند",
+                                    "image" => "صورة",
+                                    "audio" => "صوت",
+                                    "video" => "فيديو",
+                                    _ => Model.ContentSourceType
+                                })
+                            </dd>
+
+                            @if (!string.IsNullOrEmpty(Model.Content))
+                            {
+                                <dt class="col-sm-3">المحتوى:</dt>
+                                <dd class="col-sm-9">
+                                    @if (Model.ContentSourceType.ToLower() == "text" && Model.Content.Length > 300)
+                                    {
+                                        <div class="text-content-preview">
+                                            @Model.Content.Substring(0, 300)...
+                                            <button class="btn btn-link btn-sm text-content-toggle">عرض المزيد</button>
+                                        </div>
+                                        <div class="text-content-full" style="display:none;">
+                                            @Model.Content
+                                            <button class="btn btn-link btn-sm text-content-toggle">عرض أقل</button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        @Model.Content
+                                    }
+                                </dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.Url))
+                            {
+                                <dt class="col-sm-3">الرابط:</dt>
+                                <dd class="col-sm-9">
+                                    <a href="@Model.Url" target="_blank">@Model.Url</a>
+                                </dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.FileName))
+                            {
+                                <dt class="col-sm-3">الملف:</dt>
+                                <dd class="col-sm-9">
+                                    @Model.FileName
+                                    @if (!string.IsNullOrEmpty(Model.FileName))
+                                    {
+                                        <a href="@Url.Action("DownloadFile", new { id = Model.Id })" class="btn btn-sm btn-outline-primary ms-2">
+                                            <i class="bi bi-download"></i> تنزيل
+                                        </a>
+                                    }
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+            }
         </div>
-      </div>
     </div>
-  </div>
 </div>
 
-@functions {
-  string GetQuestionTypeDisplay(string questionType)
-  {
-    return questionType?.ToLower() switch
-    {
-      "mcq" => "اختيار من متعدد",
-      "tf" => "صح / خطأ",
-      "open" => "إجابة مفتوحة",
-      "fillintheblank" => "ملء الفراغات",
-      "ordering" => "ترتيب",
-      "matching" => "مطابقة",
-      "multiselect" => "اختيار متعدد",
-      "shortanswer" => "إجابة قصيرة",
-      _ => questionType
-    };
-  }
+<!-- Modal: إعادة توليد الأسئلة -->
+<div class="modal fade" id="regenerateModal" tabindex="-1" aria-labelledby="regenerateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regenerateModalLabel">إعادة توليد الأسئلة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من رغبتك في إعادة توليد الأسئلة؟ سيتم حذف الأسئلة الحالية واستبدالها بأسئلة جديدة.</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i> تحذير: لا يمكن التراجع عن هذه العملية.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <form asp-action="GenerateAgain" asp-route-id="@Model.Id" method="post">
+                    <button type="submit" class="btn btn-warning">إعادة التوليد</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-    string GetLanguageDisplay(QuestionSetLanguage language)
-    {
-        return language switch
-        {
-            QuestionSetLanguage.Arabic => "العربية",
-            QuestionSetLanguage.English => "الإنجليزية",
-            _ => language.ToString()
-        };
-    }
+<!-- Modal: خلط خيارات الأسئلة -->
+<div class="modal fade" id="shuffleOptionsModal" tabindex="-1" aria-labelledby="shuffleOptionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shuffleOptionsModalLabel">خلط خيارات الأسئلة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <p>اختر طريقة خلط خيارات الأسئلة:</p>
+                <form asp-action="ShuffleOptions" method="get">
+                    <input type="hidden" name="questionSetId" value="@Model.Id" />
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="shuffleType" id="shuffleAll" value="all" checked>
+                        <label class="form-check-label" for="shuffleAll">
+                            خلط جميع الخيارات مع الحفاظ على مواضع الإجابات الصحيحة
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="shuffleType" id="shuffleCorrect" value="correctAnswers">
+                        <label class="form-check-label" for="shuffleCorrect">
+                            خلط مواضع الإجابات الصحيحة فقط
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="shuffleType" id="shuffleComplete" value="complete">
+                        <label class="form-check-label" for="shuffleComplete">
+                            خلط كامل للخيارات والإجابات الصحيحة
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="submitShuffleForm">تطبيق</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-  string GetDifficultyDisplay(string difficulty)
-  {
-    return difficulty?.ToLower() switch
-    {
-      "easy" => "سهل",
-      "medium" => "متوسط",
-      "hard" => "صعب",
-      "auto" => "تلقائي",
-      _ => difficulty
-    };
-  }
-
-  string GetDifficultyColor(string difficulty)
-  {
-    return difficulty?.ToLower() switch
-    {
-      "easy" => "success",
-      "medium" => "warning",
-      "hard" => "danger",
-      "auto" => "info",
-      _ => "secondary"
-    };
-  }
-
-  string GetContentTypeDisplay(string contentType)
-  {
-    return contentType?.ToLower() switch
-    {
-      "text" => "نص",
-      "document" => "مستند",
-      "link" => "رابط",
-      "image" => "صورة",
-      "audio" => "ملف صوتي",
-      "video" => "فيديو",
-      "youtube" => "فيديو يوتيوب",
-      "topic" => "موضوع",
-      _ => contentType
-    };
-  }
-
-  string GetFileSizeDisplay(long fileSize)
-  {
-    var kb = fileSize / 1024.0;
-    if (kb < 1024)
-    {
-      return $"{kb:F2} كيلوبايت";
-    }
-    var mb = kb / 1024.0;
-    return $"{mb:F2} ميجابايت";
-  }
-
-  // string GetFileIcon(string fileName)
-  // {
-  //   var extension = Path.GetExtension(fileName ?? "")?.ToLower();
-
-  //   return extension switch
-  //   {
-  //     ".pdf" => "bx-file-pdf",
-  //     ".doc" or ".docx" => "bx-file-doc",
-  //     ".xls" or ".xlsx" => "bx-file-spreadsheet",
-  //     ".ppt" or ".pptx" => "bx-file-presentation",
-  //     ".jpg" or ".jpeg" or ".png" or ".gif" => "bx-image",
-  //     ".mp3" or ".wav" or ".ogg" => "bx-music",
-  //     ".mp4" or ".avi" or ".mov" => "bx-video",
-  //     _ => "bx-file"
-  //   };
-  // }
-
-  string GetStatusBadge(TawtheefTest.Enum.QuestionSetStatus status)
-  {
-    return status switch
-    {
-      TawtheefTest.Enum.QuestionSetStatus.Pending => "warning",
-      TawtheefTest.Enum.QuestionSetStatus.Processing => "info",
-      TawtheefTest.Enum.QuestionSetStatus.Completed => "success",
-      TawtheefTest.Enum.QuestionSetStatus.Failed => "danger",
-      _ => "secondary"
-    };
-  }
-
-  string FormatTimeSpan(TimeSpan span)
-  {
-    if (span.TotalMinutes < 1)
-    {
-      return $"{span.Seconds} ثانية";
-    }
-    if (span.TotalHours < 1)
-    {
-      return $"{span.Minutes} دقيقة و {span.Seconds} ثانية";
-    }
-    if (span.TotalDays < 1)
-    {
-      return $"{(int)span.TotalHours} ساعة و {span.Minutes} دقيقة";
-    }
-
-    return $"{(int)span.TotalDays} يوم و {span.Hours} ساعة";
-  }
-}
+<!-- Modal للتحذير عند إعادة التوليد -->
+<div class="modal fade" id="regenerateWarningModal" tabindex="-1" aria-labelledby="regenerateWarningModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regenerateWarningModalLabel">تنبيه قبل إعادة توليد الأسئلة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>تنبيه:</strong> إعادة توليد الأسئلة سيؤدي إلى حذف جميع الأسئلة الحالية وإنشاء أسئلة جديدة.
+                    <br>
+                    هل أنت متأكد من أنك تريد المتابعة؟
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <form asp-action="GenerateAgain" asp-route-id="@Model.Id" method="post">
+                    <button type="submit" class="btn btn-danger">تأكيد إعادة التوليد</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
-  <script>
-    $(document).ready(function() {
-      // بحث في الأسئلة
-      $("#questionSearchInput").on("keyup", function() {
-        var value = $(this).val().toLowerCase();
-        $(".question-item-container").each(function() {
-          var questionText = $(this).find(".question-text").text().toLowerCase();
-          var visible = questionText.indexOf(value) > -1;
-          $(this).toggle(visible);
+    <script>
+        $(document).ready(function() {
+            // تبديل عرض محتوى النص
+            $('.text-content-toggle').click(function() {
+                var preview = $(this).closest('.text-content-preview');
+                var full = preview.siblings('.text-content-full');
 
-          // إظهار السؤال إذا كان مطابقا للبحث
-          if (visible && value.length > 0) {
-            $(this).find(".accordion-collapse").addClass("show");
-            $(this).find(".accordion-button").removeClass("collapsed");
-          }
+                preview.toggle();
+                full.toggle();
+            });
+
+            // تحديث حالة مجموعة الأسئلة بشكل دوري
+            @if (Model.Status == QuestionSetStatus.Processing)
+            {
+                <text>
+                var statusCheckInterval = setInterval(function() {
+                    $.ajax({
+                        url: '@Url.Action("Status", new { id = Model.Id })',
+                        type: 'GET',
+                        success: function(result) {
+                            if (result.status !== '@QuestionSetStatus.Processing') {
+                                clearInterval(statusCheckInterval);
+                                location.reload();
+                            }
+                        }
+                    });
+                }, 5000); // فحص كل 5 ثوانٍ
+                </text>
+            }
+
+            // إرسال نموذج خلط الخيارات
+            $('#submitShuffleForm').click(function() {
+                var selectedValue = $('input[name="shuffleType"]:checked').val();
+                window.location.href = '@Url.Action("ShuffleOptions", new { id = Model.Id })' + '?shuffleType=' + selectedValue;
+            });
         });
-      });
-
-      // توسيع وطي جميع الأسئلة
-      $("#expandAllBtn").click(function() {
-        $(".accordion-collapse").addClass("show");
-        $(".accordion-button").removeClass("collapsed");
-      });
-
-      $("#collapseAllBtn").click(function() {
-        $(".accordion-collapse").removeClass("show");
-        $(".accordion-button").addClass("collapsed");
-      });
-    });
-  </script>
+    </script>
 }

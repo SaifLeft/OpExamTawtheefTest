@@ -11,32 +11,17 @@ using Microsoft.Extensions.Logging;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
 using TawtheefTest.DTOs.OpExam;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
+using TawtheefTest.Models;
 
 namespace TawtheefTest.Services
 {
   public interface IOpExamQuestionGenerationService
   {
-    Task<string> UploadFileAsync(byte[] fileData, string fileName);
-    Task<QuestionSetDto> GenerateQuestionsFromTopicAsync(int questionSetId, string topic, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
-    Task<QuestionSetDto> GenerateQuestionsFromTextAsync(int questionSetId, string text, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
-    Task<QuestionSetDto> GenerateQuestionsFromLinkAsync(int questionSetId, string link, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
-    Task<QuestionSetDto> GenerateQuestionsFromYoutubeAsync(int questionSetId, string youtubeLink, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
-    Task<QuestionSetDto> GenerateQuestionsFromDocumentAsync(int questionSetId, string documentUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
-    Task<QuestionSetDto> GenerateQuestionsFromImageAsync(int questionSetId, string imageUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
-    Task<QuestionSetDto> GenerateQuestionsFromAudioAsync(int questionSetId, string audioUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
-    Task<QuestionSetDto> GenerateQuestionsFromVideoAsync(int questionSetId, string videoUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic");
+    Task<string?> UploadFileAsync(byte[] fileData, string fileName);
+    Task<QuestionSetDto> GenerateQuestionsAsync(int questionSetId, OpExamQuestionGenerationRequest request);
     Task<QuestionSetDto> GetQuestionSetDetailsAsync(int questionSetId);
     Task<QuestionSetDto> GetQuestionSetStatusAsync(int questionSetId);
-    Task<bool> RetryQuestionGenerationAsync(int questionSetId);
     Task<bool> AddQuestionsToExamAsync(int questionSetId, int examId);
   }
   public class OpExamQuestionGenerationService : IOpExamQuestionGenerationService
@@ -65,14 +50,17 @@ namespace TawtheefTest.Services
       _baseUrl = _configuration["OpExam:BaseUrl"];
     }
 
-    public async Task<string> UploadFileAsync(byte[] fileData, string fileName)
+    public async Task<string?> UploadFileAsync(byte[] fileData, string fileName)
     {
       try
       {
         var client = CreateHttpClient();
 
-        var content = new MultipartFormDataContent();
+        // تحديد نوع الملف إذا كان معروفًا (مثلاً PDF)
         var fileContent = new ByteArrayContent(fileData);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+
+        var content = new MultipartFormDataContent();
         content.Add(fileContent, "file", fileName);
 
         var response = await client.PostAsync($"{_baseUrl}/questions-generator/v2/upload-file", content);
@@ -85,133 +73,17 @@ namespace TawtheefTest.Services
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "خطأ في رفع الملف: {FileName}", fileName);
-        throw;
+        _logger.LogError(ex, $"خطأ في رفع الملف: {fileName}");
+        throw new Exception("حدث خطأ أثناء رفع الملف. الرجاء المحاولة مرة أخرى أو التواصل مع الدعم الفني.");
       }
     }
 
-    public async Task<QuestionSetDto> GenerateQuestionsFromTopicAsync(int questionSetId, string topic, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
+    public async Task<QuestionSetDto> GenerateQuestionsAsync(int questionSetId, OpExamQuestionGenerationRequest request)
     {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "topic",
-        Topic = topic
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    public async Task<QuestionSetDto> GenerateQuestionsFromTextAsync(int questionSetId, string text, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
-    {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "text",
-        Text = text
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    public async Task<QuestionSetDto> GenerateQuestionsFromLinkAsync(int questionSetId, string link, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
-    {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "link",
-        Link = link
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    public async Task<QuestionSetDto> GenerateQuestionsFromYoutubeAsync(int questionSetId, string youtubeLink, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
-    {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "youtube",
-        Link = youtubeLink
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    public async Task<QuestionSetDto> GenerateQuestionsFromDocumentAsync(int questionSetId, string documentUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
-    {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "pdf",
-        Document = documentUrl
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    public async Task<QuestionSetDto> GenerateQuestionsFromImageAsync(int questionSetId, string imageUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
-    {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "image",
-        Image = imageUrl
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    public async Task<QuestionSetDto> GenerateQuestionsFromAudioAsync(int questionSetId, string audioUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
-    {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "audio",
-        Audio = audioUrl
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    public async Task<QuestionSetDto> GenerateQuestionsFromVideoAsync(int questionSetId, string videoUrl, string questionType,
-        int numberOfQuestions, string difficulty, string language = "Arabic")
-    {
-      var request = CreateBaseRequest(questionType, numberOfQuestions, difficulty, language);
-      request.SourceContent = new SourceContent
-      {
-        Type = "video",
-        Video = videoUrl
-      };
-
-      return await GenerateQuestionsAsync(questionSetId, request);
-    }
-
-    private OpExamQuestionGenerationRequest CreateBaseRequest(string questionType, int numberOfQuestions, string difficulty, string language)
-    {
-      return new OpExamQuestionGenerationRequest
-      {
-        QuestionType = questionType,
-        NumberOfQuestions = numberOfQuestions,
-        Difficulty = difficulty,
-        Language = language
-      };
-    }
-
-    private async Task<QuestionSetDto> GenerateQuestionsAsync(int questionSetId, OpExamQuestionGenerationRequest request)
-    {
+      HttpResponseMessage httpResponseMessage = default;
       try
       {
-        // تحديث حالة مجموعة الأسئلة
         var questionSet = await _dbContext.QuestionSets
-            .Include(qs => qs.ContentSources)
             .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
         if (questionSet == null)
@@ -219,6 +91,7 @@ namespace TawtheefTest.Services
           throw new Exception($"مجموعة الأسئلة بالمعرف {questionSetId} غير موجودة");
         }
 
+        // تحديث حالة مجموعة الأسئلة إلى "قيد المعالجة"
         questionSet.Status = QuestionSetStatus.Processing;
         await _dbContext.SaveChangesAsync();
 
@@ -228,19 +101,30 @@ namespace TawtheefTest.Services
         var jsonContent = JsonSerializer.Serialize(request);
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync($"{_baseUrl}/questions-generator/v2", content);
-        response.EnsureSuccessStatusCode();
+        httpResponseMessage = await client.PostAsync($"{_baseUrl}/questions-generator/v2", content);
+        httpResponseMessage.EnsureSuccessStatusCode();
 
-        var responseString = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<OpExamQuestionGenerationResponse>(responseString);
+        var responseString = await httpResponseMessage.Content.ReadAsStringAsync();
+        OpExamQuestionGenerationResponse opExamQuestionGenerationResponse = new OpExamQuestionGenerationResponse();
+        OpExamTFQuestionResponse opExamTFQuestionResponse = new OpExamTFQuestionResponse();
+        if (request.QuestionType == nameof(QuestionTypeEnum.TF))
+        {
+          opExamTFQuestionResponse = JsonSerializer.Deserialize<OpExamTFQuestionResponse>(responseString);
+        }
+        else
+        {
+          opExamQuestionGenerationResponse = JsonSerializer.Deserialize<OpExamQuestionGenerationResponse>(responseString);
+        }
 
         // حفظ الأسئلة المُنشأة
-        await SaveGeneratedQuestionsAsync(questionSet, result);
+        await SaveGeneratedQuestionsAsync(questionSet, opExamQuestionGenerationResponse, opExamTFQuestionResponse);
 
         // تحديث حالة مجموعة الأسئلة
         questionSet.Status = QuestionSetStatus.Completed;
         questionSet.ProcessedAt = DateTime.UtcNow;
-        questionSet.QuestionCount = result.Questions.Count;
+        questionSet.QuestionCount = request.QuestionType == nameof(QuestionTypeEnum.TF)
+            ? opExamTFQuestionResponse.Questions.Count
+            : opExamQuestionGenerationResponse.Questions.Count;
         await _dbContext.SaveChangesAsync();
 
         return _mapper.Map<QuestionSetDto>(questionSet);
@@ -254,7 +138,11 @@ namespace TawtheefTest.Services
         if (questionSet != null)
         {
           questionSet.Status = QuestionSetStatus.Failed;
-          questionSet.ErrorMessage = ex.Message + " " + ex.InnerException?.Message;
+
+          var ErrorJsonFromApi = await httpResponseMessage.Content.ReadAsStringAsync();
+
+
+          questionSet.ErrorMessage = ErrorJsonFromApi + " Error: " + ex.Message + " " + ex.InnerException?.Message;
           await _dbContext.SaveChangesAsync();
         }
 
@@ -262,124 +150,177 @@ namespace TawtheefTest.Services
       }
     }
 
-    private async Task SaveGeneratedQuestionsAsync(QuestionSet questionSet, OpExamQuestionGenerationResponse response)
+    private async Task SaveGeneratedQuestionsAsync(QuestionSet questionSet, OpExamQuestionGenerationResponse response, OpExamTFQuestionResponse? tfResponse)
     {
       var questions = new List<Question>();
 
-      foreach (var opExamQuestion in response.Questions)
+      if (questionSet.QuestionType.ToLower() == "tf" && tfResponse != null && tfResponse.Questions != null)
       {
-        var question = new Question
+        // معالجة أسئلة صح/خطأ من الاستجابة المخصصة
+        foreach (var tfQuestion in tfResponse.Questions)
         {
-          QuestionSetId = questionSet.Id,
-          QuestionText = opExamQuestion.QuestionText,
-          Index = opExamQuestion.Index,
-          QuestionType = questionSet.QuestionType,
-          CreatedAt = DateTime.UtcNow
-        };
+          var question = new Question
+          {
+            QuestionSetId = questionSet.Id,
+            QuestionText = tfQuestion.QuestionText,
+            Index = tfQuestion.Index,
+            QuestionType = questionSet.QuestionType,
+            CreatedAt = DateTime.UtcNow,
+            TrueFalseAnswer = tfQuestion.Answer
+          };
 
-        // معالجة الأسئلة حسب نوعها
-        switch (questionSet.QuestionType.ToLower())
-        {
-          case "mcq":
-            question.Options = CreateOptions(opExamQuestion.Options);
-            if (opExamQuestion.AnswerIndex.HasValue)
-            {
-              question.Answer = opExamQuestion.Options[opExamQuestion.AnswerIndex.Value];
-            }
-            break;
-          case "tf":
-            question.TrueFalseAnswer = opExamQuestion.Answer?.ToLower() == "true";
-            break;
-          case "open":
-            question.Answer = opExamQuestion.SampleAnswer ?? opExamQuestion.Answer;
-            break;
-          case "fillintheblank":
-            question.Answer = opExamQuestion.Answer;
-            break;
-          case "ordering":
-            question.Answer = JsonSerializer.Serialize(new
-            {
-              correctlyOrdered = opExamQuestion.CorrectlyOrdered,
-              shuffledOrder = opExamQuestion.ShuffledOrder,
-              instructionText = opExamQuestion.InstructionText
-            });
-            break;
-          case "matching":
-            // معالجة خاصة للمطابقة
-            break;
-          case "multiselect":
-            question.Options = CreateOptions(opExamQuestion.Options);
-            question.Answer = opExamQuestion.Answer;
-            break;
-          case "shortanswer":
-            question.Answer = opExamQuestion.Answer;
-            break;
+          questions.Add(question);
         }
+      }
+      else if (response.Questions != null)
+      {
+        // معالجة باقي أنواع الأسئلة
+        foreach (var opExamQuestion in response.Questions)
+        {
+          var question = new Question
+          {
+            QuestionSetId = questionSet.Id,
+            QuestionText = opExamQuestion.QuestionText,
+            Index = opExamQuestion.Index,
+            QuestionType = questionSet.QuestionType,
+            CreatedAt = DateTime.UtcNow,
+            ExternalId = opExamQuestion.Id,
+          };
 
-        questions.Add(question);
+          // معالجة الأسئلة حسب نوعها
+          switch (questionSet.QuestionType.ToLower())
+          {
+            case "mcq":
+              question.Options = CreateOptions(opExamQuestion.Options);
+              if (opExamQuestion.AnswerIndex.HasValue)
+              {
+                question.Answer = opExamQuestion.Options[opExamQuestion.AnswerIndex.Value];
+              }
+              break;
+            case "tf":
+              question.TrueFalseAnswer = opExamQuestion.Answer?.ToLower() == "true";
+              break;
+            case "open":
+              question.Answer = opExamQuestion.SampleAnswer ?? opExamQuestion.Answer;
+              break;
+            case "fillintheblank":
+              question.Answer = opExamQuestion.Answer;
+              break;
+            case "ordering":
+              question.InstructionText = opExamQuestion.InstructionText;
+              question.OrderingItems = PrepareOrderItems(opExamQuestion.CorrectlyOrdered, opExamQuestion.ShuffledOrder);
+              break;
+            case "matching":
+              var newMatchingPairs = new List<MatchingPair>();
+              foreach (var pair in question.MatchingPairs)
+              {
+                newMatchingPairs.Add(new MatchingPair
+                {
+                  QuestionId = question.Id,
+                  LeftItem = pair.LeftItem,
+                  RightItem = pair.RightItem,
+                  DisplayOrder = pair.DisplayOrder
+                });
+              }
+              break;
+            case "multiselect":
+              question.Options = CreateOptions(opExamQuestion.Options);
+              question.Answer = opExamQuestion.Answer;
+              break;
+            case "shortanswer":
+              question.Answer = opExamQuestion.Answer;
+              break;
+          }
+
+          questions.Add(question);
+        }
       }
 
       await _dbContext.Questions.AddRangeAsync(questions);
       await _dbContext.SaveChangesAsync();
 
-      // نسخ خيارات الأسئلة إذا وجدت
-      if (questionSet.Questions != null && questionSet.Questions.Any())
+      //// نسخ خيارات الأسئلة إذا وجدت
+      //if (questionSet.Questions != null && questionSet.Questions.Any())
+      //{
+      //  foreach (var question in questionSet.Questions)
+      //  {
+      //    if (question.Options != null && question.Options.Any())
+      //    {
+      //      var newOptions = new List<QuestionOption>();
+      //      foreach (var option in question.Options)
+      //      {
+      //        newOptions.Add(new QuestionOption
+      //        {
+      //          QuestionId = question.Id,
+      //          Text = option.Text,
+      //          Index = option.Index,
+      //          IsCorrect = option.IsCorrect
+      //        });
+      //      }
+      //      _dbContext.QuestionOptions.AddRange(newOptions);
+      //    }
+
+      //    // نسخ بيانات الترتيب إذا كان السؤال من نوع الترتيب
+      //    if (question.QuestionType.ToLower() == "ordering" && question.OrderingItems != null && question.OrderingItems.Any())
+      //    {
+      //      var newOrderingItems = new List<OrderingItem>();
+      //      foreach (var item in question.OrderingItems)
+      //      {
+      //        newOrderingItems.Add(new OrderingItem
+      //        {
+      //          QuestionId = question.Id,
+      //          Text = item.Text,
+      //          CorrectOrder = item.CorrectOrder,
+      //          DisplayOrder = item.DisplayOrder
+      //        });
+      //      }
+      //      _dbContext.OrderingItems.AddRange(newOrderingItems);
+      //    }
+
+      //    // نسخ بيانات المطابقة إذا كان السؤال من نوع المطابقة
+      //    if (question.QuestionType.ToLower() == "matching" && question.MatchingPairs != null && question.MatchingPairs.Any())
+      //    {
+      //      var newMatchingPairs = new List<MatchingPair>();
+      //      foreach (var pair in question.MatchingPairs)
+      //      {
+      //        newMatchingPairs.Add(new MatchingPair
+      //        {
+      //          QuestionId = question.Id,
+      //          LeftItem = pair.LeftItem,
+      //          RightItem = pair.RightItem,
+      //          DisplayOrder = pair.DisplayOrder
+      //        });
+      //      }
+      //      _dbContext.MatchingPairs.AddRange(newMatchingPairs);
+      //    }
+
+      //    await _dbContext.SaveChangesAsync();
+      //  }
+      //}
+    }
+
+    private ICollection<OrderingItem> PrepareOrderItems(List<string> correctlyOrdered, List<string> shuffledOrder)
+    {
+      var result = new List<OrderingItem>();
+      // Prepare Ordering Items Shuffled Order
+      for (int i = 0; i < shuffledOrder.Count; i++)
       {
-        foreach (var question in questionSet.Questions)
+        result.Add(new OrderingItem
         {
-          if (question.Options != null && question.Options.Any())
-          {
-            var newOptions = new List<QuestionOption>();
-            foreach (var option in question.Options)
-            {
-              newOptions.Add(new QuestionOption
-              {
-                QuestionId = question.Id,
-                Text = option.Text,
-                Index = option.Index,
-                IsCorrect = option.IsCorrect
-              });
-            }
-            _dbContext.QuestionOptions.AddRange(newOptions);
-          }
-
-          // نسخ بيانات الترتيب إذا كان السؤال من نوع الترتيب
-          if (question.QuestionType.ToLower() == "ordering" && question.OrderingItems != null && question.OrderingItems.Any())
-          {
-            var newOrderingItems = new List<OrderingItem>();
-            foreach (var item in question.OrderingItems)
-            {
-              newOrderingItems.Add(new OrderingItem
-              {
-                QuestionId = question.Id,
-                Text = item.Text,
-                CorrectOrder = item.CorrectOrder,
-                DisplayOrder = item.DisplayOrder
-              });
-            }
-            _dbContext.OrderingItems.AddRange(newOrderingItems);
-          }
-
-          // نسخ بيانات المطابقة إذا كان السؤال من نوع المطابقة
-          if (question.QuestionType.ToLower() == "matching" && question.MatchingPairs != null && question.MatchingPairs.Any())
-          {
-            var newMatchingPairs = new List<MatchingPair>();
-            foreach (var pair in question.MatchingPairs)
-            {
-              newMatchingPairs.Add(new MatchingPair
-              {
-                QuestionId = question.Id,
-                LeftItem = pair.LeftItem,
-                RightItem = pair.RightItem,
-                DisplayOrder = pair.DisplayOrder
-              });
-            }
-            _dbContext.MatchingPairs.AddRange(newMatchingPairs);
-          }
-
-          await _dbContext.SaveChangesAsync();
-        }
+          Text = shuffledOrder[i],
+          DisplayOrder = i + 1
+        });
       }
+      // Prepare Ordering Items Correctly Ordered
+      for (int i = 0; i < correctlyOrdered.Count; i++)
+      {
+        result.Add(new OrderingItem
+        {
+          Text = correctlyOrdered[i],
+          CorrectOrder = i + 1,
+        });
+      }
+      return result;
     }
 
     private List<QuestionOption> CreateOptions(List<string> options)
@@ -410,12 +351,12 @@ namespace TawtheefTest.Services
     public async Task<QuestionSetDto> GetQuestionSetDetailsAsync(int questionSetId)
     {
       var questionSet = await _dbContext.QuestionSets
-          .Include(qs => qs.ContentSources)
-          .ThenInclude(cs => cs.Content)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.Options)
-          .Include(qs => qs.ExamQuestionSets)
-              .ThenInclude(eqs => eqs.Exam)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.OrderingItems)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
       if (questionSet == null)
@@ -437,90 +378,6 @@ namespace TawtheefTest.Services
       }
 
       return _mapper.Map<QuestionSetDto>(questionSet);
-    }
-
-    public async Task<bool> RetryQuestionGenerationAsync(int questionSetId)
-    {
-      var questionSet = await _dbContext.QuestionSets
-          .Include(qs => qs.ContentSources)
-          .Include(qs => qs.Questions)
-          .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
-
-      if (questionSet == null || questionSet.Status != QuestionSetStatus.Failed)
-      {
-        return false;
-      }
-
-      // حذف الأسئلة الموجودة
-      _dbContext.Questions.RemoveRange(questionSet.Questions);
-      await _dbContext.SaveChangesAsync();
-
-      // إعادة تعيين حالة مجموعة الأسئلة
-      questionSet.Status = QuestionSetStatus.Pending;
-      questionSet.ErrorMessage = null;
-      await _dbContext.SaveChangesAsync();
-
-      try
-      {
-        // الحصول على مصدر المحتوى
-        var contentSource = questionSet.ContentSources.FirstOrDefault();
-        if (contentSource == null)
-        {
-          throw new Exception("لا يوجد مصدر محتوى لمجموعة الأسئلة");
-        }
-
-        string contentType = contentSource.ContentSourceType.ToLower();
-        string content = contentSource.Content ?? contentSource.Url;
-
-        switch (contentType)
-        {
-          case "topic":
-            await GenerateQuestionsFromTopicAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          case "text":
-            await GenerateQuestionsFromTextAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          case "link":
-            await GenerateQuestionsFromLinkAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          case "youtube":
-            await GenerateQuestionsFromYoutubeAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          case "document":
-          case "pdf":
-            await GenerateQuestionsFromDocumentAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          case "image":
-            await GenerateQuestionsFromImageAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          case "audio":
-            await GenerateQuestionsFromAudioAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          case "video":
-            await GenerateQuestionsFromVideoAsync(questionSetId, content, questionSet.QuestionType,
-                questionSet.QuestionCount, questionSet.Difficulty);
-            break;
-          default:
-            throw new Exception($"نوع المحتوى غير مدعوم: {contentType}");
-        }
-
-        return true;
-      }
-      catch (Exception ex)
-      {
-        _logger.LogError(ex, "خطأ في إعادة محاولة توليد الأسئلة: {QuestionSetId}", questionSetId);
-        questionSet.Status = QuestionSetStatus.Failed;
-        questionSet.ErrorMessage = ex.Message;
-        await _dbContext.SaveChangesAsync();
-        return false;
-      }
     }
 
     public async Task<bool> AddQuestionsToExamAsync(int questionSetId, int examId)

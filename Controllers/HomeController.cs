@@ -102,5 +102,17 @@ namespace TawtheefTest.Controllers
     {
       return View();
     }
+
+    [HttpPost]
+    public IActionResult SetSuccessMessage([FromBody] SuccessMessageModel model)
+    {
+      TempData["SuccessMessage"] = model.Message;
+      return Ok();
+    }
+
+    public class SuccessMessageModel
+    {
+      public string Message { get; set; }
+    }
   }
 }

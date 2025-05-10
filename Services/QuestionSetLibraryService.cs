@@ -6,11 +6,70 @@ using System.Linq;
 using System.Threading.Tasks;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
-using TawtheefTest.Enum;
+using TawtheefTest.Enums;
 using TawtheefTest.ViewModels;
 
 namespace TawtheefTest.Services
 {
+  public interface IQuestionSetLibraryService
+  {
+    /// <summary>
+    /// الحصول على جميع مجموعات الأسئلة
+    /// </summary>
+    Task<List<QuestionSetDto>> GetAllQuestionSetsAsync();
+
+    /// <summary>
+    /// الحصول على تفاصيل مجموعة أسئلة معينة
+    /// </summary>
+    Task<QuestionSetDto> GetQuestionSetDetailsAsync(int id);
+
+    /// <summary>
+    /// إنشاء مجموعة أسئلة جديدة
+    /// </summary>
+    Task<int> CreateQuestionSetAsync(QuestionSetCreateViewModel model);
+
+    /// <summary>
+    /// إضافة مجموعة أسئلة إلى اختبار
+    /// </summary>
+    Task AddQuestionSetToExamAsync(int examId, int questionSetId, int displayOrder);
+
+    /// <summary>
+    /// نسخ مجموعة أسئلة
+    /// </summary>
+    Task<int> CloneQuestionSetAsync(int questionSetId);
+
+    /// <summary>
+    /// خلط خيارات الأسئلة في مجموعة أسئلة
+    /// </summary>
+    Task ShuffleQuestionOptionsAsync(int questionSetId, ShuffleType shuffleType);
+
+    /// <summary>
+    /// الحصول على مجموعات الأسئلة التي يمكن إعادة استخدامها
+    /// </summary>
+    Task<List<QuestionSetDto>> GetReusableQuestionSetsAsync();
+
+    /// <summary>
+    /// دمج عدة مجموعات أسئلة في مجموعة جديدة
+    /// </summary>
+    Task<int> MergeSetsAsync(MergeQuestionSetsViewModel model);
+
+    /// <summary>
+    /// البحث في مجموعات الأسئلة
+    /// </summary>
+    Task<List<QuestionSetDto>> SearchQuestionSetsAsync(string search = null, string questionType = null, string difficulty = null, string language = null);
+
+    /// <summary>
+    /// الحصول على مجموعة أسئلة معينة بواسطة المعرف
+    /// </summary>
+    Task<QuestionSetDto> GetQuestionSetByIdAsync(int id);
+
+    /// <summary>
+    /// حذف مجموعة أسئلة
+    /// </summary>
+    Task<bool> DeleteQuestionSetAsync(int id);
+    Task AddQuestionSetToExam(int examId, int questionSetId, int displayOrder);
+    Task RemoveQuestionSetFromExam(int examId, int questionSetId);
+  }
   public class QuestionSetLibraryService : IQuestionSetLibraryService
   {
     private readonly ApplicationDbContext _context;
@@ -45,7 +104,6 @@ namespace TawtheefTest.Services
               .ThenInclude(q => q.Options)
           .Include(qs => qs.ExamQuestionSets)
               .ThenInclude(eqs => eqs.Exam)
-          .Include(qs => qs.ContentSources)
           .FirstOrDefaultAsync(qs => qs.Id == id);
 
       if (questionSet == null)
@@ -80,31 +138,15 @@ namespace TawtheefTest.Services
         QuestionCount = model.QuestionCount,
         OptionsCount = model.OptionsCount,
         Status = QuestionSetStatus.Pending,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.UtcNow,
+        ContentSourceType = model.ContentSourceType,
+        Content = model.Topic,
       };
 
       _context.QuestionSets.Add(questionSet);
       await _context.SaveChangesAsync();
 
-      // إنشاء مصدر محتوى للأسئلة
-      var contentSource = new ContentSource
-      {
-        ContentSourceType = model.ContentSourceType,
-        Content = model.Topic,
-        QuestionSetId = questionSet.Id,
-        CreatedAt = DateTime.UtcNow
-      };
 
-      _context.ContentSources.Add(contentSource);
-      await _context.SaveChangesAsync();
-
-      // توليد الأسئلة باستخدام OpExam
-      await _questionGenerationService.GenerateQuestionsFromTopicAsync(
-          questionSet.Id,
-          model.Topic,
-          model.QuestionType,
-          model.QuestionCount,
-          model.Difficulty);
 
       return questionSet.Id;
     }
@@ -153,7 +195,6 @@ namespace TawtheefTest.Services
               .ThenInclude(q => q.MatchingPairs)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.OrderingItems)
-          .Include(qs => qs.ContentSources)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
       if (originalQuestionSet == null)
@@ -180,20 +221,12 @@ namespace TawtheefTest.Services
       _context.QuestionSets.Add(newQuestionSet);
       await _context.SaveChangesAsync();
 
-      // نسخ مصادر المحتوى
-      foreach (var contentSource in originalQuestionSet.ContentSources)
-      {
-        var newContentSource = new ContentSource
-        {
-          ContentSourceType = contentSource.ContentSourceType,
-          Content = contentSource.Content,
-          Url = contentSource.Url,
-          QuestionSetId = newQuestionSet.Id,
-          CreatedAt = DateTime.UtcNow
-        };
-
-        _context.ContentSources.Add(newContentSource);
-      }
+      // نسخ محتوى المصدر مباشرة من QuestionSet الأصلي
+      newQuestionSet.ContentSourceType = originalQuestionSet.ContentSourceType;
+      newQuestionSet.Content = originalQuestionSet.Content;
+      newQuestionSet.Url = originalQuestionSet.Url;
+      newQuestionSet.FileName = originalQuestionSet.FileName;
+      newQuestionSet.FileUploadedCode = originalQuestionSet.FileUploadedCode;
 
       await _context.SaveChangesAsync();
 
@@ -375,6 +408,269 @@ namespace TawtheefTest.Services
       }
 
       return dtos;
+    }
+
+    public async Task<int> MergeSetsAsync(MergeQuestionSetsViewModel model)
+    {
+      // جلب المجموعات المختارة والتأكد من أنها مكتملة
+      var sets = await _context.QuestionSets
+          .Where(q => model.SelectedIds.Contains(q.Id) && q.Status == QuestionSetStatus.Completed)
+          .Include(q => q.Questions)
+              .ThenInclude(q => q.Options)
+          .Include(q => q.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(q => q.Questions)
+              .ThenInclude(q => q.OrderingItems)
+          .ToListAsync();
+
+      if (sets.Count != model.SelectedIds.Count)
+        throw new Exception("بعض المجموعات المختارة غير مكتملة أو غير موجودة.");
+
+      // جلب الأسئلة من كل مجموعة حسب العدد المطلوب
+      var mergedQuestions = new List<Question>();
+      var setNames = new List<string>(); // لتجميع أسماء المجموعات للوصف
+
+      foreach (var set in sets)
+      {
+        setNames.Add(set.Name);
+        int count = model.QuestionsCountPerSet.ContainsKey(set.Id) ? model.QuestionsCountPerSet[set.Id] : set.Questions.Count;
+
+        // تحقق من أن عدد الأسئلة المطلوب لا يتجاوز المتاح
+        if (count > set.Questions.Count)
+          count = set.Questions.Count;
+
+        var questions = set.Questions.OrderBy(q => Guid.NewGuid()).Take(count).ToList();
+        mergedQuestions.AddRange(questions);
+      }
+
+      // خلط الأسئلة إذا لزم الأمر
+      if (model.ShuffleQuestions)
+        mergedQuestions = mergedQuestions.OrderBy(q => Guid.NewGuid()).ToList();
+
+      // إنشاء وصف للمجموعة الجديدة
+      string mergedDescription = $"تم دمج هذه المجموعة من المجموعات التالية: {string.Join("، ", setNames)}";
+
+      // إنشاء مجموعة جديدة
+      var newSet = new QuestionSet
+      {
+        Name = model.MergedName,
+        Description = mergedDescription,
+        QuestionType = model.MergedType,
+        Difficulty = model.MergedDifficulty,
+        Language = model.MergedLanguage,
+        Status = QuestionSetStatus.Completed,
+        CreatedAt = DateTime.UtcNow,
+        QuestionCount = mergedQuestions.Count,
+        OptionsCount = sets.First().OptionsCount,
+        NumberOfRows = sets.First().NumberOfRows,
+        NumberOfCorrectOptions = sets.First().NumberOfCorrectOptions
+      };
+
+      _context.QuestionSets.Add(newSet);
+      await _context.SaveChangesAsync();
+
+      // نسخ الأسئلة وربطها بالمجموعة الجديدة
+      int questionIndex = 0;
+      foreach (var question in mergedQuestions)
+      {
+        var newQuestion = new Question
+        {
+          QuestionSetId = newSet.Id,
+          QuestionText = question.QuestionText,
+          QuestionType = question.QuestionType,
+          Index = ++questionIndex, // ترتيب متسلسل جديد
+          CreatedAt = DateTime.UtcNow
+        };
+
+        _context.Questions.Add(newQuestion);
+        await _context.SaveChangesAsync();
+
+        // نسخ الخيارات إذا كانت موجودة
+        if (question.Options != null && question.Options.Any())
+        {
+          foreach (var option in question.Options)
+          {
+            var newOption = new QuestionOption
+            {
+              Text = option.Text,
+              IsCorrect = option.IsCorrect,
+              QuestionId = newQuestion.Id,
+              Index = option.Index
+            };
+
+            _context.QuestionOptions.Add(newOption);
+          }
+        }
+
+        // نسخ أزواج المطابقة إذا كانت موجودة
+        if (question.MatchingPairs != null && question.MatchingPairs.Any())
+        {
+          foreach (var pair in question.MatchingPairs)
+          {
+            var newPair = new MatchingPair
+            {
+              LeftItem = pair.LeftItem,
+              RightItem = pair.RightItem,
+              QuestionId = newQuestion.Id,
+              DisplayOrder = pair.DisplayOrder
+            };
+
+            _context.MatchingPairs.Add(newPair);
+          }
+        }
+
+        // نسخ عناصر الترتيب إذا كانت موجودة
+        if (question.OrderingItems != null && question.OrderingItems.Any())
+        {
+          foreach (var item in question.OrderingItems)
+          {
+            var newItem = new OrderingItem
+            {
+              Text = item.Text,
+              CorrectOrder = item.CorrectOrder,
+              QuestionId = newQuestion.Id,
+              DisplayOrder = item.DisplayOrder
+            };
+
+            _context.OrderingItems.Add(newItem);
+          }
+        }
+      }
+
+      await _context.SaveChangesAsync();
+
+      return newSet.Id;
+    }
+
+    public async Task<List<QuestionSetDto>> SearchQuestionSetsAsync(string search, string questionType, string difficulty, string language)
+    {
+      // بناء استعلام قاعدة البيانات
+      var query = _context.QuestionSets
+          .Include(qs => qs.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.Exam)
+          .Include(qs => qs.Questions)
+          .AsQueryable();
+
+      // إضافة شروط البحث
+      if (!string.IsNullOrEmpty(search))
+      {
+        search = search.ToLower();
+        query = query.Where(qs => qs.Name.ToLower().Contains(search) ||
+                            (qs.Description != null && qs.Description.ToLower().Contains(search)));
+      }
+
+      if (!string.IsNullOrEmpty(questionType))
+      {
+        query = query.Where(qs => qs.QuestionType == questionType);
+      }
+
+      if (!string.IsNullOrEmpty(difficulty))
+      {
+        query = query.Where(qs => qs.Difficulty == difficulty);
+      }
+
+      if (!string.IsNullOrEmpty(language))
+      {
+        query = query.Where(qs => qs.Language == language);
+      }
+
+      // تنفيذ الاستعلام وترتيب النتائج
+      var questionSets = await query
+          .OrderByDescending(qs => qs.CreatedAt)
+          .ToListAsync();
+
+      // تحويل البيانات إلى DTOs
+      var dtos = _mapper.Map<List<QuestionSetDto>>(questionSets);
+
+      // إضافة معلومات إضافية لكل DTO
+      for (int i = 0; i < questionSets.Count; i++)
+      {
+        // حساب عدد الأسئلة المولدة
+        dtos[i].QuestionsGenerated = questionSets[i].Questions.Count;
+
+        // إضافة أسماء الاختبارات المستخدمة فيها
+        dtos[i].UsedInExams = questionSets[i].ExamQuestionSets
+            .Select(eqs => eqs.Exam.Name)
+            .ToList();
+
+        // حساب عدد الاستخدامات
+        dtos[i].UsageCount = dtos[i].UsedInExams.Count;
+      }
+
+      return dtos;
+    }
+
+    public async Task<QuestionSetDto> GetQuestionSetByIdAsync(int id)
+    {
+      // البحث عن مجموعة الأسئلة بالمعرف
+      var questionSet = await _context.QuestionSets
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.Options)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.MatchingPairs)
+          .Include(qs => qs.Questions)
+              .ThenInclude(q => q.OrderingItems)
+          .Include(qs => qs.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.Exam)
+          .FirstOrDefaultAsync(qs => qs.Id == id);
+
+      if (questionSet == null)
+      {
+        return new QuestionSetDto();
+      }
+
+      // تحويل البيانات إلى DTO
+      var dto = _mapper.Map<QuestionSetDto>(questionSet);
+
+      // ترتيب الأسئلة حسب الفهرس
+      dto.Questions = _mapper.Map<List<QuestionDto>>(questionSet.Questions.OrderBy(q => q.Index).ToList());
+
+      // إضافة معلومات إضافية للـ DTO
+      dto.UsageCount = questionSet.ExamQuestionSets.Count;
+      dto.UsedInExams = questionSet.ExamQuestionSets
+          .Select(eqs => eqs.Exam.Name)
+          .ToList();
+
+
+
+
+
+      return dto;
+    }
+
+    public async Task<bool> DeleteQuestionSetAsync(int id)
+    {
+      // البحث عن مجموعة الأسئلة المراد حذفها
+      var questionSet = await _context.QuestionSets
+          .Include(qs => qs.ExamQuestionSets)
+          .FirstOrDefaultAsync(qs => qs.Id == id);
+
+      if (questionSet == null)
+      {
+        return false;
+      }
+
+      // التحقق من أن مجموعة الأسئلة غير مستخدمة في أي اختبار
+      if (questionSet.ExamQuestionSets.Any())
+      {
+        throw new InvalidOperationException("لا يمكن حذف مجموعة الأسئلة لأنها مستخدمة في اختبارات. قم بإزالتها من الاختبارات أولاً.");
+      }
+
+      // حذف مجموعة الأسئلة
+      _context.QuestionSets.Remove(questionSet);
+      await _context.SaveChangesAsync();
+
+      return true;
+    }
+
+    public Task AddQuestionSetToExam(int examId, int questionSetId, int displayOrder)
+    {
+      throw new NotImplementedException();
+    }
+
+    public Task RemoveQuestionSetFromExam(int examId, int questionSetId)
+    {
+      throw new NotImplementedException();
     }
   }
 }

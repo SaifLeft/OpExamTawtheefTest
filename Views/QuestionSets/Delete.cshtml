@@ -1,3 +1,4 @@
+@using TawtheefTest.Enums
 @model TawtheefTest.DTOs.QuestionSetDto
 @{
   ViewData["title"] = "حذف مجموعة الأسئلة";
@@ -78,7 +79,7 @@
                       عدد الأسئلة:
                     </dt>
                     <dd class="col-sm-8 mb-2">
-                      @if (Model.Status == TawtheefTest.Enum.QuestionSetStatus.Completed)
+                      @if (Model.Status == QuestionSetStatus.Completed)
                       {
                         <span>@Model.QuestionsGenerated / @Model.QuestionCount</span>
                       }
@@ -194,26 +195,26 @@
     };
   }
 
-  string GetStatusBadge(TawtheefTest.Enum.QuestionSetStatus status)
+  string GetStatusBadge(QuestionSetStatus status)
   {
     return status switch
     {
-      TawtheefTest.Enum.QuestionSetStatus.Pending => "warning",
-      TawtheefTest.Enum.QuestionSetStatus.Processing => "info",
-      TawtheefTest.Enum.QuestionSetStatus.Completed => "success",
-      TawtheefTest.Enum.QuestionSetStatus.Failed => "danger",
+      QuestionSetStatus.Pending => "warning",
+      QuestionSetStatus.Processing => "info",
+      QuestionSetStatus.Completed => "success",
+      QuestionSetStatus.Failed => "danger",
       _ => "secondary"
     };
   }
 
-  string GetStatusText(TawtheefTest.Enum.QuestionSetStatus status)
+  string GetStatusText(QuestionSetStatus status)
   {
     return status switch
     {
-      TawtheefTest.Enum.QuestionSetStatus.Pending => "في الانتظار",
-      TawtheefTest.Enum.QuestionSetStatus.Processing => "قيد المعالجة",
-      TawtheefTest.Enum.QuestionSetStatus.Completed => "مكتمل",
-      TawtheefTest.Enum.QuestionSetStatus.Failed => "فشل",
+      QuestionSetStatus.Pending => "في الانتظار",
+      QuestionSetStatus.Processing => "قيد المعالجة",
+      QuestionSetStatus.Completed => "مكتمل",
+      QuestionSetStatus.Failed => "فشل",
       _ => status.ToString()
     };
   }

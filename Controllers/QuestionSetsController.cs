@@ -1,58 +1,60 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
+using ITAM.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
-using TawtheefTest.ViewModels;
 using TawtheefTest.DTOs;
-using TawtheefTest.Services;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using TawtheefTest.Enum;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using AutoMapper;
-using ITAM.Service;
 using TawtheefTest.DTOs.Common;
+using TawtheefTest.Enums;
+using TawtheefTest.Services;
+using TawtheefTest.ViewModels;
 
 namespace TawtheefTest.Controllers
 {
   public class QuestionSetsController : Controller
   {
     private readonly ApplicationDbContext _context;
-    private readonly IOpExamsService _opExamsService;
-    private readonly IOpExamQuestionGenerationService _questionGenerationService;
     private readonly IMapper _mapper;
-    private readonly IQuestionSetLibraryService _questionSetLibraryService;
+    private readonly IQuestionSetLibraryService _libraryService;
+    private readonly IQuestionGenerationService _questionGenerationService;
     private readonly IFileMangmanent _file;
-
     public QuestionSetsController(
         ApplicationDbContext context,
-        IOpExamsService opExamsService,
-        IOpExamQuestionGenerationService questionGenerationService,
         IMapper mapper,
-        IQuestionSetLibraryService questionSetLibraryService,
+        IQuestionSetLibraryService libraryService,
+        IQuestionGenerationService questionGenerationService,
         IFileMangmanent file)
     {
       _context = context;
-      _opExamsService = opExamsService;
-      _questionGenerationService = questionGenerationService;
       _mapper = mapper;
-      _questionSetLibraryService = questionSetLibraryService;
+      _libraryService = libraryService;
+      _questionGenerationService = questionGenerationService;
       _file = file;
     }
 
     // GET: QuestionSets
     public async Task<IActionResult> Index()
     {
-      var questionSets = await _context.QuestionSets
-          .Include(qs => qs.ExamQuestionSets)
-              .ThenInclude(eqs => eqs.Exam)
-          .OrderByDescending(qs => qs.CreatedAt)
-          .ToListAsync();
+      var questionSets = await _libraryService.GetAllQuestionSetsAsync();
+      return View(questionSets);
+    }
 
-      var questionSetDtos = _mapper.Map<List<QuestionSetDto>>(questionSets);
-      return View(questionSetDtos);
+    // GET: QuestionSets/Library
+    public async Task<IActionResult> Library(string search, string questionType, string difficulty, string language)
+    {
+      var questionSets = await _libraryService.SearchQuestionSetsAsync(search, questionType, difficulty, language);
+
+      ViewBag.Search = search;
+      ViewBag.QuestionType = questionType;
+      ViewBag.Difficulty = difficulty;
+      ViewBag.Language = language;
+
+      return View(questionSets);
     }
 
     // GET: QuestionSets/Details/5
@@ -63,44 +65,59 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var questionSetDto = await _questionGenerationService.GetQuestionSetDetailsAsync(id.Value);
-      if (questionSetDto == null)
+      var questionSet = await _libraryService.GetQuestionSetByIdAsync(id.Value);
+      if (questionSet == null)
       {
         return NotFound();
       }
 
-      return View(questionSetDto);
-    }
-
-    // GET: QuestionSets/Status/5
-    public async Task<IActionResult> Status(int id)
-    {
-      var questionSetDto = await _questionGenerationService.GetQuestionSetStatusAsync(id);
-      if (questionSetDto == null)
-      {
-        return NotFound();
-      }
-
-      var viewModel = _mapper.Map<QuestionSetStatusViewModel>(questionSetDto);
-      return PartialView("_StatusPartial", viewModel);
+      return View(questionSet);
     }
 
     // GET: QuestionSets/Create
-    public IActionResult Create(int? examId)
+    public IActionResult Create()
     {
-      var viewModel = new CreateQuestionSetViewModel
+      ViewBag.QuestionTypes = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "MCQ", Text = "اختيار من متعدد" },
+                new SelectListItem { Value = "TF", Text = "صح / خطأ" },
+                new SelectListItem { Value = "open", Text = "إجابة مفتوحة" },
+                new SelectListItem { Value = "fillInTheBlank", Text = "ملء الفراغات" },
+                new SelectListItem { Value = "ordering", Text = "ترتيب" },
+                new SelectListItem { Value = "matching", Text = "مطابقة" },
+                new SelectListItem { Value = "multiSelect", Text = "اختيار متعدد (أكثر من إجابة)" },
+                new SelectListItem { Value = "shortAnswer", Text = "إجابة قصيرة" }
+            };
+
+      ViewBag.DifficultyLevels = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "auto", Text = "تلقائي" },
+                new SelectListItem { Value = "easy", Text = "سهل" },
+                new SelectListItem { Value = "medium", Text = "متوسط" },
+                new SelectListItem { Value = "hard", Text = "صعب" }
+            };
+
+      ViewBag.ContentSourceTypes = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "text", Text = "نص" },
+                new SelectListItem { Value = "topic", Text = "موضوع" },
+                new SelectListItem { Value = "link", Text = "رابط" },
+                new SelectListItem { Value = "youtube", Text = "فيديو يوتيوب" },
+                new SelectListItem { Value = "document", Text = "مستند (PDF/Word)" },
+                new SelectListItem { Value = "image", Text = "صورة" },
+                new SelectListItem { Value = "audio", Text = "ملف صوتي" },
+                new SelectListItem { Value = "video", Text = "فيديو" }
+            };
+
+      var model = new CreateQuestionSetViewModel
       {
-        ExamId = examId ?? 0,
-        QuestionCount = 10,
+        Language = "Arabic",
         Difficulty = "auto",
-        Language = "Arabic"
+        QuestionCount = 10,
+        OptionsCount = 4
       };
 
-      ViewBag.QuestionTypes = GetQuestionTypes();
-      ViewBag.ContentSourceTypes = GetContentSourceTypes();
-      ViewBag.DifficultyLevels = GetDifficultyLevels();
-
-      return View(viewModel);
+      return View(model);
     }
 
     // POST: QuestionSets/Create
@@ -110,354 +127,90 @@ namespace TawtheefTest.Controllers
     {
       if (ModelState.IsValid)
       {
-        // Create a new question set with failed status
-        var questionSet = new QuestionSet
-        {
-          Name = model.Name,
-          Description = model.Description,
-          QuestionType = model.QuestionType,
-          Difficulty = model.Difficulty,
-          QuestionCount = model.QuestionCount,
-          Language = model.Language,
-          OptionsCount = model.OptionsCount,
-          NumberOfRows = model.NumberOfRows,
-          NumberOfCorrectOptions = model.NumberOfCorrectOptions,
-          Status = QuestionSetStatus.Failed,
-          CreatedAt = DateTime.UtcNow,
-        };
-
-        _context.Add(questionSet);
-        await _context.SaveChangesAsync();
-
-        var contentSource = new ContentSource
-        {
-          QuestionSetId = questionSet.Id,
-          ContentSourceType = model.ContentSourceType,
-          Content = model.TextContent,
-          CreatedAt = DateTime.UtcNow
-        };
-
-        if (model.File != null && model.File.Length > 0)
-        {
-          ContentSourceType type = System.Enum.Parse<ContentSourceType>(model.ContentSourceType, true);
-          FileRespoesDTO respoesDTO = _file.SaveFile(model.File, type);
-          if (respoesDTO == null && !respoesDTO.IsSuccess)
-          {
-            throw new Exception(respoesDTO.Message);
-          }
-          contentSource.UploadedFile = new UploadedFile
-          {
-            FileName = respoesDTO.FileName,
-            FileId = respoesDTO.Path,
-            FileType = respoesDTO.FileExtension,
-            ContentType = model.File.ContentType,
-            FileSize = model.File.Length,
-            CreatedAt = DateTime.UtcNow,
-          };
-        }
-
-        _context.ContentSources.Add(contentSource);
-        await _context.SaveChangesAsync();
-
-        if (model.ExamId > 0)
-        {
-          var examQuestionSet = new ExamQuestionSet
-          {
-            ExamId = model.ExamId,
-            QuestionSetId = questionSet.Id,
-            DisplayOrder = 1
-          };
-
-          _context.ExamQuestionSets.Add(examQuestionSet);
-          await _context.SaveChangesAsync();
-        }
-
-        //await _opExamsService.GenerateQuestionsAsync(questionSet.Id);
-
-        TempData["SuccessMessage"] = "تم إنشاء مجموعة الأسئلة بنجاح وبدء عملية توليد الأسئلة.";
-
-        if (model.ExamId > 0)
-        {
-          return RedirectToAction("Details", "Exams", new { id = model.ExamId });
-        }
-        else
-        {
-          return RedirectToAction(nameof(Index));
-        }
-      }
-
-      ViewBag.QuestionTypes = GetQuestionTypes();
-      ViewBag.ContentSourceTypes = GetContentSourceTypes();
-      ViewBag.DifficultyLevels = GetDifficultyLevels();
-
-      return View(model);
-    }
-
-    // GET: QuestionSets/Edit/5
-    public async Task<IActionResult> Edit(int? id)
-    {
-      if (id == null)
-      {
-        return NotFound();
-      }
-
-      var questionSet = await _context.QuestionSets
-          .Include(qs => qs.ContentSources)
-          .Include(qs => qs.ExamQuestionSets)
-          .FirstOrDefaultAsync(qs => qs.Id == id);
-
-      if (questionSet == null)
-      {
-        return NotFound();
-      }
-
-      if (questionSet.Status == QuestionSetStatus.Processing)
-      {
-        TempData["ErrorMessage"] = "لا يمكن تعديل مجموعة الأسئلة لأنها قيد المعالجة حاليًا.";
-        return RedirectToAction(nameof(Details), new { id });
-      }
-
-      var model = new EditQuestionSetViewModel
-      {
-        Id = questionSet.Id,
-        Name = questionSet.Name,
-        Description = questionSet.Description,
-        QuestionType = questionSet.QuestionType,
-        Language = questionSet.Language,
-        Difficulty = questionSet.Difficulty,
-        QuestionCount = questionSet.QuestionCount,
-        OptionsCount = questionSet.OptionsCount ?? 4,
-        NumberOfRows = questionSet.NumberOfRows,
-        NumberOfCorrectOptions = questionSet.NumberOfCorrectOptions,
-        IsProcessing = questionSet.Status == QuestionSetStatus.Processing
-      };
-
-      var examQuestionSet = questionSet.ExamQuestionSets?.FirstOrDefault();
-      if (examQuestionSet != null)
-      {
-        model.ExamId = examQuestionSet.ExamId;
-      }
-
-      var contentSource = questionSet.ContentSources?.FirstOrDefault();
-      if (contentSource != null)
-      {
-        string contentType = contentSource.ContentSourceType?.ToLower() ?? "";
-        model.CurrentContentType = contentType;
-
-        switch (contentType)
-        {
-          case "topic":
-            model.Topic = contentSource.Content;
-            break;
-          case "text":
-            model.TextContent = contentSource.Content;
-            break;
-          case "link":
-            model.LinkUrl = contentSource.Url;
-            break;
-          case "youtube":
-            model.YoutubeUrl = contentSource.Url;
-            break;
-          default:
-            if (new[] { "document", "image", "audio", "video" }.Contains(contentType))
-            {
-              model.FileReference = contentSource.UploadedFileId?.ToString();
-              model.CurrentFileReference = contentSource.UploadedFileId?.ToString();
-            }
-            break;
-        }
-      }
-
-      ViewBag.QuestionSetId = questionSet.Id;
-      ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name");
-      return View(model);
-    }
-
-    // POST: QuestionSets/Edit/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, EditQuestionSetViewModel model)
-    {
-      var questionSet = await _context.QuestionSets
-          .Include(qs => qs.ContentSources)
-          .Include(qs => qs.ExamQuestionSets)
-          .FirstOrDefaultAsync(qs => qs.Id == id);
-
-      if (questionSet == null)
-      {
-        return NotFound();
-      }
-
-      if (questionSet.Status == QuestionSetStatus.Processing)
-      {
-        TempData["ErrorMessage"] = "لا يمكن تعديل مجموعة الأسئلة لأنها قيد المعالجة حاليًا.";
-        return RedirectToAction(nameof(Details), new { id });
-      }
-
-      if (ModelState.IsValid)
-      {
         try
         {
-          questionSet.Name = model.Name;
-          questionSet.Description = model.Description;
-          questionSet.QuestionType = model.QuestionType;
-          questionSet.Language = model.Language;
-          questionSet.Difficulty = model.Difficulty;
-          questionSet.QuestionCount = model.QuestionCount;
-          questionSet.OptionsCount = model.OptionsCount;
-          questionSet.NumberOfRows = model.NumberOfRows;
-          questionSet.NumberOfCorrectOptions = model.NumberOfCorrectOptions;
-          questionSet.UpdatedAt = DateTime.UtcNow;
+          var createDto = _mapper.Map<CreateQuestionSetDto>(model);
 
-          if (questionSet.Status == QuestionSetStatus.Completed || questionSet.Status == QuestionSetStatus.Failed)
+          if (model.File?.Length > 0)
           {
-            questionSet.Status = QuestionSetStatus.Pending;
-            questionSet.ProcessedAt = null;
-            questionSet.ErrorMessage = null;
-
-            var questions = await _context.Questions
-                .Where(q => q.QuestionSetId == id)
-                .ToListAsync();
-
-            _context.Questions.RemoveRange(questions);
-          }
-
-          _context.Update(questionSet);
-
-          if (model.ExamId > 0)
-          {
-            var examQuestionSet = await _context.ExamQuestionSets
-                .FirstOrDefaultAsync(eqs => eqs.QuestionSetId == id);
-
-            if (examQuestionSet != null)
+            ContentSourceType contentSourceTypeEnum = (ContentSourceType)System.Enum.Parse(typeof(ContentSourceType), model.ContentSourceType, true);
+            var SaveResponse = _file.SaveFile(model.File, contentSourceTypeEnum);
+            if (SaveResponse.IsSuccess)
             {
-              if (examQuestionSet.ExamId != model.ExamId)
-              {
-                examQuestionSet.ExamId = model.ExamId;
-                _context.Update(examQuestionSet);
-              }
+              createDto.FileName = SaveResponse.FileName;
             }
             else
             {
-              var newExamQuestionSet = new ExamQuestionSet
-              {
-                ExamId = model.ExamId,
-                QuestionSetId = id,
-                DisplayOrder = 1
-              };
-              _context.Add(newExamQuestionSet);
+              ModelState.AddModelError("", "حدث خطأ أثناء حفظ الملف");
+              PrepareViewBags();
+              return View(model);
             }
           }
 
-          if (model.File != null && model.File.Length > 0)
+          var questionSetId = await _questionGenerationService.CreateQuestionSetAsync(createDto);
+
+          if (questionSetId > 0)
           {
-            using var stream = model.File.OpenReadStream();
-            var fileId = await _opExamsService.UploadFile(stream, model.File.FileName);
-            if (!string.IsNullOrEmpty(fileId))
-            {
-              var file = new UploadedFile
-              {
-                FileName = model.File.FileName,
-                FileId = fileId,
-                FileType = DetermineFileType(model.File.ContentType),
-                ContentType = model.File.ContentType,
-                FileSize = model.File.Length,
-                CreatedAt = DateTime.UtcNow
-              };
+            TempData["SuccessMessage"] = "تم إنشاء مجموعة الأسئلة بنجاح وبدأت عملية توليد الأسئلة.";
 
-              _context.UploadedFiles.Add(file);
-              await _context.SaveChangesAsync();
 
-              var contentSource = questionSet.ContentSources.FirstOrDefault();
-              string contentType = DetermineContentType(model.File.ContentType);
-
-              if (contentSource != null)
-              {
-                contentSource.ContentSourceType = contentType;
-                contentSource.UploadedFileId = file.Id;
-                contentSource.Content = null;
-                contentSource.Url = null;
-                _context.Update(contentSource);
-              }
-              else
-              {
-                contentSource = new ContentSource
-                {
-                  ContentSourceType = contentType,
-                  UploadedFileId = file.Id,
-                  QuestionSetId = id
-                };
-                _context.Add(contentSource);
-              }
-            }
+            return RedirectToAction(nameof(Details), new { id = questionSetId });
           }
           else
           {
-            var contentSource = questionSet.ContentSources.FirstOrDefault();
-
-            if (!string.IsNullOrEmpty(model.Topic))
-            {
-              UpdateContentSource(contentSource, ContentSourceType.Topic.ToString(), model.Topic, null, null, id);
-            }
-            else if (!string.IsNullOrEmpty(model.TextContent))
-            {
-              UpdateContentSource(contentSource, ContentSourceType.Text.ToString(), model.TextContent, null, null, id);
-            }
-            else if (!string.IsNullOrEmpty(model.LinkUrl))
-            {
-              UpdateContentSource(contentSource, ContentSourceType.Link.ToString(), null, model.LinkUrl, null, id);
-            }
-            else if (!string.IsNullOrEmpty(model.YoutubeUrl))
-            {
-              UpdateContentSource(contentSource, ContentSourceType.Youtube.ToString(), null, model.YoutubeUrl, null, id);
-            }
+            ModelState.AddModelError("", "حدث خطأ أثناء إنشاء مجموعة الأسئلة");
+            PrepareViewBags();
+            return View(model);
           }
-
-          await _context.SaveChangesAsync();
-
-          TempData["SuccessMessage"] = "تم تحديث مجموعة الأسئلة بنجاح وإعادة تقديمها لتوليد الأسئلة.";
-          return RedirectToAction(nameof(Details), new { id });
         }
-        catch (DbUpdateConcurrencyException)
+        catch (Exception ex)
         {
-          if (!QuestionSetExists(id))
-          {
-            return NotFound();
-          }
-          else
-          {
-            throw;
-          }
+          ModelState.AddModelError("", $"حدث خطأ: {ex.Message}");
+          PrepareViewBags();
+          return View(model);
         }
       }
 
-      ViewBag.Exams = new SelectList(_context.Exams.ToList(), "Id", "Name", model.ExamId);
+      PrepareViewBags();
       return View(model);
+
+      void PrepareViewBags()
+      {
+        ViewBag.QuestionTypes = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "MCQ", Text = "اختيار من متعدد" },
+                    new SelectListItem { Value = "TF", Text = "صح / خطأ" },
+                    new SelectListItem { Value = "open", Text = "إجابة مفتوحة" },
+                    new SelectListItem { Value = "fillInTheBlank", Text = "ملء الفراغات" },
+                    new SelectListItem { Value = "ordering", Text = "ترتيب" },
+                    new SelectListItem { Value = "matching", Text = "مطابقة" },
+                    new SelectListItem { Value = "multiSelect", Text = "اختيار متعدد (أكثر من إجابة)" },
+                    new SelectListItem { Value = "shortAnswer", Text = "إجابة قصيرة" }
+                };
+
+        ViewBag.DifficultyLevels = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "auto", Text = "تلقائي" },
+                    new SelectListItem { Value = "easy", Text = "سهل" },
+                    new SelectListItem { Value = "medium", Text = "متوسط" },
+                    new SelectListItem { Value = "hard", Text = "صعب" }
+                };
+
+        ViewBag.ContentSourceTypes = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "text", Text = "نص" },
+                    new SelectListItem { Value = "topic", Text = "موضوع" },
+                    new SelectListItem { Value = "link", Text = "رابط" },
+                    new SelectListItem { Value = "youtube", Text = "فيديو يوتيوب" },
+                    new SelectListItem { Value = "document", Text = "مستند (PDF/Word)" },
+                    new SelectListItem { Value = "image", Text = "صورة" },
+                    new SelectListItem { Value = "audio", Text = "ملف صوتي" },
+                    new SelectListItem { Value = "video", Text = "فيديو" }
+                };
+      }
     }
 
-    private void UpdateContentSource(ContentSource contentSource, string contentType, string content, string url, int? fileId, int questionSetId)
-    {
-      if (contentSource != null)
-      {
-        contentSource.ContentSourceType = contentType;
-        contentSource.Content = content;
-        contentSource.Url = url;
-        contentSource.UploadedFileId = fileId;
-        _context.Update(contentSource);
-      }
-      else
-      {
-        contentSource = new ContentSource
-        {
-          ContentSourceType = contentType,
-          Content = content,
-          Url = url,
-          UploadedFileId = fileId,
-          QuestionSetId = questionSetId
-        };
-        _context.Add(contentSource);
-      }
-    }
+   
 
     // GET: QuestionSets/Delete/5
     public async Task<IActionResult> Delete(int? id)
@@ -468,21 +221,17 @@ namespace TawtheefTest.Controllers
       }
 
       var questionSet = await _context.QuestionSets
-          .Include(qs => qs.ExamQuestionSets)
-              .ThenInclude(eqs => eqs.Exam)
-          .FirstOrDefaultAsync(m => m.Id == id);
+          .Include(q => q.ExamQuestionSets)
+          .FirstOrDefaultAsync(q => q.Id == id);
 
       if (questionSet == null)
       {
         return NotFound();
       }
 
-
-
-      // لا نسمح بحذف مجموعة الأسئلة التي قيد المعالجة
-      if (questionSet.Status == QuestionSetStatus.Processing)
+      if (questionSet.ExamQuestionSets.Any())
       {
-        TempData["ErrorMessage"] = "لا يمكن حذف مجموعة الأسئلة لأنها قيد المعالجة حاليًا.";
+        TempData["ErrorMessage"] = "لا يمكن حذف المجموعة لأنها مستخدمة في اختبارات";
         return RedirectToAction(nameof(Details), new { id });
       }
 
@@ -497,66 +246,159 @@ namespace TawtheefTest.Controllers
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
       var questionSet = await _context.QuestionSets
-          .Include(qs => qs.Questions)
-          .Include(qs => qs.ExamQuestionSets)
-          .Include(qs => qs.ContentSources)
-          .FirstOrDefaultAsync(qs => qs.Id == id);
+          .Include(q => q.ExamQuestionSets)
+          .FirstOrDefaultAsync(q => q.Id == id);
 
-      if (questionSet != null)
-      {
-        // لا نسمح بحذف مجموعة الأسئلة التي قيد المعالجة
-        if (questionSet.Status == QuestionSetStatus.Processing)
-        {
-          TempData["ErrorMessage"] = "لا يمكن حذف مجموعة الأسئلة لأنها قيد المعالجة حاليًا.";
-          return RedirectToAction(nameof(Details), new { id });
-        }
-
-        _context.QuestionSets.Remove(questionSet);
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = "تم حذف مجموعة الأسئلة بنجاح";
-      }
-
-      return RedirectToAction(nameof(Index));
-    }
-
-    // POST: QuestionSets/Retry/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Retry(int id)
-    {
-      var result = await _questionGenerationService.RetryQuestionGenerationAsync(id);
-      if (!result)
-      {
-        TempData["ErrorMessage"] = "تعذر إعادة محاولة توليد الأسئلة. يجب أن تكون المجموعة في حالة فشل.";
-        return RedirectToAction("Details", new { id });
-      }
-
-      TempData["SuccessMessage"] = "تم إعادة محاولة توليد الأسئلة بنجاح.";
-      return RedirectToAction("Details", new { id });
-    }
-
-    // GET: QuestionSets/AddToExam/5
-    public async Task<IActionResult> AddToExam(int id)
-    {
-      var questionSet = await _questionGenerationService.GetQuestionSetDetailsAsync(id);
       if (questionSet == null)
       {
         return NotFound();
       }
 
-      var exams = await _context.Exams
-          .Where(e => e.Status != ExamStatus.Archived)
-          .Select(e => new SelectListItem
+      if (questionSet.ExamQuestionSets.Any())
+      {
+        TempData["ErrorMessage"] = "لا يمكن حذف المجموعة لأنها مستخدمة في اختبارات";
+        return RedirectToAction(nameof(Index));
+      }
+
+      _context.QuestionSets.Remove(questionSet);
+      await _context.SaveChangesAsync();
+
+      TempData["SuccessMessage"] = "تم حذف المجموعة بنجاح";
+      return RedirectToAction(nameof(Index));
+    }
+
+    // GET: QuestionSets/Status/5
+    [HttpGet]
+    public async Task<IActionResult> Status(int id)
+    {
+      var questionSet = await _context.QuestionSets.FindAsync(id);
+      if (questionSet == null)
+      {
+        return NotFound();
+      }
+
+      return Json(new { status = questionSet.Status.ToString() });
+    }
+
+    // GET: QuestionSets/ShuffleOptions/5
+    [HttpGet]
+    public async Task<IActionResult> ShuffleOptions(int id, string shuffleType)
+    {
+      try
+      {
+        ShuffleType type = (ShuffleType)System.Enum.Parse(typeof(ShuffleType), shuffleType);
+        await _libraryService.ShuffleQuestionOptionsAsync(id, type);
+        TempData["SuccessMessage"] = "تم خلط خيارات الأسئلة بنجاح";
+      }
+      catch (Exception ex)
+      {
+        TempData["ErrorMessage"] = $"حدث خطأ أثناء خلط الخيارات: {ex.Message}";
+      }
+
+      return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // POST: QuestionSets/Retry/5
+    [HttpPost]
+    public async Task<IActionResult> Retry(int id)
+    {
+      try
+      {
+        await _questionGenerationService.RetryQuestionGenerationAsync(id);
+        TempData["SuccessMessage"] = "تم إعادة محاولة توليد الأسئلة بنجاح";
+      }
+      catch (Exception ex)
+      {
+        TempData["ErrorMessage"] = $"حدث خطأ أثناء إعادة المحاولة: {ex.Message}";
+      }
+
+      return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // POST: QuestionSets/GenerateAgain/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateAgain(int id)
+    {
+      var questionSet = await _context.QuestionSets.FindAsync(id);
+      if (questionSet == null)
+      {
+        return NotFound();
+      }
+
+      try
+      {
+        bool result = await _questionGenerationService.RegenerateQuestions(id);
+        if (result)
+        {
+          TempData["SuccessMessage"] = "تم بدء عملية إعادة توليد الأسئلة بنجاح";
+        }
+        else
+        {
+          TempData["ErrorMessage"] = "حدث خطأ أثناء إعادة توليد الأسئلة";
+        }
+      }
+      catch (Exception ex)
+      {
+        TempData["ErrorMessage"] = $"حدث خطأ: {ex.Message}";
+      }
+
+      return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // GET: QuestionSets/AddToExam/5
+    public async Task<IActionResult> AddToExam(int id)
+    {
+      var questionSet = await _context.QuestionSets
+          .Include(q => q.ExamQuestionSets)
+          .ThenInclude(e => e.Exam)
+          .ThenInclude(e => e.Job)
+          .FirstOrDefaultAsync(q => q.Id == id);
+
+      if (questionSet == null || questionSet.Status != QuestionSetStatus.Completed)
+      {
+        return NotFound();
+      }
+
+      var viewModel = new AddQuestionSetToExamViewModel
+      {
+        QuestionSetId = questionSet.Id,
+        QuestionSetName = questionSet.Name,
+        QuestionType = questionSet.QuestionType,
+        Language = questionSet.Language == "Arabic" ? QuestionSetLanguage.Arabic : QuestionSetLanguage.English,
+        QuestionCount = questionSet.Questions.Count,
+        DisplayOrder = 1
+      };
+
+      // الاختبارات المرتبطة حالياً
+      viewModel.AssignedExams = questionSet.ExamQuestionSets
+          .Select(e => new ExamSummaryViewModel
           {
-            Value = e.Id.ToString(),
-            Text = e.Name
-          }).ToListAsync();
+            Id = e.Exam.Id,
+            Name = e.Exam.Name,
+            JobTitle = e.Exam.Job.Title,
+            Status = e.Exam.Status
+          })
+          .ToList();
 
-      ViewBag.Exams = exams;
-      ViewBag.QuestionSet = questionSet;
+      // الاختبارات المتاحة للإضافة
+      var assignedExamIds = viewModel.AssignedExams.Select(e => e.Id).ToList();
+      var availableExams = await _context.Exams
+          .Include(e => e.Job)
+          .Where(e => !assignedExamIds.Contains(e.Id) && e.Status != ExamStatus.Archived)
+          .ToListAsync();
 
-      return View(new AddQuestionSetToExamViewModel { QuestionSetId = id });
+      viewModel.AvailableExams = availableExams
+          .Select(e => new ExamSummaryViewModel
+          {
+            Id = e.Id,
+            Name = e.Name,
+            JobTitle = e.Job.Title,
+            Status = e.Status
+          })
+          .ToList();
+
+      return View(viewModel);
     }
 
     // POST: QuestionSets/AddToExam
@@ -566,185 +408,72 @@ namespace TawtheefTest.Controllers
     {
       if (ModelState.IsValid)
       {
-        // استخدام الخدمة لإضافة مجموعة الأسئلة إلى الاختبار إذا كانت متاحة
-        if (_questionSetLibraryService != null)
+        try
         {
-          await _questionSetLibraryService.AddQuestionSetToExamAsync(model.ExamId, model.QuestionSetId, model.DisplayOrder);
+          await _libraryService.AddQuestionSetToExam(model.ExamId, model.QuestionSetId, model.DisplayOrder);
+          TempData["SuccessMessage"] = "تمت إضافة مجموعة الأسئلة إلى الاختبار بنجاح";
+          return RedirectToAction("Details", "Exams", new { id = model.ExamId });
         }
-        else
+        catch (Exception ex)
         {
-          // إذا لم تكن الخدمة متاحة، استخدم الطريقة التقليدية
-          var examQuestionSet = new ExamQuestionSet
-          {
-            ExamId = model.ExamId,
-            QuestionSetId = model.QuestionSetId,
-            DisplayOrder = model.DisplayOrder
-          };
-
-          _context.ExamQuestionSets.Add(examQuestionSet);
-          await _context.SaveChangesAsync();
+          ModelState.AddModelError("", ex.Message);
         }
-
-        return RedirectToAction("Details", "Exams", new { id = model.ExamId });
       }
 
-      var questionSet = await _questionGenerationService.GetQuestionSetDetailsAsync(model.QuestionSetId);
-      var exams = await _context.Exams
-          .Where(e => e.Status != ExamStatus.Archived)
-          .Select(e => new SelectListItem
-          {
-            Value = e.Id.ToString(),
-            Text = e.Name
-          }).ToListAsync();
+      // إعادة تجهيز النموذج في حالة الخطأ
+      var questionSet = await _context.QuestionSets
+          .Include(q => q.ExamQuestionSets)
+          .ThenInclude(e => e.Exam)
+          .ThenInclude(e => e.Job)
+          .FirstOrDefaultAsync(q => q.Id == model.QuestionSetId);
 
-      ViewBag.Exams = exams;
-      ViewBag.QuestionSet = questionSet;
+      // الاختبارات المرتبطة حالياً
+      model.AssignedExams = questionSet.ExamQuestionSets
+          .Select(e => new ExamSummaryViewModel
+          {
+            Id = e.Exam.Id,
+            Name = e.Exam.Name,
+            JobTitle = e.Exam.Job.Title,
+            Status = e.Exam.Status
+          })
+          .ToList();
+
+      // الاختبارات المتاحة للإضافة
+      var assignedExamIds = model.AssignedExams.Select(e => e.Id).ToList();
+      var availableExams = await _context.Exams
+          .Include(e => e.Job)
+          .Where(e => !assignedExamIds.Contains(e.Id) && e.Status != ExamStatus.Archived)
+          .ToListAsync();
+
+      model.AvailableExams = availableExams
+          .Select(e => new ExamSummaryViewModel
+          {
+            Id = e.Id,
+            Name = e.Name,
+            JobTitle = e.Job.Title,
+            Status = e.Status
+          })
+          .ToList();
 
       return View(model);
     }
 
-    // POST: QuestionSets/GenerateAgain/5
+    // POST: QuestionSets/RemoveFromExam
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GenerateAgain(int id)
+    public async Task<IActionResult> RemoveFromExam(int questionSetId, int examId)
     {
-      var questionSet = await _context.QuestionSets
-          .Include(qs => qs.Questions)
-          .FirstOrDefaultAsync(qs => qs.Id == id);
-
-      if (questionSet == null)
+      try
       {
-        return NotFound();
+        await _libraryService.RemoveQuestionSetFromExam(examId, questionSetId);
+        TempData["SuccessMessage"] = "تمت إزالة مجموعة الأسئلة من الاختبار بنجاح";
+      }
+      catch (Exception ex)
+      {
+        TempData["ErrorMessage"] = $"حدث خطأ: {ex.Message}";
       }
 
-      // حذف الأسئلة الموجودة
-      _context.Questions.RemoveRange(questionSet.Questions);
-      await _context.SaveChangesAsync();
-
-      // إعادة تعيين حالة مجموعة الأسئلة
-      questionSet.Status = QuestionSetStatus.Pending;
-      questionSet.ErrorMessage = null;
-      await _context.SaveChangesAsync();
-
-      // بدء عملية إنشاء الأسئلة مرة أخرى
-      await _opExamsService.GenerateQuestionsAsync(questionSet.Id);
-
-      TempData["SuccessMessage"] = "تم بدء عملية توليد الأسئلة مرة أخرى.";
-      return RedirectToAction(nameof(Details), new { id });
-    }
-
-    private bool QuestionSetExists(int id)
-    {
-      return _context.QuestionSets.Any(e => e.Id == id);
-    }
-
-    private string DetermineFileType(string contentType)
-    {
-      if (contentType.StartsWith("image/"))
-      {
-        return nameof(FileType.Image);
-      }
-      else if (contentType.StartsWith("audio/"))
-      {
-        return nameof(FileType.Audio);
-      }
-      else if (contentType.StartsWith("video/"))
-      {
-        return nameof(FileType.Video);
-      }
-      else if (contentType == "application/pdf" ||
-              contentType == "application/msword" ||
-              contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-              contentType == "text/plain")
-      {
-        return nameof(FileType.Document);
-      }
-      else
-      {
-        return nameof(FileType.Other);
-      }
-    }
-
-    private string DetermineContentType(string contentType)
-    {
-      if (contentType.StartsWith("image/"))
-      {
-        return ContentSourceType.Image.ToString();
-      }
-      else if (contentType.StartsWith("audio/"))
-      {
-        return ContentSourceType.Audio.ToString();
-      }
-      else if (contentType.StartsWith("video/"))
-      {
-        return ContentSourceType.Video.ToString();
-      }
-      else
-      {
-        return ContentSourceType.Document.ToString();
-      }
-    }
-
-    // Helpers for dropdown lists
-    private IEnumerable<SelectListItem> GetQuestionTypes()
-    {
-      return new List<SelectListItem>
-      {
-        new SelectListItem { Value = "MCQ", Text = "اختيار من متعدد" },
-        new SelectListItem { Value = "TF", Text = "صح / خطأ" },
-        new SelectListItem { Value = "open", Text = "إجابة مفتوحة" },
-        new SelectListItem { Value = "fillInTheBlank", Text = "ملء الفراغات" },
-        new SelectListItem { Value = "ordering", Text = "ترتيب" },
-        new SelectListItem { Value = "matching", Text = "مطابقة" },
-        new SelectListItem { Value = "multiSelect", Text = "اختيار متعدد" },
-        new SelectListItem { Value = "shortAnswer", Text = "إجابة قصيرة" }
-      };
-    }
-
-    private IEnumerable<SelectListItem> GetContentSourceTypes()
-    {
-      return new List<SelectListItem>
-      {
-        new SelectListItem { Value = "topic", Text = "موضوع" },
-        new SelectListItem { Value = "text", Text = "نص" },
-        new SelectListItem { Value = "link", Text = "رابط" },
-        new SelectListItem { Value = "youtube", Text = "يوتيوب" },
-        new SelectListItem { Value = "document", Text = "مستند" },
-        new SelectListItem { Value = "image", Text = "صورة" },
-        new SelectListItem { Value = "audio", Text = "صوت" },
-        new SelectListItem { Value = "video", Text = "فيديو" }
-      };
-    }
-
-    private IEnumerable<SelectListItem> GetDifficultyLevels()
-    {
-      return new List<SelectListItem>
-      {
-        new SelectListItem { Value = "easy", Text = "سهل" },
-        new SelectListItem { Value = "medium", Text = "متوسط" },
-        new SelectListItem { Value = "hard", Text = "صعب" },
-        new SelectListItem { Value = "auto", Text = "تلقائي" }
-      };
-    }
-
-    // تم نقلها من QuestionSetsLibraryController
-    // GET: QuestionSets/Library
-    public async Task<IActionResult> Library()
-    {
-      var questionSets = await _questionSetLibraryService.GetAllQuestionSetsAsync();
-      return View(questionSets);
-    }
-
-    // GET: QuestionSets/LibraryDetails/5
-    public async Task<IActionResult> LibraryDetails(int id)
-    {
-      var questionSet = await _questionSetLibraryService.GetQuestionSetDetailsAsync(id);
-      if (questionSet == null)
-      {
-        return NotFound();
-      }
-
-      return View(questionSet);
+      return RedirectToAction("Details", "Exams", new { id = examId });
     }
 
     // POST: QuestionSets/Clone/5
@@ -752,79 +481,159 @@ namespace TawtheefTest.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Clone(int id)
     {
-      var newQuestionSetId = await _questionSetLibraryService.CloneQuestionSetAsync(id);
-      if (newQuestionSetId == 0)
+      try
       {
-        return NotFound();
+        var newId = await _libraryService.CloneQuestionSetAsync(id);
+        TempData["SuccessMessage"] = "تم نسخ مجموعة الأسئلة بنجاح";
+        return RedirectToAction(nameof(Details), new { id = newId });
       }
-
-      TempData["SuccessMessage"] = "تم نسخ مجموعة الأسئلة بنجاح";
-      return RedirectToAction(nameof(LibraryDetails), new { id = newQuestionSetId });
-    }
-
-    // GET: QuestionSets/ShuffleOptions/5
-    public async Task<IActionResult> ShuffleOptions(int id)
-    {
-      var questionSet = await _questionSetLibraryService.GetQuestionSetDetailsAsync(id);
-      if (questionSet == null)
+      catch (Exception ex)
       {
-        return NotFound();
+        TempData["ErrorMessage"] = $"حدث خطأ أثناء نسخ المجموعة: {ex.Message}";
+        return RedirectToAction(nameof(Details), new { id });
       }
-
-      ViewBag.QuestionSet = questionSet;
-      return View(new ShuffleOptionsViewModel { QuestionSetId = id });
-    }
-
-    // POST: QuestionSets/ShuffleOptions
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ShuffleOptions(ShuffleOptionsViewModel model)
-    {
-      if (ModelState.IsValid)
-      {
-        await _questionSetLibraryService.ShuffleQuestionOptionsAsync(model.QuestionSetId, model.ShuffleType);
-        TempData["SuccessMessage"] = "تم خلط خيارات الأسئلة بنجاح";
-        return RedirectToAction(nameof(LibraryDetails), new { id = model.QuestionSetId });
-      }
-
-      var questionSet = await _questionSetLibraryService.GetQuestionSetDetailsAsync(model.QuestionSetId);
-      ViewBag.QuestionSet = questionSet;
-      return View(model);
     }
 
     // GET: QuestionSets/DownloadDocument/5
-    public async Task<IActionResult> DownloadDocument(int? id)
+    public async Task<IActionResult> DownloadDocument(int id)
     {
-      if (id == null)
+      var questionSet = await _context.QuestionSets
+          .FirstOrDefaultAsync(qs => qs.Id == id && qs.ContentSourceType == "document");
+
+      if (questionSet == null || string.IsNullOrEmpty(questionSet.FileUploadedCode))
       {
         return NotFound();
       }
+
+      try
+      {
+        var contentSourceType = Enum.Parse<ContentSourceType>(questionSet.ContentSourceType, true);
+        var fileData = _file.GetFileByName(questionSet.FileUploadedCode, contentSourceType);
+        if (fileData == null || fileData.FileBytes == null || fileData.FileBytes.Length == 0)
+        {
+          return NotFound("لم يتم العثور على الملف");
+        }
+
+        return File(fileData.FileBytes, "application/pdf", questionSet.FileName ?? "document.pdf");
+      }
+      catch (Exception)
+      {
+        return NotFound("حدث خطأ أثناء استرداد الملف");
+      }
+    }
+
+    // GET: QuestionSets/DownloadFile/5
+    public async Task<IActionResult> DownloadFile(int id)
+    {
 
       var questionSet = await _context.QuestionSets
-          .Include(q => q.ContentSources)
-              .ThenInclude(cs => cs.UploadedFile)
-          .FirstOrDefaultAsync(q => q.Id == id);
+          .FirstOrDefaultAsync(qs => qs.Id == id);
 
-      if (questionSet == null || questionSet.ContentSources == null || !questionSet.ContentSources.Any())
+      if (questionSet == null || string.IsNullOrEmpty(questionSet.FileName))
       {
-        return NotFound();
+        return NotFound("الملف غير موجود");
       }
 
-      var contentSource = questionSet.ContentSources.FirstOrDefault();
-      if (contentSource == null ||
-          contentSource.ContentSourceType != ContentSourceType.Document.ToString() ||
-          contentSource.UploadedFile == null)
+      try
       {
-        return BadRequest("لا يوجد مستند مرفق لهذه المجموعة");
+        var contentSourceType = Enum.Parse<ContentSourceType>(questionSet.ContentSourceType, true);
+        var fileData = _file.GetFileByName(questionSet.FileName, contentSourceType);
+        if (fileData == null || fileData.FileBytes == null || fileData.FileBytes.Length == 0)
+        {
+          return NotFound("لم يتم العثور على الملف");
+        }
+
+        return File(fileData.FileBytes, fileData.FileContentType, fileData.FileName);
+      }
+      catch (Exception ex)
+      {
+        return NotFound($"حدث خطأ أثناء استرداد الملف: {ex.Message}");
+      }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Merge([FromForm] MergeQuestionSetsViewModel model)
+    {
+      if (model.SelectedIds == null || model.SelectedIds.Count < 2)
+        return Json(new { success = false, message = "يرجى اختيار مجموعتين أو أكثر للدمج." });
+
+      if (string.IsNullOrWhiteSpace(model.MergedName))
+        return Json(new { success = false, message = "يرجى إدخال اسم المجموعة الجديدة." });
+
+      if (string.IsNullOrWhiteSpace(model.MergedType))
+        return Json(new { success = false, message = "يرجى اختيار نوع الأسئلة للمجموعة الجديدة." });
+
+      if (string.IsNullOrWhiteSpace(model.MergedDifficulty))
+        return Json(new { success = false, message = "يرجى اختيار مستوى الصعوبة للمجموعة الجديدة." });
+
+      if (string.IsNullOrWhiteSpace(model.MergedLanguage))
+        return Json(new { success = false, message = "يرجى اختيار اللغة للمجموعة الجديدة." });
+
+      // التحقق من عدد الأسئلة المطلوبة من كل مجموعة
+      if (model.QuestionsCountPerSet == null)
+      {
+        model.QuestionsCountPerSet = new Dictionary<int, int>();
+
+        // إذا لم يتم تحديد عدد الأسئلة، استخدم العدد الأقصى المتاح من كل مجموعة
+        var questionSets = await _context.QuestionSets
+            .Where(q => model.SelectedIds.Contains(q.Id))
+            .Include(q => q.Questions)
+            .ToListAsync();
+
+        foreach (var set in questionSets)
+        {
+          model.QuestionsCountPerSet.Add(set.Id, set.Questions.Count);
+        }
       }
 
-      var fileResponse = _file.GetFileByName(contentSource.UploadedFile.FileName, ContentSourceType.Document);
-      if (fileResponse == null || !fileResponse.IsSuccess)
+      // تأكد من أن المجموعات متوافقة من حيث النوع إذا تم اختيار نوع محدد
+      if (model.MergedType != "auto" && model.MergedType != "mixed")
       {
-        return NotFound("لم يتم العثور على الملف المطلوب");
+        var questionTypes = await _context.QuestionSets
+            .Where(q => model.SelectedIds.Contains(q.Id))
+            .Select(q => q.QuestionType)
+            .Distinct()
+            .ToListAsync();
+
+        if (questionTypes.Count > 1)
+        {
+          return Json(new
+          {
+            success = false,
+            warning = true,
+            message = "تنبيه: المجموعات المختارة تحتوي على أنواع مختلفة من الأسئلة. هل تريد المتابعة رغم ذلك؟"
+          });
+        }
       }
 
-      return File(fileResponse.FileBytes, "application/octet-stream", contentSource.UploadedFile.FileName);
+      try
+      {
+        // استدعاء الخدمة لتنفيذ الدمج
+        var newSetId = await _libraryService.MergeSetsAsync(model);
+
+        // حساب مجموع الأسئلة التي تم دمجها فعلياً
+        int totalQuestions = 0;
+        foreach (var count in model.QuestionsCountPerSet.Values)
+        {
+          totalQuestions += count;
+        }
+
+        return Json(new
+        {
+          success = true,
+          redirectUrl = Url.Action("Details", new { id = newSetId }),
+          message = $"تم دمج المجموعات بنجاح وإنشاء مجموعة جديدة باسم '{model.MergedName}' تحتوي على {totalQuestions} سؤال."
+        });
+      }
+      catch (Exception ex)
+      {
+        return Json(new { success = false, message = "حدث خطأ أثناء دمج المجموعات: " + ex.Message });
+      }
+    }
+
+    private bool QuestionSetExists(int id)
+    {
+      return _context.QuestionSets.Any(e => e.Id == id);
     }
   }
 }

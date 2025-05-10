@@ -74,9 +74,6 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.UsageCount, opt => opt.Ignore())
           .ForMember(dest => dest.UsedInExams, opt => opt.Ignore());
 
-      CreateMap<ContentSource, ContentSourceViewModel>();
-      CreateMap<UploadedFile, UploadedFileViewModel>();
-
       // تعيين Question إلى QuestionDto بدلاً من QuestionViewModel
       CreateMap<Question, QuestionDto>();
       CreateMap<QuestionViewModel, QuestionDto>();
@@ -152,28 +149,30 @@ namespace TawtheefTest.Infrastructure
       CreateMap<OTPRequestViewModel, OTPRequestDto>();
 
       CreateMap<CreateQuestionSetViewModel, CreateQuestionSetDto>();
+      CreateMap<QuestionSetCreateViewModel, CreateQuestionSetDto>()
+        .ForMember(dest => dest.ContentSourceType, opt => opt.MapFrom(src => src.ContentSourceType));
     }
 
-    private string GetStatusDescription(Enum.QuestionSetStatus status)
+    private string GetStatusDescription(Enums.QuestionSetStatus status)
     {
       return status switch
       {
-        Enum.QuestionSetStatus.Pending => "في الانتظار",
-        Enum.QuestionSetStatus.Processing => "قيد المعالجة",
-        Enum.QuestionSetStatus.Completed => "مكتمل",
-        Enum.QuestionSetStatus.Failed => "فشل",
+        Enums.QuestionSetStatus.Pending => "في الانتظار",
+        Enums.QuestionSetStatus.Processing => "قيد المعالجة",
+        Enums.QuestionSetStatus.Completed => "مكتمل",
+        Enums.QuestionSetStatus.Failed => "فشل",
         _ => "غير معروف"
       };
     }
 
-    private string GetQuestionSetStatusDescription(Enum.QuestionSetStatus status)
+    private string GetQuestionSetStatusDescription(Enums.QuestionSetStatus status)
     {
       return status switch
       {
-        Enum.QuestionSetStatus.Pending => "في الانتظار",
-        Enum.QuestionSetStatus.Processing => "قيد المعالجة",
-        Enum.QuestionSetStatus.Completed => "مكتمل",
-        Enum.QuestionSetStatus.Failed => "فشل",
+        Enums.QuestionSetStatus.Pending => "في الانتظار",
+        Enums.QuestionSetStatus.Processing => "قيد المعالجة",
+        Enums.QuestionSetStatus.Completed => "مكتمل",
+        Enums.QuestionSetStatus.Failed => "فشل",
         _ => "غير معروف"
       };
     }

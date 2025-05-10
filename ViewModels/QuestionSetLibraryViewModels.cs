@@ -33,18 +33,6 @@ namespace TawtheefTest.ViewModels
     public string ContentSourceType { get; set; } = "Topic";
   }
 
-  public class AddQuestionSetToExamViewModel
-  {
-    [Required(ErrorMessage = "الاختبار مطلوب")]
-    public int ExamId { get; set; }
-
-    [Required(ErrorMessage = "مجموعة الأسئلة مطلوبة")]
-    public int QuestionSetId { get; set; }
-
-    [Display(Name = "ترتيب العرض")]
-    public int DisplayOrder { get; set; } = 1;
-  }
-
   public class ShuffleOptionsViewModel
   {
     [Required(ErrorMessage = "مجموعة الأسئلة مطلوبة")]
@@ -64,5 +52,16 @@ namespace TawtheefTest.ViewModels
 
     [Display(Name = "خلط الأسئلة والخيارات")]
     Both = 3
+  }
+
+  public class MergeQuestionSetsViewModel
+  {
+    public List<int> SelectedIds { get; set; }
+    public string MergedName { get; set; }
+    public string MergedType { get; set; }
+    public string MergedDifficulty { get; set; }
+    public string MergedLanguage { get; set; }
+    public bool ShuffleQuestions { get; set; }
+    public Dictionary<int, int> QuestionsCountPerSet { get; set; }
   }
 }

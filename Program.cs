@@ -22,7 +22,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register services
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOTPService, OTPService>();
-builder.Services.AddTransient<IOpExamsService, OpExamsService>();
 builder.Services.AddTransient<IFileMangmanent, FileMangmanent>();
 builder.Services.AddTransient<IOpExamQuestionGenerationService, OpExamQuestionGenerationService>();
 builder.Services.AddTransient<IQuestionSetLibraryService, QuestionSetLibraryService>();
