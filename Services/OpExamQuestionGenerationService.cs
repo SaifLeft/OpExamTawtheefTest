@@ -191,12 +191,12 @@ namespace TawtheefTest.Services
           switch (questionSet.QuestionType.ToLower())
           {
             case "mcq":
-              question.Options = CreateOptions(opExamQuestion.Options);
+              question.Options = CreateOptions(opExamQuestion.Options, opExamQuestion.AnswerIndex);
               if (opExamQuestion.AnswerIndex.HasValue)
               {
                 question.Answer = opExamQuestion.Options[opExamQuestion.AnswerIndex.Value];
               }
-              break;
+                break;
             case "tf":
               question.TrueFalseAnswer = opExamQuestion.Answer?.ToLower() == "true";
               break;
@@ -224,7 +224,7 @@ namespace TawtheefTest.Services
               }
               break;
             case "multiselect":
-              question.Options = CreateOptions(opExamQuestion.Options);
+              question.Options = CreateOptions(opExamQuestion.Options, opExamQuestion.AnswerIndex);
               question.Answer = opExamQuestion.Answer;
               break;
             case "shortanswer":
@@ -323,7 +323,7 @@ namespace TawtheefTest.Services
       return result;
     }
 
-    private List<QuestionOption> CreateOptions(List<string> options)
+    private List<QuestionOption> CreateOptions(List<string> options, int? answerIndex)
     {
       if (options == null) return new List<QuestionOption>();
 
@@ -334,7 +334,7 @@ namespace TawtheefTest.Services
         {
           Text = options[i],
           Index = i + 1,
-          IsCorrect = false
+          IsCorrect = i == answerIndex
         });
       }
 

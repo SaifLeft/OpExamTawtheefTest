@@ -38,14 +38,7 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: QuestionSets
-    public async Task<IActionResult> Index()
-    {
-      var questionSets = await _libraryService.GetAllQuestionSetsAsync();
-      return View(questionSets);
-    }
-
-    // GET: QuestionSets/Library
-    public async Task<IActionResult> Library(string search, string questionType, string difficulty, string language)
+    public async Task<IActionResult> Index(string search, string questionType, string difficulty, string language)
     {
       var questionSets = await _libraryService.SearchQuestionSetsAsync(search, questionType, difficulty, language);
 
@@ -210,7 +203,7 @@ namespace TawtheefTest.Controllers
       }
     }
 
-   
+
 
     // GET: QuestionSets/Delete/5
     public async Task<IActionResult> Delete(int? id)

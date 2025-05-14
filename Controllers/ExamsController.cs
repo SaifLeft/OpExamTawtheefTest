@@ -25,6 +25,7 @@ namespace TawtheefTest.Controllers
     public async Task<IActionResult> Index()
     {
       var exams = await _context.Exams
+          .Include(e => e.CandidateExams)
           .Include(e => e.Job)
           .Include(e => e.ExamQuestionSets)
               .ThenInclude(eqs => eqs.QuestionSet)
@@ -273,86 +274,6 @@ namespace TawtheefTest.Controllers
 
       ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title", examDto.JobId);
       return View(examDto);
-    }
-
-    // GET: Exams/GenerateQuestions/5
-    public async Task<IActionResult> GenerateQuestions(int? id)
-    {
-      if (id == null)
-      {
-        return NotFound();
-      }
-
-      var exam = await _context.Exams
-          .Include(e => e.Job)
-          .FirstOrDefaultAsync(m => m.Id == id);
-
-      if (exam == null)
-      {
-        return NotFound();
-      }
-
-      ViewData["JobName"] = exam.Job.Title;
-
-      var examDetailsDto = new ExamDetailsDto
-      {
-        Id = exam.Id,
-        Name = exam.Name,
-        Description = exam.Description,
-        JobId = exam.JobId
-      };
-
-      return View(examDetailsDto);
-    }
-
-    // POST: Exams/GenerateQuestions/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GenerateQuestions(int id, string topic, QuestionTypeEnum questionType, string difficulty, int questionCount)
-    {
-      var exam = await _context.Exams
-          .Include(e => e.Questions)
-          .FirstOrDefaultAsync(e => e.Id == id);
-
-      if (exam == null)
-      {
-        return NotFound();
-      }
-
-      // Create a new QuestionSet
-      var questionSet = new QuestionSet
-      {
-        Name = $"Question Set: {topic}",
-        Description = $"Generated for {exam.Name}",
-        QuestionType = questionType.ToString(),
-        Difficulty = difficulty,
-        QuestionCount = questionCount,
-        Status = QuestionSetStatus.Pending,
-        CreatedAt = DateTime.UtcNow
-      };
-
-      _context.QuestionSets.Add(questionSet);
-      await _context.SaveChangesAsync();
-
-      // تعيين مصدر المحتوى مباشرة
-      questionSet.ContentSourceType = ContentSourceType.Topic.ToString();
-      questionSet.Content = topic;
-      await _context.SaveChangesAsync();
-
-      // Link question set to exam
-      var examQuestionSet = new ExamQuestionSet
-      {
-        ExamId = exam.Id,
-        QuestionSetId = questionSet.Id,
-        DisplayOrder = (exam.ExamQuestionSets?.Count ?? 0) + 1
-      };
-
-      _context.ExamQuestionSets.Add(examQuestionSet);
-      await _context.SaveChangesAsync();
-
-
-      TempData["SuccessMessage"] = "تم بدء عملية توليد الأسئلة";
-      return RedirectToAction(nameof(Details), new { id });
     }
 
     // GET: Exams/Results/5
