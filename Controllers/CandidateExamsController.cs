@@ -91,6 +91,20 @@ namespace TawtheefTest.Controllers
       return View(examViewModels);
     }
 
+
+    public async Task<IActionResult> ByCandidateId(int id)
+    {
+      var candidateExams = await _context.CandidateExams
+          .Include(ce => ce.Exam)
+          .ThenInclude(e => e.Job)
+          .Where(ce => ce.CandidateId == id)
+          .OrderByDescending(ce => ce.StartTime)
+          .ToListAsync();
+      var candidateExamViewModels = _mapper.Map<List<CandidateExamViewModel>>(candidateExams);
+      ViewData["CandidateExams"] = candidateExamViewModels;
+      return View();
+    }
+
     // GET: CandidateExams/Start/5
     public async Task<IActionResult> Start(int? id)
     {

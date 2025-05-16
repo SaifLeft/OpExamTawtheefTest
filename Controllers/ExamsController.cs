@@ -91,20 +91,26 @@ namespace TawtheefTest.Controllers
         CreatedDate = exam.CreatedAt,
         ExamStartDate = exam.StartDate ?? DateTime.Now,
         ExamEndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
-        QuestionCount = exam.Questions.Count,
+        QuestionCountForEachCandidate = exam.QuestionCountForEachCandidate,
         ShowResultsImmediately = exam.ShowResultsImmediately,
         SendExamLinkToApplicants = exam.SendExamLinkToApplicants,
         Status = exam.Status,
-        QuestionSets = exam.ExamQuestionSets.Select(eqs => new QuestionSetDto
-        {
-          Id = eqs.QuestionSet.Id,
-          Name = eqs.QuestionSet.Name,
-          Description = eqs.QuestionSet.Description,
-          QuestionType = eqs.QuestionSet.QuestionType,
-          QuestionCount = eqs.QuestionSet.QuestionCount,
-          Status = eqs.QuestionSet.Status,
-          CreatedAt = eqs.QuestionSet.CreatedAt
-        }).ToList()
+        QuestionSets = exam.ExamQuestionSets
+            .OrderBy(eqs => eqs.DisplayOrder)
+            .Select(eqs => new QuestionSetDto
+            {
+              Id = eqs.QuestionSet.Id,
+              Name = eqs.QuestionSet.Name,
+              Description = eqs.QuestionSet.Description,
+              QuestionType = eqs.QuestionSet.QuestionType,
+              QuestionCount = eqs.QuestionSet.QuestionCount,
+              Status = eqs.QuestionSet.Status,
+              StatusDescription = GetStatusDescription(eqs.QuestionSet.Status),
+              ContentSourceType = eqs.QuestionSet.ContentSourceType,
+              Difficulty = eqs.QuestionSet.Difficulty,
+              ProcessedAt = eqs.QuestionSet.UpdatedAt,
+              CreatedAt = eqs.QuestionSet.CreatedAt
+            }).ToList()
       };
 
       // طباعة قيمة Status للتحقق
@@ -347,45 +353,6 @@ namespace TawtheefTest.Controllers
       return View(exams);
     }
 
-    // GET: Exams/QuestionSets/5
-    public async Task<IActionResult> QuestionSets(int? id)
-    {
-      if (id == null)
-      {
-        return NotFound();
-      }
-
-      var exam = await _context.Exams
-          .Include(e => e.ExamQuestionSets)
-              .ThenInclude(eqs => eqs.QuestionSet)
-          .FirstOrDefaultAsync(e => e.Id == id);
-
-      if (exam == null)
-      {
-        return NotFound();
-      }
-
-      ViewBag.ExamId = exam.Id;
-      ViewBag.ExamName = exam.Name;
-
-      var questionSets = exam.ExamQuestionSets
-          .OrderBy(eqs => eqs.DisplayOrder)
-          .Select(eqs => new QuestionSetDto
-          {
-            Id = eqs.QuestionSet.Id,
-            Name = eqs.QuestionSet.Name,
-            Description = eqs.QuestionSet.Description,
-            QuestionType = eqs.QuestionSet.QuestionType,
-            QuestionCount = eqs.QuestionSet.QuestionCount,
-            Status = eqs.QuestionSet.Status,
-            StatusDescription = GetStatusDescription(eqs.QuestionSet.Status),
-            CreatedAt = eqs.QuestionSet.CreatedAt,
-            UpdatedAt = eqs.QuestionSet.UpdatedAt,
-          })
-          .ToList();
-
-      return View(questionSets);
-    }
 
     // GET: Exams/ExamQuestions/5
     public async Task<IActionResult> ExamQuestions(int? id)

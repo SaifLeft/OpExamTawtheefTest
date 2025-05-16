@@ -359,8 +359,8 @@ namespace TawtheefTest.Controllers
         QuestionSetName = questionSet.Name,
         QuestionType = questionSet.QuestionType,
         Language = questionSet.Language == "Arabic" ? QuestionSetLanguage.Arabic : QuestionSetLanguage.English,
-        QuestionCount = questionSet.Questions.Count,
-        DisplayOrder = 1
+        QuestionCount = questionSet.QuestionCount,
+        DisplayOrder = 1 
       };
 
       // الاختبارات المرتبطة حالياً
@@ -397,15 +397,15 @@ namespace TawtheefTest.Controllers
     // POST: QuestionSets/AddToExam
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddToExam(AddQuestionSetToExamViewModel model)
+    public async Task<IActionResult> AddToExam(AddToExamDTO DTO)
     {
       if (ModelState.IsValid)
       {
         try
         {
-          await _libraryService.AddQuestionSetToExam(model.ExamId, model.QuestionSetId, model.DisplayOrder);
+          await _libraryService.AddQuestionSetToExam(DTO);
           TempData["SuccessMessage"] = "تمت إضافة مجموعة الأسئلة إلى الاختبار بنجاح";
-          return RedirectToAction("Details", "Exams", new { id = model.ExamId });
+          return RedirectToAction("Details", "Exams", new { id = DTO.ExamId });
         }
         catch (Exception ex)
         {
@@ -413,12 +413,18 @@ namespace TawtheefTest.Controllers
         }
       }
 
+      AddQuestionSetToExamViewModel model = new AddQuestionSetToExamViewModel
+      {
+        QuestionSetId = DTO.QuestionSetId,
+        DisplayOrder = DTO.DisplayOrder
+      };
+
       // إعادة تجهيز النموذج في حالة الخطأ
       var questionSet = await _context.QuestionSets
           .Include(q => q.ExamQuestionSets)
           .ThenInclude(e => e.Exam)
           .ThenInclude(e => e.Job)
-          .FirstOrDefaultAsync(q => q.Id == model.QuestionSetId);
+          .FirstOrDefaultAsync(q => q.Id == DTO.QuestionSetId);
 
       // الاختبارات المرتبطة حالياً
       model.AssignedExams = questionSet.ExamQuestionSets

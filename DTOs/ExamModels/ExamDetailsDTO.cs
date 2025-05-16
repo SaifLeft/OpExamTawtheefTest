@@ -11,7 +11,7 @@ namespace TawtheefTest.DTOs.ExamModels
     public string Name { get; set; }
     public int JobId { get; set; }
     public string JobName { get; set; }
-    public int QuestionCount { get; set; }
+    public int QuestionCountForEachCandidate { get; set; }
     public int OptionsCount { get; set; }
     public string QuestionType { get; set; }
     public string Difficulty { get; set; }
@@ -24,6 +24,7 @@ namespace TawtheefTest.DTOs.ExamModels
     public bool SendExamLinkToApplicants { get; set; }
     public ExamStatus Status { get; set; }
     public List<QuestionSetDto> QuestionSets { get; set; }
+    public List<ExamCandidateDTO> Candidates { get; set; }
   }
 
 }

@@ -144,6 +144,7 @@ namespace TawtheefTest.Data.Structure
 
     // النسبة المئوية للنجاح
     public decimal? PassPercentage { get; set; } = 60;
+    public int QuestionCountForEachCandidate { get; set; } = 30;
 
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }

@@ -39,7 +39,8 @@ namespace TawtheefTest.Infrastructure
       CreateMap<Exam, ExamForCandidateViewModel>()
           .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Job.Title))
           .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.Questions.Count))
-          .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60));
+          .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60))
+          .ForMember(dest => dest.QuestionCountForEachCandidate, opt => opt.MapFrom(src => src.QuestionCountForEachCandidate));
 
       // تخطيط CandidateExam إلى CandidateExamResultViewModel
       CreateMap<CandidateExam, CandidateExamResultViewModel>()

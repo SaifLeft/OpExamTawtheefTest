@@ -31,7 +31,8 @@ namespace TawtheefTest.Services
     /// <summary>
     /// إضافة مجموعة أسئلة إلى اختبار
     /// </summary>
-    Task AddQuestionSetToExamAsync(int examId, int questionSetId, int displayOrder);
+    Task AddQuestionSetToExam(AddToExamDTO DTO);
+
 
     /// <summary>
     /// نسخ مجموعة أسئلة
@@ -67,7 +68,6 @@ namespace TawtheefTest.Services
     /// حذف مجموعة أسئلة
     /// </summary>
     Task<bool> DeleteQuestionSetAsync(int id);
-    Task AddQuestionSetToExam(int examId, int questionSetId, int displayOrder);
     Task RemoveQuestionSetFromExam(int examId, int questionSetId);
   }
   public class QuestionSetLibraryService : IQuestionSetLibraryService
@@ -151,10 +151,10 @@ namespace TawtheefTest.Services
       return questionSet.Id;
     }
 
-    public async Task AddQuestionSetToExamAsync(int examId, int questionSetId, int displayOrder)
+    public async Task AddQuestionSetToExam(AddToExamDTO DTO)
     {
-      var exam = await _context.Exams.FindAsync(examId);
-      var questionSet = await _context.QuestionSets.FindAsync(questionSetId);
+      var exam = await _context.Exams.FindAsync(DTO.ExamId);
+      var questionSet = await _context.QuestionSets.FindAsync(DTO.QuestionSetId);
 
       if (exam == null || questionSet == null)
       {
@@ -163,21 +163,21 @@ namespace TawtheefTest.Services
 
       // تحقق مما إذا كانت مجموعة الأسئلة مضافة بالفعل للاختبار
       var existingLink = await _context.ExamQuestionSets
-          .FirstOrDefaultAsync(eqs => eqs.ExamId == examId && eqs.QuestionSetId == questionSetId);
+          .FirstOrDefaultAsync(eqs => eqs.ExamId == DTO.ExamId && eqs.QuestionSetId == DTO.QuestionSetId);
 
       if (existingLink != null)
       {
         // تحديث ترتيب العرض فقط إذا كانت مجموعة الأسئلة مضافة بالفعل
-        existingLink.DisplayOrder = displayOrder;
+        existingLink.DisplayOrder = DTO.DisplayOrder;
       }
       else
       {
         // إنشاء ارتباط جديد بين الاختبار ومجموعة الأسئلة
         var examQuestionSet = new ExamQuestionSet
         {
-          ExamId = examId,
-          QuestionSetId = questionSetId,
-          DisplayOrder = displayOrder
+          ExamId = DTO.ExamId,
+          QuestionSetId = DTO.QuestionSetId,
+          DisplayOrder = DTO.DisplayOrder
         };
 
         _context.ExamQuestionSets.Add(examQuestionSet);
@@ -665,10 +665,6 @@ namespace TawtheefTest.Services
       return true;
     }
 
-    public Task AddQuestionSetToExam(int examId, int questionSetId, int displayOrder)
-    {
-      throw new NotImplementedException();
-    }
 
     public Task RemoveQuestionSetFromExam(int examId, int questionSetId)
     {

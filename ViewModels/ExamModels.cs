@@ -19,7 +19,7 @@ namespace TawtheefTest.ViewModels
     // الخصائص المضافة لإصلاح الأخطاء
     public string QuestionType { get; set; }
     public string Difficulty { get; set; }
-    public int QuestionCount { get; set; }
+    public int QuestionCountForEachCandidate { get; set; }
   }
 
   public class CandidateExamViewModel
