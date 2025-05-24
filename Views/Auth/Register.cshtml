@@ -7,12 +7,12 @@
 <div class="row justify-content-center">
   <div class="col-md-8">
     <div class="card shadow">
-      <div class="card-header bg-primary text-white text-center">
+      <div class="card-header text-center">
         <h5 class="mb-0">تسجيل حساب جديد كمرشح</h5>
       </div>
       <div class="card-body">
         <div class="text-center mb-4">
-          <i class="bi bi-person-plus-fill" style="font-size: 3rem; color: #0d6efd;"></i>
+          <i class="bx bx-person-plus-fill" style="font-size: 3rem; color: #0d6efd;"></i>
         </div>
 
         @if (TempData["ErrorMessage"] != null)
@@ -23,7 +23,7 @@
         }
 
         <div class="alert alert-info">
-          <i class="bi bi-info-circle"></i> يرجى تعبئة المعلومات المطلوبة للتسجيل في نظام اختبارات المرشحين.
+          <i class="bx bx-info-circle"></i> يرجى تعبئة المعلومات المطلوبة للتسجيل في نظام اختبارات المرشحين.
         </div>
 
         <form asp-action="Register" method="post">
@@ -32,7 +32,7 @@
           <div class="mb-3">
             <label asp-for="Name" class="form-label">الاسم الكامل</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <span class="input-group-text"><i class="bx bx-person"></i></span>
               <input asp-for="Name" class="form-control" placeholder="أدخل الاسم الكامل" />
             </div>
             <span asp-validation-for="Name" class="text-danger"></span>
@@ -41,7 +41,7 @@
           <div class="mb-3">
             <label asp-for="Phone" class="form-label">رقم الهاتف</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-phone"></i></span>
+              <span class="input-group-text"><i class="bx bx-phone"></i></span>
               <input asp-for="Phone" class="form-control" placeholder="أدخل رقم الهاتف" />
             </div>
             <span asp-validation-for="Phone" class="text-danger"></span>
@@ -51,7 +51,7 @@
           <div class="mb-3">
             <label asp-for="JobId" class="form-label">الوظيفة</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-briefcase"></i></span>
+              <span class="input-group-text"><i class="bx bx-briefcase"></i></span>
               <select asp-for="JobId" class="form-select" asp-items="ViewBag.Jobs">
                 <option value="">-- اختر الوظيفة --</option>
               </select>
@@ -61,7 +61,7 @@
 
           <div class="d-grid gap-2 mt-4">
             <button type="submit" class="btn btn-primary btn-lg">
-              <i class="bi bi-check-circle"></i> تسجيل
+              <i class="bx bx-check-circle"></i> تسجيل
             </button>
           </div>
         </form>

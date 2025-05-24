@@ -150,7 +150,7 @@ namespace TawtheefTest.Services
       }
     }
 
-    private async Task SaveGeneratedQuestionsAsync(QuestionSet questionSet, OpExamQuestionGenerationResponse response, OpExamTFQuestionResponse? tfResponse)
+    private async Task SaveGeneratedQuestionsAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, OpExamQuestionGenerationResponse response, OpExamTFQuestionResponse? tfResponse)
     {
       var questions = new List<Question>();
 
@@ -196,7 +196,7 @@ namespace TawtheefTest.Services
               {
                 question.Answer = opExamQuestion.Options[opExamQuestion.AnswerIndex.Value];
               }
-                break;
+              break;
             case "tf":
               question.TrueFalseAnswer = opExamQuestion.Answer?.ToLower() == "true";
               break;
@@ -409,7 +409,7 @@ namespace TawtheefTest.Services
       if (examQuestionSet == null)
       {
         // إنشاء علاقة جديدة
-        examQuestionSet = new ExamQuestionSet
+        examQuestionSet = new TawtheefTest.Data.Structure.ExamQuestionSet
         {
           ExamId = examId,
           QuestionSetId = questionSetId,
@@ -422,116 +422,21 @@ namespace TawtheefTest.Services
         await _dbContext.SaveChangesAsync();
       }
 
-      // نسخ الأسئلة من مجموعة الأسئلة إلى الامتحان
-      if (questionSet.Questions != null && questionSet.Questions.Any())
+      return true;
+    }
+
+    // جلب مجموعة الأسئلة من قاعدة البيانات
+    private async Task<TawtheefTest.Data.Structure.QuestionSet> GetQuestionSetById(int questionSetId)
+    {
+      var questionSet = await _dbContext.QuestionSets
+          .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
+
+      if (questionSet == null)
       {
-        // البحث عن أقصى رقم ترتيبي في الامتحان
-        var maxIndex = await _dbContext.Questions
-            .Where(q => q.ExamId == examId)
-            .Select(q => q.Index)
-            .DefaultIfEmpty(0)
-            .MaxAsync();
-
-        var allNewQuestions = new List<Question>();
-        var allNewOptions = new List<QuestionOption>();
-        var allNewOrderingItems = new List<OrderingItem>();
-        var allNewMatchingPairs = new List<MatchingPair>();
-
-        // تحضير جميع الأسئلة للإضافة الجماعية
-        foreach (var question in questionSet.Questions)
-        {
-          var newQuestion = new Question
-          {
-            ExamId = examId,
-            QuestionSetId = question.QuestionSetId,
-            QuestionText = question.QuestionText,
-            QuestionType = question.QuestionType,
-            Index = ++maxIndex,
-            Answer = question.Answer,
-            TrueFalseAnswer = question.TrueFalseAnswer,
-            InstructionText = question.InstructionText,
-            CreatedAt = DateTime.UtcNow
-          };
-
-          allNewQuestions.Add(newQuestion);
-        }
-
-        // إضافة جميع الأسئلة دفعة واحدة
-        await _dbContext.Questions.AddRangeAsync(allNewQuestions);
-        await _dbContext.SaveChangesAsync();
-
-        // إضافة الخيارات وعناصر الترتيب وأزواج المطابقة
-        for (int i = 0; i < questionSet.Questions.Count; i++)
-        {
-          var originalQuestion = questionSet.Questions.ElementAt(i);
-          var newQuestion = allNewQuestions[i];
-
-          // نسخ خيارات السؤال إذا وجدت
-          if (originalQuestion.Options != null && originalQuestion.Options.Any())
-          {
-            foreach (var option in originalQuestion.Options)
-            {
-              allNewOptions.Add(new QuestionOption
-              {
-                QuestionId = newQuestion.Id,
-                Text = option.Text,
-                Index = option.Index,
-                IsCorrect = option.IsCorrect
-              });
-            }
-          }
-
-          // نسخ بيانات الترتيب إذا كان السؤال من نوع الترتيب
-          if (originalQuestion.QuestionType.ToLower() == "ordering" && originalQuestion.OrderingItems != null && originalQuestion.OrderingItems.Any())
-          {
-            foreach (var item in originalQuestion.OrderingItems)
-            {
-              allNewOrderingItems.Add(new OrderingItem
-              {
-                QuestionId = newQuestion.Id,
-                Text = item.Text,
-                CorrectOrder = item.CorrectOrder,
-                DisplayOrder = item.DisplayOrder
-              });
-            }
-          }
-
-          // نسخ بيانات المطابقة إذا كان السؤال من نوع المطابقة
-          if (originalQuestion.QuestionType.ToLower() == "matching" && originalQuestion.MatchingPairs != null && originalQuestion.MatchingPairs.Any())
-          {
-            foreach (var pair in originalQuestion.MatchingPairs)
-            {
-              allNewMatchingPairs.Add(new MatchingPair
-              {
-                QuestionId = newQuestion.Id,
-                LeftItem = pair.LeftItem,
-                RightItem = pair.RightItem,
-                DisplayOrder = pair.DisplayOrder
-              });
-            }
-          }
-        }
-
-        // إضافة جميع العناصر المرتبطة دفعة واحدة
-        if (allNewOptions.Any())
-        {
-          await _dbContext.QuestionOptions.AddRangeAsync(allNewOptions);
-        }
-
-        if (allNewOrderingItems.Any())
-        {
-          await _dbContext.OrderingItems.AddRangeAsync(allNewOrderingItems);
-        }
-
-        if (allNewMatchingPairs.Any())
-        {
-          await _dbContext.MatchingPairs.AddRangeAsync(allNewMatchingPairs);
-        }
-
-        await _dbContext.SaveChangesAsync();
+        throw new Exception($"لم يتم العثور على مجموعة الأسئلة بالمعرف {questionSetId}");
       }
 
-      return true;
+      return questionSet;
     }
   }
 }

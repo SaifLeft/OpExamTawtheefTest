@@ -46,7 +46,7 @@ namespace TawtheefTest.DTOs
     public DateTime CreatedDate { get; set; }
 
     [Display(Name = "عدد المتقدمين")]
-    public int? ApplicantsCount { get; set; }
+    public int? CandidatesCount { get; set; }
 
     // مجموعات الأسئلة المرتبطة بالاختبار
     public List<QuestionSetDto> QuestionSets { get; set; }

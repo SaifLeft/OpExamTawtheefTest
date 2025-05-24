@@ -15,6 +15,7 @@ namespace TawtheefTest.ViewModels
     public string CorrectAnswerText { get; set; }
     public string CorrectAnswer { get; set; }
     public DateTime? SubmittedAt { get; set; }
+    public bool IsFlagged { get; set; } = false;
 
     // الخصائص المضافة لإصلاح الأخطاء
     public string Answer { get; set; }

@@ -61,7 +61,7 @@ namespace TawtheefTest.Services
         ErrorMessage = null,
         ProcessedAt = null,
         UpdatedAt = null,
-        
+
       };
 
       _context.QuestionSets.Add(questionSet);
@@ -213,11 +213,6 @@ namespace TawtheefTest.Services
         _context.ExamQuestionSets.Add(examQuestionSet);
       }
 
-      // تحديث ExamId للأسئلة
-      foreach (var question in questionSet.Questions)
-      {
-        question.ExamId = examId;
-      }
 
       await _context.SaveChangesAsync();
       return true;

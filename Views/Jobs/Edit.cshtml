@@ -7,15 +7,15 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>تعديل الوظيفة</h1>
   <a asp-action="Index" class="btn btn-secondary">
-    <i class="bi bi-arrow-return-left"></i> العودة للقائمة
+    <i class="bx bx-arrow-return-left"></i> العودة للقائمة
   </a>
 </div>
 
 <div class="row">
   <div class="col-md-8">
     <div class="card">
-      <div class="card-header bg-primary text-white">
-        <i class="bi bi-pencil-square"></i> تعديل معلومات الوظيفة
+      <div class="card-header">
+        <i class="bx bx-pencil-square"></i> تعديل معلومات الوظيفة
       </div>
       <div class="card-body">
         <form asp-action="Edit">
@@ -25,7 +25,7 @@
 
           <div class="mb-3">
             <label asp-for="Name" class="form-label">
-              <i class="bi bi-briefcase"></i> اسم الوظيفة
+              <i class="bx bx-briefcase"></i> اسم الوظيفة
             </label>
             <input asp-for="Name" class="form-control" required placeholder="أدخل اسم الوظيفة" />
             <span asp-validation-for="Name" class="text-danger"></span>
@@ -33,7 +33,7 @@
 
           <div class="mb-3">
             <label asp-for="Code" class="form-label">
-              <i class="bi bi-key"></i> رمز الوظيفة
+              <i class="bx bx-key"></i> رمز الوظيفة
             </label>
             <input asp-for="Code" class="form-control" readonly />
             <small class="text-muted">يتم إنشاء رمز الوظيفة تلقائياً</small>
@@ -41,14 +41,14 @@
 
           <div class="mb-3">
             <label class="form-label">
-              <i class="bi bi-calendar"></i> تاريخ الإنشاء
+              <i class="bx bx-calendar"></i> تاريخ الإنشاء
             </label>
             <input type="text" class="form-control" value="@Model.CreatedDate.ToString("yyyy-MM-dd")" readonly />
           </div>
 
           <div class="d-flex justify-content-end">
             <button type="submit" class="btn btn-primary">
-              <i class="bi bi-save"></i> حفظ التغييرات
+              <i class="bx bx-save"></i> حفظ التغييرات
             </button>
           </div>
         </form>

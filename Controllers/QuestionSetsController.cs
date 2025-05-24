@@ -38,7 +38,7 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: QuestionSets
-    public async Task<IActionResult> Index(string search, string questionType, string difficulty, string language)
+    public async Task<IActionResult> Index(string search = null, string questionType = null, string difficulty = null, string language = null)
     {
       var questionSets = await _libraryService.SearchQuestionSetsAsync(search, questionType, difficulty, language);
 

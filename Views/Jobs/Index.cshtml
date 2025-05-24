@@ -8,7 +8,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>قائمة الوظائف</h1>
   <a asp-action="Create" class="btn btn-primary">
-    <i class="bi bi-plus-circle"></i> إضافة وظيفة جديدة
+    <i class="bx bx-plus-circle"></i> إضافة وظيفة جديدة
   </a>
 </div>
 
@@ -31,7 +31,7 @@
 @if (!Model.Any())
 {
   <div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> لا توجد وظائف متاحة. يرجى إضافة وظيفة جديدة.
+    <i class="bx bx-info-circle"></i> لا توجد وظائف متاحة. يرجى إضافة وظيفة جديدة.
   </div>
 }
 else
@@ -57,23 +57,23 @@ else
             <td>
               <a asp-controller="Candidates" asp-action="ByJob" asp-route-id="@item.Id"
                 class="badge bg-success text-decoration-none">
-                <i class="bi bi-people"></i> @item.CandidateCount
+                <i class="bx bx-people"></i> @item.CandidateCount
               </a>
             </td>
             <td>
               <a asp-controller="Exams" asp-action="ByJob" asp-route-id="@item.Id"
                 class="badge bg-info text-decoration-none">
-                <i class="bi bi-journal-text"></i> @item.ExamCount
+                <i class="bx bx-journal-text"></i> @item.ExamCount
               </a>
             </td>
             <td>@item.CreatedDate.ToString("yyyy-MM-dd")</td>
             <td>
               <div class="btn-group" role="group">
                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="تعديل">
-                  <i class="bi bi-pencil-square"></i>
+                  <i class="bx bx-pencil-square"></i>
                 </a>
                 <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="حذف">
-                  <i class="bi bi-trash"></i>
+                  <i class="bx bx-trash"></i>
                 </a>
               </div>
             </td>

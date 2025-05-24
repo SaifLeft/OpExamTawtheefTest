@@ -5,12 +5,12 @@
 <div class="row justify-content-center">
   <div class="col-md-6">
     <div class="card shadow">
-      <div class="card-header bg-primary text-white text-center">
+      <div class="card-header text-center">
         <h5 class="mb-0">تسجيل الدخول للمرشحين</h5>
       </div>
       <div class="card-body">
         <div class="text-center mb-4">
-          <i class="bi bi-person-badge" style="font-size: 3rem; color: #0d6efd;"></i>
+          <i class="bx bx-person-badge" style="font-size: 3rem; color: #0d6efd;"></i>
         </div>
 
         @if (TempData["ErrorMessage"] != null)
@@ -28,7 +28,7 @@
         }
 
         <div class="alert alert-info">
-          <i class="bi bi-info-circle"></i> مرحباً بك في منصة اختبارات المرشحين للوظائف. يرجى إدخال رقم الهاتف
+          <i class="bx bx-info-circle"></i> مرحباً بك في منصة اختبارات المرشحين للوظائف. يرجى إدخال رقم الهاتف
           المسجل للوصول إلى الاختبارات المتاحة لك.
         </div>
 
@@ -36,7 +36,7 @@
           <div class="mb-3">
             <label for="phoneNumber" class="form-label">رقم الهاتف</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-phone"></i></span>
+              <span class="input-group-text"><i class="bx bx-phone"></i></span>
               <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" required
                 placeholder="أدخل رقم الهاتف المسجل">
             </div>
@@ -45,14 +45,14 @@
 
           <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary btn-lg">
-              <i class="bi bi-send"></i> إرسال رمز التحقق
+              <i class="bx bx-send"></i> إرسال رمز التحقق
             </button>
           </div>
         </form>
       </div>
       <div class="card-footer text-center">
         <a asp-controller="Home" asp-action="Index" class="btn btn-link">
-          <i class="bi bi-house-door"></i> العودة للصفحة الرئيسية
+          <i class="bx bx-house-door"></i> العودة للصفحة الرئيسية
         </a>
       </div>
     </div>

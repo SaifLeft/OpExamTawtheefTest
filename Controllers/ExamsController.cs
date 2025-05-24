@@ -27,6 +27,7 @@ namespace TawtheefTest.Controllers
       var exams = await _context.Exams
           .Include(e => e.CandidateExams)
           .Include(e => e.Job)
+            .ThenInclude(e => e.Candidates)
           .Include(e => e.ExamQuestionSets)
               .ThenInclude(eqs => eqs.QuestionSet)
           .Select(e => new ExamDto
@@ -40,7 +41,7 @@ namespace TawtheefTest.Controllers
             StartDate = e.StartDate ?? DateTime.Now,
             EndDate = e.EndDate ?? DateTime.Now.AddDays(7),
             CreatedDate = e.CreatedAt,
-            ApplicantsCount = e.CandidateExams.Count(),
+            CandidatesCount = e.Job.Candidates.Count(),
             QuestionSets = e.ExamQuestionSets.Select(eqs => new QuestionSetDto
             {
               Id = eqs.QuestionSet.Id,
@@ -67,12 +68,20 @@ namespace TawtheefTest.Controllers
           .Include(e => e.ExamQuestionSets)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
-          .Include(e => e.Questions)
-              .ThenInclude(q => q.Options)
-          .Include(e => e.Questions)
-              .ThenInclude(q => q.MatchingPairs)
-          .Include(e => e.Questions)
-              .ThenInclude(q => q.OrderingItems)
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+                  .ThenInclude(qs => qs.Questions)
+                      .ThenInclude(q => q.Options)
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+                  .ThenInclude(qs => qs.Questions)
+                      .ThenInclude(q => q.MatchingPairs)
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+                  .ThenInclude(qs => qs.Questions)
+                      .ThenInclude(q => q.OrderingItems)
+          .Include(e => e.CandidateExams)
+              .ThenInclude(ce => ce.Candidate)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (exam == null)
@@ -91,7 +100,7 @@ namespace TawtheefTest.Controllers
         CreatedDate = exam.CreatedAt,
         ExamStartDate = exam.StartDate ?? DateTime.Now,
         ExamEndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
-        QuestionCountForEachCandidate = exam.QuestionCountForEachCandidate,
+        TotalQuestionsPerCandidate = exam.TotalQuestionsPerCandidate,
         ShowResultsImmediately = exam.ShowResultsImmediately,
         SendExamLinkToApplicants = exam.SendExamLinkToApplicants,
         Status = exam.Status,
@@ -110,6 +119,17 @@ namespace TawtheefTest.Controllers
               Difficulty = eqs.QuestionSet.Difficulty,
               ProcessedAt = eqs.QuestionSet.UpdatedAt,
               CreatedAt = eqs.QuestionSet.CreatedAt
+            }).ToList(),
+        Candidates = exam.CandidateExams
+            .Select(ce => new ExamCandidateDTO
+            {
+              Id = ce.Id,
+              CandidateId = ce.CandidateId,
+              Name = ce.Candidate.Name,
+              StartTime = ce.StartTime,
+              EndTime = ce.EndTime,
+              Score = ce.Score,
+              Status = Enum.GetValues<CandidateExamStatus>().FirstOrDefault(s => s.ToString() == ce.Status.ToString()),
             }).ToList()
       };
 
@@ -120,7 +140,11 @@ namespace TawtheefTest.Controllers
       TempData["StatusDebug"] = $"قيمة Status في الـ DTO: {examDetailsDto.Status} | قيمة Status في النموذج الأصلي: {exam.Status}";
 
       // جلب الأسئلة للاختبار
-      var questions = exam.Questions
+      var allQuestions = exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
+
+      var questions = allQuestions
           .OrderBy(q => q.Index)
           .Select(q => new ExamQuestionDTO
           {
@@ -133,20 +157,20 @@ namespace TawtheefTest.Controllers
             InstructionText = q.InstructionText,
             // للأسئلة من نوع الترتيب
             CorrectlyOrdered = q.QuestionType.ToLower() == "ordering"
-                ? q.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList()
-                : null,
+                  ? q.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList()
+                  : null,
             ShuffledOrder = q.QuestionType.ToLower() == "ordering"
-                ? q.OrderingItems.OrderBy(o => o.DisplayOrder).Select(o => o.Text).ToList()
-                : null,
+                  ? q.OrderingItems.OrderBy(o => o.DisplayOrder).Select(o => o.Text).ToList()
+                  : null,
             // للأسئلة من نوع المطابقة
             MatchingPairs = q.QuestionType.ToLower() == "matching"
-                ? q.MatchingPairs.Select(m => new MatchingPairDTO
-                {
-                  Left = m.LeftItem,
-                  Right = m.RightItem,
-                  Index = m.DisplayOrder
-                }).ToList()
-                : null,
+                  ? q.MatchingPairs.Select(m => new MatchingPairDTO
+                  {
+                    Left = m.LeftItem,
+                    Right = m.RightItem,
+                    Index = m.DisplayOrder
+                  }).ToList()
+                  : null,
             Options = q.Options?.Select(o => new QuestionOptionDTO
             {
               Id = o.Id,
@@ -334,7 +358,9 @@ namespace TawtheefTest.Controllers
       var exams = await _context.Exams
           .Where(e => e.JobId == id)
           .Include(e => e.Job)
-          .Include(e => e.Questions)
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+                  .ThenInclude(qs => qs.Questions)
           .Select(e => new ExamListDTO
           {
             Id = e.Id,
@@ -342,7 +368,7 @@ namespace TawtheefTest.Controllers
             JobId = e.JobId,
             JobName = e.Job.Title,
             Duration = e.Duration ?? 60,
-            QuestionsCount = e.Questions.Count,
+            QuestionsCount = e.ExamQuestionSets.Sum(eqs => eqs.QuestionSet.Questions.Count),
             CreatedDate = e.CreatedAt
           })
           .ToListAsync();
@@ -363,13 +389,10 @@ namespace TawtheefTest.Controllers
       }
 
       var exam = await _context.Exams
-          .Include(e => e.Job)
-          .Include(e => e.Questions)
-              .ThenInclude(q => q.Options)
-          .Include(e => e.Questions)
-              .ThenInclude(q => q.MatchingPairs)
-          .Include(e => e.Questions)
-              .ThenInclude(q => q.OrderingItems)
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+                  .ThenInclude(qs => qs.Questions)
+                    .ThenInclude(q => q.Options)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (exam == null)
@@ -377,45 +400,32 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      ViewBag.ExamName = exam.Name;
-      ViewBag.JobName = exam.Job.Title;
-
-      var questions = exam.Questions
-          .OrderBy(q => q.Index)
-          .Select(q => new ExamQuestionDTO
-          {
-            Id = q.Id,
-            SequenceNumber = q.Index,
-            QuestionText = q.QuestionText,
-            QuestionType = q.QuestionType,
-            Answer = q.Answer,
-            TrueFalseAnswer = q.TrueFalseAnswer,
-            InstructionText = q.InstructionText,
-            // للأسئلة من نوع الترتيب
-            CorrectlyOrdered = q.QuestionType.ToLower() == "ordering"
-                ? q.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList()
-                : null,
-            ShuffledOrder = q.QuestionType.ToLower() == "ordering"
-                ? q.OrderingItems.OrderBy(o => o.DisplayOrder).Select(o => o.Text).ToList()
-                : null,
-            // للأسئلة من نوع المطابقة
-            MatchingPairs = q.QuestionType.ToLower() == "matching"
-                ? q.MatchingPairs.Select(m => new MatchingPairDTO
-                {
-                  Left = m.LeftItem,
-                  Right = m.RightItem,
-                  Index = m.DisplayOrder
-                }).ToList()
-                : null,
-            Options = q.Options?.Select(o => new QuestionOptionDTO
-            {
-              Id = o.Id,
-              Text = o.Text,
-              Index = o.Index,
-              IsCorrect = o.IsCorrect
-            }).ToList()
-          })
+      // تجميع الأسئلة من جميع مجموعات الأسئلة
+      var allQuestions = exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
           .ToList();
+
+      if (allQuestions.Count == 0)
+      {
+        TempData["WarningMessage"] = "لا توجد أسئلة في هذا الاختبار بعد. يرجى إضافة بعض الأسئلة أولاً.";
+        return RedirectToAction(nameof(Details), new { id });
+      }
+
+      var questions = allQuestions.Select(q => new ExamQuestionDTO
+      {
+        Id = q.Id,
+        QuestionText = q.QuestionText,
+        QuestionType = q.QuestionType,
+        Options = q.Options.Select(o => new QuestionOptionDTO
+        {
+          Id = o.Id,
+          Text = o.Text,
+          IsCorrect = o.IsCorrect
+        }).ToList()
+      }).ToList();
+
+      ViewBag.ExamId = id;
+      ViewBag.ExamName = exam.Name;
 
       return View(questions);
     }
@@ -482,8 +492,9 @@ namespace TawtheefTest.Controllers
       }
 
       // التحقق من أن الاختبار يحتوي على أسئلة
-      var questionsCount = await _context.Questions
-          .Where(q => q.ExamId == id)
+      var questionsCount = await _context.ExamQuestionSets
+          .Where(eqs => eqs.ExamId == id)
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
           .CountAsync();
 
       if (questionsCount == 0)
@@ -521,7 +532,37 @@ namespace TawtheefTest.Controllers
 
       var exam = await _context.Exams
           .Include(e => e.Job)
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+                  .ThenInclude(qs => qs.Questions)
           .FirstOrDefaultAsync(e => e.Id == model.ExamId);
+
+      // check if exam has questions
+      if (exam.ExamQuestionSets.Count == 0)
+      {
+        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
+        return RedirectToAction(nameof(Details), new { id = model.ExamId });
+      }
+
+      // check if exam has candidates
+      var candidatesCount = await _context.Candidates
+          .Where(c => c.JobId == exam.JobId && c.IsActive)
+          .CountAsync();
+
+      if (candidatesCount == 0)
+      {
+        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على متقدمين";
+        return RedirectToAction(nameof(Details), new { id = model.ExamId });
+      }
+
+      // check if exam has n no of questions to be published
+
+      if (exam.TotalQuestionsPerCandidate > exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count())
+      {
+        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
+        return RedirectToAction(nameof(Details), new { id = model.ExamId });
+      }
+
 
       if (exam == null)
       {
@@ -633,6 +674,200 @@ namespace TawtheefTest.Controllers
       await _context.SaveChangesAsync();
 
       return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AssignQuestionSetsToExam(int examId, List<int> questionSetIds)
+    {
+      try
+      {
+        // التحقق من وجود الامتحان
+        var exam = await _context.Exams
+            .Include(e => e.ExamQuestionSets)
+            .FirstOrDefaultAsync(e => e.Id == examId);
+
+        if (exam == null)
+        {
+          return NotFound(new { success = false, message = "الامتحان غير موجود" });
+        }
+
+        // حذف مجموعات الأسئلة الحالية المرتبطة بالامتحان
+        _context.ExamQuestionSets.RemoveRange(exam.ExamQuestionSets);
+
+        // إضافة مجموعات الأسئلة المحددة إلى الامتحان
+        int displayOrder = 1;
+        foreach (var questionSetId in questionSetIds)
+        {
+          var examQuestionSet = new TawtheefTest.Data.Structure.ExamQuestionSet
+          {
+            ExamId = examId,
+            QuestionSetId = questionSetId,
+            DisplayOrder = displayOrder++
+          };
+          _context.ExamQuestionSets.Add(examQuestionSet);
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "تم تعيين مجموعات الأسئلة بنجاح" });
+      }
+      catch (Exception ex)
+      {
+        return StatusCode(500, new { success = false, message = $"حدث خطأ: {ex.Message}" });
+      }
+    }
+
+    // POST: Exams/DeleteQuestion/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteQuestion(int id)
+    {
+      // الحصول على السؤال من خلال معرّفه
+      var question = await _context.Questions
+          .Include(q => q.QuestionSet)
+              .ThenInclude(qs => qs.ExamQuestionSets)
+          .FirstOrDefaultAsync(q => q.Id == id);
+
+      if (question == null)
+      {
+        return NotFound();
+      }
+
+      // التحقق من أن السؤال ينتمي إلى مجموعة أسئلة مرتبطة بامتحان
+      var examId = question.QuestionSet.ExamQuestionSets.FirstOrDefault()?.ExamId;
+
+      if (examId == null)
+      {
+        TempData["ErrorMessage"] = "لم يتم العثور على الامتحان المرتبط بهذا السؤال.";
+        return RedirectToAction(nameof(Index));
+      }
+
+      try
+      {
+        _context.Questions.Remove(question);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "تم حذف السؤال بنجاح.";
+      }
+      catch (Exception ex)
+      {
+        TempData["ErrorMessage"] = $"حدث خطأ أثناء حذف السؤال: {ex.Message}";
+      }
+
+      return RedirectToAction(nameof(ExamQuestions), new { id = examId });
+    }
+
+    // GET: Exams/AddQuestion/5
+    public IActionResult AddQuestion(int id)
+    {
+      var questionSets = _context.QuestionSets
+          .Where(qs => qs.ExamQuestionSets.Any(eqs => eqs.ExamId == id))
+          .ToList();
+
+      if (questionSets.Count == 0)
+      {
+        TempData["ErrorMessage"] = "لا توجد مجموعات أسئلة متاحة لهذا الامتحان. يرجى إضافة مجموعة أسئلة أولاً.";
+        return RedirectToAction(nameof(Details), new { id });
+      }
+
+      ViewBag.QuestionSets = new SelectList(questionSets, "Id", "Name");
+      ViewBag.ExamId = id;
+      return View(new AddQuestionViewModel { ExamId = id });
+    }
+
+    // POST: Exams/AddQuestion/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddQuestion(int id, AddQuestionViewModel model)
+    {
+      if (id != model.ExamId)
+      {
+        return NotFound();
+      }
+
+      if (ModelState.IsValid)
+      {
+        try
+        {
+          // التحقق من وجود الامتحان
+          var exam = await _context.Exams
+              .Include(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+              .FirstOrDefaultAsync(e => e.Id == id);
+
+          if (exam == null)
+          {
+            return NotFound();
+          }
+
+          // إنشاء سؤال جديد
+          var question = new Question
+          {
+            QuestionSetId = model.QuestionSetId,
+            QuestionText = model.QuestionText,
+            QuestionType = model.QuestionType,
+            Index = 0, // سيتم تحديثه لاحقًا
+            DisplayOrder = 0, // سيتم تحديثه لاحقًا
+            CreatedAt = DateTime.UtcNow
+          };
+
+          if (model.QuestionType == "TF")
+          {
+            question.TrueFalseAnswer = model.TrueFalseAnswer;
+          }
+          else if (model.QuestionType == "ShortAnswer" || model.QuestionType == "FillInTheBlank")
+          {
+            question.Answer = model.Answer;
+          }
+
+          _context.Questions.Add(question);
+          await _context.SaveChangesAsync();
+
+          // تحديث مؤشر السؤال
+          var questionCount = exam.ExamQuestionSets
+              .SelectMany(eqs => eqs.QuestionSet.Questions)
+              .Count();
+
+          question.Index = questionCount;
+          question.DisplayOrder = questionCount;
+          await _context.SaveChangesAsync();
+
+          // إضافة خيارات للسؤال (إذا كان من نوع الاختيار من متعدد)
+          if (model.QuestionType == "MCQ" && model.Options != null && model.Options.Count > 0)
+          {
+            int optionIndex = 0;
+            foreach (var optionText in model.Options)
+            {
+              var option = new QuestionOption
+              {
+                QuestionId = question.Id,
+                Text = optionText,
+                IsCorrect = optionIndex == model.CorrectOptionIndex,
+                Index = optionIndex
+              };
+              _context.QuestionOptions.Add(option);
+              optionIndex++;
+            }
+            await _context.SaveChangesAsync();
+          }
+
+          TempData["SuccessMessage"] = "تم إضافة السؤال بنجاح.";
+          return RedirectToAction(nameof(ExamQuestions), new { id });
+        }
+        catch (Exception ex)
+        {
+          ModelState.AddModelError("", $"حدث خطأ أثناء إضافة السؤال: {ex.Message}");
+        }
+      }
+
+      // إعادة تحميل البيانات في حالة حدوث خطأ
+      var questionSets = await _context.QuestionSets
+          .Where(qs => qs.ExamQuestionSets.Any(eqs => eqs.ExamId == id))
+          .ToListAsync();
+
+      ViewBag.QuestionSets = new SelectList(questionSets, "Id", "Name");
+      ViewBag.ExamId = id;
+      return View(model);
     }
   }
 }

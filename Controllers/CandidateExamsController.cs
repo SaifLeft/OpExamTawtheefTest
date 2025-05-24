@@ -80,7 +80,6 @@ namespace TawtheefTest.Controllers
       var exams = await _context.Exams
           .Include(e => e.Job)
           .Where(e => e.JobId == candidate.JobId && e.Status == ExamStatus.Published)
-          .Where(e => !candidateExams.Any(ce => ce.ExamId == e.Id && ce.Status == CandidateExamStatus.Completed.ToString()))
           .ToListAsync();
 
       var examViewModels = _mapper.Map<List<ExamForCandidateViewModel>>(exams);
@@ -106,13 +105,9 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: CandidateExams/Start/5
-    public async Task<IActionResult> Start(int? id)
+    [HttpPost]
+    public async Task<IActionResult> Start(int id)
     {
-      if (id == null)
-      {
-        return NotFound();
-      }
-
       // التحقق من تسجيل دخول المرشح
       var candidateId = GetCurrentCandidateId();
       if (candidateId == null)
@@ -121,16 +116,35 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Login", "Auth");
       }
 
-      // الحصول على تفاصيل الاختبار
-      var exam = await _context.Exams
-          .Include(e => e.Job)
-          .Include(e => e.Questions)
-          .FirstOrDefaultAsync(e => e.Id == id);
+      // الحصول على اختبار المرشح
+      var candidateExam = await _context.CandidateExams
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+        .Include(ce => ce.CandidateAnswers)
+        .Include(ce => ce.Candidate)
+        .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
 
-      if (exam == null)
+      if (candidateExam == null)
       {
-        return NotFound();
+        TempData["ErrorMessage"] = "الاختبار غير موجود.";
+        return RedirectToAction("MyExams");
       }
+
+      // التحقق من وجود الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
+
+      if (candidateExam.Exam == null || allQuestions.Count == 0)
+      {
+        TempData["ErrorMessage"] = "لا توجد أسئلة في هذا الامتحان.";
+        return RedirectToAction("MyExams");
+      }
+
+      // تعيين عدد الأسئلة الإجمالي
+      int totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions : allQuestions.Count;
 
       // التحقق مما إذا كان المرشح قد أكمل هذا الاختبار بالفعل
       var completedExam = await _context.CandidateExams
@@ -158,40 +172,35 @@ namespace TawtheefTest.Controllers
       }
 
       // إنشاء محاولة اختبار جديدة
-      var candidateExam = new CandidateExam
+      var candidateExamNew = new CandidateExam
       {
         CandidateId = candidateId.Value,
-        ExamId = id.Value,
+        ExamId = id,
         StartTime = DateTime.UtcNow,
         Status = CandidateExamStatus.InProgress.ToString(),
         CreatedAt = DateTime.UtcNow,
-        TotalQuestions = exam.Questions.Count,
+        TotalQuestions = totalQuestions,
         CompletedQuestions = 0
       };
 
-      _context.CandidateExams.Add(candidateExam);
+      _context.CandidateExams.Add(candidateExamNew);
       await _context.SaveChangesAsync();
 
       // إنشاء إشعار ببدء الاختبار
       await _notificationService.CreateNotificationAsync(
           candidateId.Value,
           "تم بدء اختبار جديد",
-          $"لقد بدأت اختبار {exam.Name} بنجاح. عدد الأسئلة: {exam.Questions.Count}، مدة الاختبار: {exam.Duration} دقيقة.",
+          $"لقد بدأت اختبار {candidateExam.Exam.Name} بنجاح. عدد الأسئلة: {totalQuestions}، مدة الاختبار: {candidateExam.Exam.Duration} دقيقة.",
           "info"
       );
 
       TempData["SuccessMessage"] = "تم بدء الاختبار بنجاح.";
-      return RedirectToAction(nameof(Take), new { id = candidateExam.Id });
+      return RedirectToAction(nameof(Take), new { id = candidateExamNew.Id });
     }
 
     // GET: CandidateExams/Take/5
-    public async Task<IActionResult> Take(int? id)
+    public async Task<IActionResult> Take(int id)
     {
-      if (id == null)
-      {
-        return NotFound();
-      }
-
       // التحقق من تسجيل دخول المرشح
       var candidateId = GetCurrentCandidateId();
       if (candidateId == null)
@@ -200,29 +209,48 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Login", "Auth");
       }
 
-      // الحصول على تفاصيل اختبار المرشح
+      // الحصول على اختبار المرشح
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Exam)
-              .ThenInclude(e => e.Questions)
-                  .ThenInclude(q => q.Options)
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.Questions)
-                  .ThenInclude(q => q.MatchingPairs)
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.Questions)
-                  .ThenInclude(q => q.OrderingItems)
-          .Include(ce => ce.CandidateAnswers)
-          .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+        .Include(ce => ce.CandidateAnswers)
+        .Include(ce => ce.Candidate)
+        .ThenInclude(c => c.Job)
+        .Include(ce => ce.Exam)
+        .Include(ce => ce.Exam.Job)
+        .Include(ce => ce.Exam.ExamQuestionSets)
+
+        .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
 
       if (candidateExam == null)
       {
-        return NotFound();
+        TempData["ErrorMessage"] = "الاختبار غير موجود.";
+        return RedirectToAction("MyExams");
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
+      // التحقق من حالة الاختبار
+      if (candidateExam.Status != CandidateExamStatus.InProgress.ToString())
       {
-        return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
+        if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
+        {
+          return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
+        }
+        else
+        {
+          return RedirectToAction(nameof(Start), new { id = candidateExam.Id });
+        }
       }
+
+      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
+
+      // التحقق من وجود الأسئلة في الامتحان
+      var totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions : allQuestions.Count;
+      var completedQuestions = candidateExam.CompletedQuestions > 0 ? candidateExam.CompletedQuestions : 0;
 
       // الحصول على إجابات المرشح
       var candidateAnswers = await _context.CandidateAnswers
@@ -230,14 +258,33 @@ namespace TawtheefTest.Controllers
           .Where(ca => ca.CandidateExamId == id)
           .ToListAsync();
 
-      var candidateExamViewModel = _mapper.Map<CandidateExamViewModel>(candidateExam);
-      var candidateAnswerDTOs = _mapper.Map<List<CandidateAnswerDTO>>(candidateAnswers);
+      //var candidateExamViewModel = _mapper.Map<CandidateExamViewModel>(candidateExam);
+      var candidateExamViewModel = new CandidateExamViewModel()
+      {
+        Id = candidateExam.Id,
+        ExamId = candidateExam.ExamId,
+        JobTitle = candidateExam.Exam.Job.Title,
+        CandidateName = candidateExam.Candidate.Name,
+        CandidateId = candidateExam.CandidateId,
+        StartTime = candidateExam.StartTime,
+        EndTime = candidateExam.EndTime,
+        Duration = candidateExam.Exam.Duration.Value,
+        TotalQuestions = totalQuestions,
+        CompletedQuestions = completedQuestions,
+        Score = candidateExam.Score,
+        Status = candidateExam.Status,
+        FlaggedQuestions = candidateAnswers.Where(ca => ca.IsFlagged).Select(ca => ca.QuestionId).ToList()
+      };
+
+      // تحميل الأسئلة في نموذج العرض
+      candidateExamViewModel.Questions = _mapper.Map<List<CandidateQuestionViewModel>>(allQuestions);
+
 
       // إعداد بيانات إضافية للعرض
       var remainingTime = CalculateRemainingTime(candidateExam);
       candidateExamViewModel.RemainingTime = remainingTime;
 
-      ViewData["CandidateAnswers"] = candidateAnswerDTOs;
+      ViewData["CandidateAnswers"] = candidateAnswers;
       ViewData["ProgressPercentage"] = CalculateProgressPercentage(candidateExam, candidateAnswers);
 
       return View(candidateExamViewModel);
@@ -246,12 +293,14 @@ namespace TawtheefTest.Controllers
     // حساب النسبة المئوية للتقدم في الاختبار
     private int CalculateProgressPercentage(CandidateExam candidateExam, List<CandidateAnswer> candidateAnswers)
     {
-      if (candidateExam.Exam == null || candidateExam.Exam.Questions == null || candidateExam.Exam.Questions.Count == 0)
+      if (candidateExam.Exam == null || candidateExam.Exam.ExamQuestionSets == null || !candidateExam.Exam.ExamQuestionSets.Any() ||
+          !candidateExam.Exam.ExamQuestionSets.Any(eqs => eqs.QuestionSet.Questions != null && eqs.QuestionSet.Questions.Any()))
       {
         return 0;
       }
 
-      int totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions : candidateExam.Exam.Questions.Count;
+      int totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions :
+          candidateExam.Exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count();
       int answeredQuestions = candidateAnswers.Select(ca => ca.QuestionId).Distinct().Count();
 
       return (int)Math.Round((double)answeredQuestions / totalQuestions * 100);
@@ -273,7 +322,8 @@ namespace TawtheefTest.Controllers
 
     // POST: CandidateExams/SaveAnswer
     [HttpPost]
-    public async Task<IActionResult> SaveAnswer(int candidateExamId, int questionId, string answer)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveAnswer(SaveAnswerDTO model)
     {
       // التحقق من تسجيل دخول المرشح
       var candidateId = GetCurrentCandidateId();
@@ -282,9 +332,14 @@ namespace TawtheefTest.Controllers
         return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
+
       // الحصول على اختبار المرشح
       var candidateExam = await _context.CandidateExams
-          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+        .FirstOrDefaultAsync(ce => ce.Id == model.CandidateExamId && ce.CandidateId == candidateId);
 
       if (candidateExam == null || candidateExam.Status == CandidateExamStatus.Completed.ToString())
       {
@@ -296,7 +351,7 @@ namespace TawtheefTest.Controllers
           .Include(q => q.Options)
           .Include(q => q.MatchingPairs)
           .Include(q => q.OrderingItems)
-          .FirstOrDefaultAsync(q => q.Id == questionId);
+          .FirstOrDefaultAsync(q => q.Id == model.QuestionId);
 
       if (question == null)
       {
@@ -305,7 +360,7 @@ namespace TawtheefTest.Controllers
 
       // التحقق مما إذا كانت الإجابة موجودة بالفعل
       var existingAnswer = await _context.CandidateAnswers
-          .FirstOrDefaultAsync(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == questionId);
+          .FirstOrDefaultAsync(ca => ca.CandidateExamId == model.CandidateExamId && ca.QuestionId == model.QuestionId);
 
       bool? isCorrect = null;
 
@@ -313,12 +368,12 @@ namespace TawtheefTest.Controllers
       switch (question.QuestionType)
       {
         case "MCQ":
-          var selectedOption = question.Options.FirstOrDefault(o => o.Id.ToString() == answer);
+          var selectedOption = question.Options.FirstOrDefault(o => o.Id.ToString() == model.AnswerText);
           isCorrect = selectedOption?.IsCorrect;
           break;
 
         case "TF":
-          if (bool.TryParse(answer, out bool boolAnswer))
+          if (bool.TryParse(model.AnswerText, out bool boolAnswer))
           {
             isCorrect = boolAnswer == question.TrueFalseAnswer;
           }
@@ -326,13 +381,13 @@ namespace TawtheefTest.Controllers
 
         case "ShortAnswer":
         case "FillInTheBlank":
-          isCorrect = string.Equals(question.Answer, answer, StringComparison.OrdinalIgnoreCase);
+          isCorrect = string.Equals(question.Answer, model.AnswerText, StringComparison.OrdinalIgnoreCase);
           break;
 
         case "MultiSelect":
           try
           {
-            var selectedOptions = JsonSerializer.Deserialize<List<int>>(answer);
+            var selectedOptions = model.SelectedOptionsIds;
             var correctOptions = question.Options.Where(o => o.IsCorrect).Select(o => o.Id).ToList();
             isCorrect = selectedOptions != null && selectedOptions.OrderBy(x => x).SequenceEqual(correctOptions.OrderBy(x => x));
           }
@@ -345,9 +400,9 @@ namespace TawtheefTest.Controllers
         case "Matching":
           try
           {
-            var pairs = JsonSerializer.Deserialize<Dictionary<string, string>>(answer);
-            var correctPairs = question.MatchingPairs.ToDictionary(p => p.LeftItem, p => p.RightItem);
-            isCorrect = pairs != null && pairs.OrderBy(x => x.Key).SequenceEqual(correctPairs.OrderBy(x => x.Key));
+            var pairs = model.MatchingPairsIds;
+            var correctPairs = question.MatchingPairs.Select(p => p.Id).ToList();
+            isCorrect = pairs != null && pairs.OrderBy(x => x).SequenceEqual(correctPairs.OrderBy(x => x));
           }
           catch
           {
@@ -358,9 +413,9 @@ namespace TawtheefTest.Controllers
         case "Ordering":
           try
           {
-            var orderItems = JsonSerializer.Deserialize<List<string>>(answer);
-            var correctOrder = question.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList();
-            isCorrect = orderItems != null && orderItems.SequenceEqual(correctOrder);
+            var orderItems = model.OrderingItemsIds;
+            var correctOrderItems = question.OrderingItems.Where(ss => ss.DisplayOrder == 0).OrderBy(o => o.CorrectOrder).Select(o => o.Id).ToList();
+            isCorrect = orderItems != null && orderItems.OrderBy(x => x).SequenceEqual(correctOrderItems.OrderBy(x => x));
           }
           catch
           {
@@ -372,7 +427,7 @@ namespace TawtheefTest.Controllers
       if (existingAnswer != null)
       {
         // تحديث الإجابة الموجودة
-        existingAnswer.AnswerText = answer;
+        existingAnswer.AnswerText = model.AnswerText;
         existingAnswer.IsCorrect = isCorrect;
         existingAnswer.UpdatedAt = DateTime.UtcNow;
         _context.Update(existingAnswer);
@@ -382,18 +437,18 @@ namespace TawtheefTest.Controllers
         // إنشاء إجابة جديدة
         var candidateAnswer = new CandidateAnswer
         {
-          CandidateExamId = candidateExamId,
-          QuestionId = questionId,
-          AnswerText = answer,
+          CandidateExamId = model.CandidateExamId,
+          QuestionId = model.QuestionId,
+          AnswerText = model.AnswerText,
           IsCorrect = isCorrect,
-          CreatedAt = DateTime.UtcNow
+          CreatedAt = DateTime.UtcNow,
         };
 
         _context.CandidateAnswers.Add(candidateAnswer);
 
         // تحديث عدد الأسئلة المجابة
         candidateExam.CompletedQuestions = await _context.CandidateAnswers
-            .Where(ca => ca.CandidateExamId == candidateExamId)
+            .Where(ca => ca.CandidateExamId == model.CandidateExamId)
             .Select(ca => ca.QuestionId)
             .Distinct()
             .CountAsync() + 1; // نضيف 1 للإجابة الحالية
@@ -421,7 +476,7 @@ namespace TawtheefTest.Controllers
       // الحصول على اختبار المرشح
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Exam)
-              .ThenInclude(e => e.Questions)
+              .ThenInclude(e => e.ExamQuestionSets)
           .Include(ce => ce.CandidateAnswers)
           .Include(ce => ce.Candidate)
           .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
@@ -437,7 +492,8 @@ namespace TawtheefTest.Controllers
       }
 
       // حساب الدرجة
-      var totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions : candidateExam.Exam.Questions.Count;
+      var totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions :
+          candidateExam.Exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count();
       var answeredQuestions = candidateExam.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count();
       var correctAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect == true);
       var score = totalQuestions > 0 ? (decimal)correctAnswers / totalQuestions * 100 : 0;
@@ -469,13 +525,8 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: CandidateExams/Results/5
-    public async Task<IActionResult> Results(int? id)
+    public async Task<IActionResult> Results(int id)
     {
-      if (id == null)
-      {
-        return RedirectToAction(nameof(Index));
-      }
-
       // التحقق من تسجيل دخول المرشح
       var candidateId = GetCurrentCandidateId();
       if (candidateId == null)
@@ -484,12 +535,26 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Login", "Auth");
       }
 
+      // الحصول على تفاصيل اختبار المرشح
       var candidateExam = await _context.CandidateExams
-          .Include(ce => ce.Candidate)
           .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+                          .ThenInclude(q => q.Options)
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+                          .ThenInclude(q => q.MatchingPairs)
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+                          .ThenInclude(q => q.OrderingItems)
           .Include(ce => ce.CandidateAnswers)
               .ThenInclude(ca => ca.Question)
-                  .ThenInclude(q => q.Options)
+          .Include(ce => ce.Candidate)
           .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
 
       if (candidateExam == null)
@@ -498,6 +563,11 @@ namespace TawtheefTest.Controllers
       }
 
       var candidateExamResult = _mapper.Map<CandidateExamResultViewModel>(candidateExam);
+
+      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
 
       // ترتيب الإجابات حسب أرقام الأسئلة
       candidateExamResult.Answers = _mapper.Map<List<CandidateAnswerViewModel>>(
@@ -547,43 +617,60 @@ namespace TawtheefTest.Controllers
       var candidateId = GetCurrentCandidateId();
       if (candidateId == null)
       {
-        return Json(new { success = false, message = "يجب تسجيل الدخول أولاً" });
+        return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
       // الحصول على اختبار المرشح
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Exam)
-              .ThenInclude(e => e.Questions)
-          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+        .Include(ce => ce.CandidateAnswers)
+        .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
 
-      if (candidateExam == null)
+      if (candidateExam == null || candidateExam.Status == CandidateExamStatus.Completed.ToString())
       {
-        return Json(new { success = false, message = "الاختبار غير موجود" });
+        return BadRequest(new { success = false, message = "الاختبار غير متاح." });
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
-      {
-        return Json(new { success = false, message = "الاختبار مكتمل" });
-      }
-
-      // التحقق مما إذا كان استبدال السؤال مستخدمًا بالفعل
+      // التحقق مما إذا كان قد تم استبدال سؤال بالفعل
       if (candidateExam.QuestionReplaced)
       {
-        return Json(new { success = false, message = "تم استخدام استبدال السؤال بالفعل" });
+        return BadRequest(new { success = false, message = "لا يمكنك استبدال أكثر من سؤال واحد." });
+      }
+
+      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
+
+      // إذا كان هناك فقط سؤال واحد متبقي، فلا يمكن استبدال السؤال
+      if (allQuestions.Count <= 1)
+      {
+        return BadRequest(new { success = false, message = "لا يمكنك استبدال السؤال إذا كان هناك سؤال واحد فقط." });
       }
 
       // الحصول على السؤال المراد استبداله
       var questionToReplace = await _context.Questions
-          .FirstOrDefaultAsync(q => q.Id == questionId && q.ExamId == candidateExam.ExamId);
+          .Include(q => q.QuestionSet)
+              .ThenInclude(qs => qs.ExamQuestionSets)
+          .FirstOrDefaultAsync(q => q.Id == questionId);
 
-      if (questionToReplace == null)
+      if (questionToReplace == null || !questionToReplace.QuestionSet.ExamQuestionSets.Any(eqs => eqs.ExamId == candidateExam.ExamId))
       {
         return Json(new { success = false, message = "السؤال غير موجود" });
       }
 
       // البحث عن سؤال بديل من نفس النوع والصعوبة
+      // أولاً نحصل على مجموعات الأسئلة المرتبطة بهذا الامتحان
+      var questionSetIds = await _context.ExamQuestionSets
+          .Where(eqs => eqs.ExamId == candidateExam.ExamId)
+          .Select(eqs => eqs.QuestionSetId)
+          .ToListAsync();
+
       var replacementQuestion = await _context.Questions
-          .Where(q => q.ExamId == candidateExam.ExamId &&
+          .Where(q => questionSetIds.Contains(q.QuestionSetId) &&
                      q.QuestionType == questionToReplace.QuestionType &&
                      q.Id != questionId &&
                      !_context.CandidateAnswers.Any(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == q.Id))
@@ -680,7 +767,49 @@ namespace TawtheefTest.Controllers
       return Ok(new { success = true, message = model.IsFlagged ? "تم تعليم السؤال للمراجعة لاحقاً." : "تم إلغاء تعليم السؤال." });
     }
 
-    // GET: CandidateExams/GetQuestion/5/2
+    // البحث عن السؤال التالي غير المُجاب عليه (إذا كان هناك أي)
+    private async Task<Question> GetNextUnansweredQuestion(int candidateExamId)
+    {
+      var candidateExam = await _context.CandidateExams
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+      .Include(ce => ce.CandidateAnswers)
+      .FirstOrDefaultAsync(ce => ce.Id == candidateExamId);
+
+      if (candidateExam == null)
+      {
+        return null;
+      }
+
+      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
+
+      // الحصول على معرّفات الأسئلة التي تمت الإجابة عليها بالفعل
+      var answeredQuestionIds = candidateExam.CandidateAnswers
+          .Select(ca => ca.QuestionId)
+          .ToHashSet();
+
+      // تصفية الأسئلة غير المُجاب عليها
+      var unansweredQuestions = allQuestions
+          .Where(q => !answeredQuestionIds.Contains(q.Id))
+          .ToList();
+
+      // إذا كانت جميع الأسئلة قد تمت الإجابة عليها، فارجع null
+      if (unansweredQuestions.Count == 0)
+      {
+        return null;
+      }
+
+      // اختيار السؤال التالي
+      return unansweredQuestions.FirstOrDefault();
+    }
+
+    // الحصول على السؤال الحالي استنادًا إلى رقم المؤشر
+    [HttpGet]
     public async Task<IActionResult> GetQuestion(int candidateExamId, int questionIndex)
     {
       // التحقق من تسجيل دخول المرشح
@@ -693,30 +822,43 @@ namespace TawtheefTest.Controllers
       // الحصول على اختبار المرشح
       var candidateExam = await _context.CandidateExams
           .Include(ce => ce.Exam)
-              .ThenInclude(e => e.Questions)
-                  .ThenInclude(q => q.Options)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+                          .ThenInclude(q => q.Options)
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+                          .ThenInclude(q => q.MatchingPairs)
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+                          .ThenInclude(q => q.OrderingItems)
+          .Include(ce => ce.CandidateAnswers)
           .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
 
       if (candidateExam == null)
       {
-        return NotFound(new { success = false, message = "لم يتم العثور على الاختبار." });
+        return NotFound(new { success = false, message = "الاختبار غير موجود." });
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
-      {
-        return BadRequest(new { success = false, message = "تم إكمال هذا الاختبار بالفعل." });
-      }
+      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
 
-      // الحصول على سؤال بناءً على الفهرس
-      var allQuestions = candidateExam.Exam.Questions.OrderBy(q => q.DisplayOrder).ToList();
+      // التحقق من صحة المؤشر
       if (questionIndex < 0 || questionIndex >= allQuestions.Count)
       {
-        return BadRequest(new { success = false, message = "مؤشر السؤال غير صالح." });
+        return BadRequest(new { success = false, message = "رقم السؤال غير صالح." });
       }
 
+      // الحصول على السؤال
       var question = allQuestions[questionIndex];
 
-      // الحصول على إجابة المرشح لهذا السؤال إن وجدت
+      // الحصول على إجابة المرشح (إن وجدت)
       var candidateAnswer = await _context.CandidateAnswers
           .FirstOrDefaultAsync(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == question.Id);
 
@@ -724,13 +866,139 @@ namespace TawtheefTest.Controllers
       questionViewModel.IsAnswered = candidateAnswer != null && !string.IsNullOrEmpty(candidateAnswer.AnswerText);
       questionViewModel.IsFlagged = candidateAnswer != null && candidateAnswer.IsFlagged;
 
+      if (question.QuestionType == nameof(QuestionTypeEnum.Matching))
+      {
+        questionViewModel.MatchingPairs = _mapper.Map<List<MatchingPairViewModel>>(question.MatchingPairs);
+      }
+
+      if (question.QuestionType == nameof(QuestionTypeEnum.Ordering))
+      {
+        questionViewModel.OrderingItems = _mapper.Map<List<OrderingItemViewModel>>(question.OrderingItems);
+      }
+
+      if (question.QuestionType == nameof(QuestionTypeEnum.TF))
+      {
+        questionViewModel.TrueFalseAnswer = candidateAnswer != null && candidateAnswer.AnswerText == "True";
+      }
+
       return Ok(new
       {
         success = true,
         question = questionViewModel,
         currentIndex = questionIndex,
         totalQuestions = allQuestions.Count,
-        answer = candidateAnswer?.AnswerText
+        answer = candidateAnswer?.AnswerText 
+      });
+    }
+
+    // POST: CandidateExams/Create
+    [HttpPost]
+    public async Task<IActionResult> Create(int examId)
+    {
+      // التحقق من تسجيل دخول المرشح
+      var candidateId = GetCurrentCandidateId();
+      if (candidateId == null)
+      {
+        TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
+        return RedirectToAction("Login", "Auth");
+      }
+
+      // التحقق من وجود الامتحان
+      var exam = await _context.Exams
+          .Include(e => e.ExamQuestionSets)
+              .ThenInclude(eqs => eqs.QuestionSet)
+                  .ThenInclude(qs => qs.Questions)
+          .FirstOrDefaultAsync(e => e.Id == examId);
+
+      if (exam == null)
+      {
+        TempData["ErrorMessage"] = "الامتحان غير موجود.";
+        return RedirectToAction("Index", "Home");
+      }
+
+      // إضافة كود لإنشاء محاولة اختبار جديدة
+      return RedirectToAction("Start", new { id = examId });
+    }
+
+    // إحضار سؤال لامتحان مرشح
+    private async Task<List<Question>> GetQuestionsForCandidateExam(int candidateExamId)
+    {
+      var candidateExam = await _context.CandidateExams
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId);
+
+      if (candidateExam == null)
+      {
+        return new List<Question>();
+      }
+
+      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
+
+      return allQuestions;
+    }
+
+    // POST: CandidateExams/Complete
+    [HttpPost]
+    public async Task<IActionResult> Complete(int candidateExamId)
+    {
+      // التحقق من تسجيل دخول المرشح
+      var candidateId = GetCurrentCandidateId();
+      if (candidateId == null)
+      {
+        return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
+      }
+
+      // الحصول على اختبار المرشح
+      var candidateExam = await _context.CandidateExams
+          .Include(ce => ce.Exam)
+              .ThenInclude(e => e.ExamQuestionSets)
+                  .ThenInclude(eqs => eqs.QuestionSet)
+                      .ThenInclude(qs => qs.Questions)
+          .Include(ce => ce.CandidateAnswers)
+              .ThenInclude(ca => ca.Question)
+          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
+
+      if (candidateExam == null)
+      {
+        return BadRequest(new { success = false, message = "الاختبار غير موجود." });
+      }
+
+      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
+      {
+        return BadRequest(new { success = false, message = "الاختبار مكتمل بالفعل." });
+      }
+
+      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
+      var allQuestions = candidateExam.Exam.ExamQuestionSets
+          .SelectMany(eqs => eqs.QuestionSet.Questions)
+          .ToList();
+
+      // حساب عدد الإجابات الصحيحة
+      int correctAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect.HasValue && ca.IsCorrect.Value);
+
+      // حساب النتيجة النهائية
+      decimal totalQuestions = allQuestions.Count;
+      decimal score = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
+      // تحديث حالة الاختبار ونتيجته
+      candidateExam.Score = score;
+      candidateExam.EndTime = DateTime.UtcNow;
+      candidateExam.Status = CandidateExamStatus.Completed.ToString();
+      candidateExam.UpdatedAt = DateTime.UtcNow;
+
+      await _context.SaveChangesAsync();
+
+      return Ok(new
+      {
+        success = true,
+        score = score,
+        redirectUrl = Url.Action("Results", new { id = candidateExamId })
       });
     }
   }

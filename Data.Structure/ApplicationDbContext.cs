@@ -103,10 +103,6 @@ namespace TawtheefTest.Data.Structure
             .HasForeignKey(e => e.JobId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        entity.HasMany(e => e.Questions)
-            .WithOne(q => q.Exam)
-            .HasForeignKey(q => q.ExamId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         entity.HasMany(e => e.ExamQuestionSets)
             .WithOne(eqs => eqs.Exam)
@@ -201,10 +197,6 @@ namespace TawtheefTest.Data.Structure
         entity.Property(e => e.CreatedAt)
             .HasDefaultValueSql("GETUTCDATE()");
 
-        entity.HasOne(e => e.Exam)
-            .WithMany(exam => exam.Questions)
-            .HasForeignKey(e => e.ExamId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         entity.HasOne(e => e.QuestionSet)
             .WithMany(qs => qs.Questions)
@@ -409,8 +401,6 @@ namespace TawtheefTest.Data.Structure
       modelBuilder.Entity<Exam>()
           .HasIndex(e => e.JobId);
 
-      modelBuilder.Entity<Question>()
-          .HasIndex(e => e.ExamId);
 
       modelBuilder.Entity<Question>()
           .HasIndex(e => e.QuestionSetId);

@@ -8,12 +8,12 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>حذف الوظيفة</h1>
   <a asp-action="Index" class="btn btn-secondary">
-    <i class="bi bi-arrow-return-left"></i> العودة للقائمة
+    <i class="bx bx-arrow-return-left"></i> العودة للقائمة
   </a>
 </div>
 
 <div class="alert alert-danger">
-  <h3><i class="bi bi-exclamation-triangle"></i> هل أنت متأكد من رغبتك في حذف هذه الوظيفة؟</h3>
+  <h3><i class="bx bx-exclamation-triangle"></i> هل أنت متأكد من رغبتك في حذف هذه الوظيفة؟</h3>
   <p class="mb-0">سيؤدي حذف الوظيفة إلى حذف جميع المرشحين والاختبارات المرتبطة بها.</p>
 </div>
 
@@ -21,34 +21,34 @@
   <div class="col-md-8">
     <div class="card">
       <div class="card-header bg-danger text-white">
-        <i class="bi bi-trash"></i> تفاصيل الوظيفة
+        <i class="bx bx-trash"></i> تفاصيل الوظيفة
       </div>
       <div class="card-body">
         <dl class="row">
           <dt class="col-sm-4">
-            <i class="bi bi-briefcase"></i> اسم الوظيفة
+            <i class="bx bx-briefcase"></i> اسم الوظيفة
           </dt>
           <dd class="col-sm-8">@Model.Name</dd>
 
           <dt class="col-sm-4">
-            <i class="bi bi-key"></i> رمز الوظيفة
+            <i class="bx bx-key"></i> رمز الوظيفة
           </dt>
           <dd class="col-sm-8">@Model.Code</dd>
 
           <dt class="col-sm-4">
-            <i class="bi bi-calendar"></i> تاريخ الإنشاء
+            <i class="bx bx-calendar"></i> تاريخ الإنشاء
           </dt>
           <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy-MM-dd")</dd>
 
           <dt class="col-sm-4">
-            <i class="bi bi-people"></i> عدد المرشحين
+            <i class="bx bx-people"></i> عدد المرشحين
           </dt>
           <dd class="col-sm-8">
             <span class="badge bg-success">@Model.CandidateCount</span>
           </dd>
 
           <dt class="col-sm-4">
-            <i class="bi bi-journal-text"></i> عدد الاختبارات
+            <i class="bx bx-journal-text"></i> عدد الاختبارات
           </dt>
           <dd class="col-sm-8">
             <span class="badge bg-info">@Model.ExamCount</span>
@@ -59,7 +59,7 @@
           <input type="hidden" asp-for="Id" />
           <div class="d-flex justify-content-end">
             <button type="submit" class="btn btn-danger">
-              <i class="bi bi-trash"></i> تأكيد الحذف
+              <i class="bx bx-trash"></i> تأكيد الحذف
             </button>
           </div>
         </form>

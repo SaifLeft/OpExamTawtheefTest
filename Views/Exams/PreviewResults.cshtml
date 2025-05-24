@@ -1,135 +1,134 @@
-
 @model ExamDetailsDTO
 
 @{
-    ViewData["Title"] = "نتائج المعاينة";
+  ViewData["Title"] = "نتائج المعاينة";
 }
 
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>نتائج معاينة الاختبار</h1>
-        <div>
-            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary me-2">
-                <i class="bi bi-arrow-left"></i> العودة للاختبار
-            </a>
-        </div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>نتائج معاينة الاختبار</h1>
+    <div>
+      <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary me-2">
+        <i class="bx bx-arrow-back"></i> العودة للاختبار
+      </a>
     </div>
+  </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">معلومات الاختبار</h5>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">@Model.Name</h5>
-                    <p class="card-text"><strong>الوظيفة:</strong> @ViewData["JobName"]</p>
-                    <p class="card-text"><strong>وصف الاختبار:</strong> @Model.Description</p>
-                    <p><strong>مستوى الصعوبة:</strong> @GetDifficultyName(Model.Difficulty)</p>
-                    <p><strong>نوع الأسئلة:</strong> @GetQuestionTypeName(Model.QuestionType)</p>
-                    <p><strong>عدد الأسئلة:</strong> @Model.QuestionCountForEachCandidate</p>
-                    <p><strong>مدة الاختبار:</strong> @Model.Duration دقيقة</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">نتائج المعاينة</h5>
-                </div>
-                <div class="card-body text-center">
-                    <div class="display-1 mb-3">@Math.Round((double)ViewData["Score"], 1)%</div>
-                    <p class="lead">
-                        <span class="badge bg-success">@ViewData["CorrectAnswers"]</span> إجابة صحيحة من
-                        <span class="badge bg-secondary">@ViewData["TotalQuestions"]</span> سؤال
-                    </p>
-
-                    @{
-                        double score = (double)ViewData["Score"];
-                        string resultMessage = "";
-                        string resultClass = "";
-
-                        if (score >= 80)
-                        {
-                            resultMessage = "ممتاز!";
-                            resultClass = "text-success";
-                        }
-                        else if (score >= 60)
-                        {
-                            resultMessage = "جيد";
-                            resultClass = "text-primary";
-                        }
-                        else
-                        {
-                            resultMessage = "تحتاج إلى تحسين";
-                            resultClass = "text-warning";
-                        }
-                    }
-
-                    <h3 class="@resultClass mt-3">@resultMessage</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="alert alert-info mb-4">
-        <h5>ملاحظات</h5>
-        <p>هذه نتائج معاينة فقط ولن يتم حفظها. عندما يقوم المرشحون بإجراء الاختبار الفعلي، سيتم حفظ نتائجهم.</p>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">الخطوات التالية</h5>
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">معلومات الاختبار</h5>
         </div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-12">
-                    <ol>
-                        <li>يمكنك العودة إلى صفحة تفاصيل الاختبار لتعديل الأسئلة إذا كنت بحاجة إلى ذلك.</li>
-                        <li>قم بمشاركة رابط الاختبار مع المرشحين عندما تكون جاهزًا.</li>
-                        <li>ستتمكن من مراجعة نتائج المرشحين بعد إكمالهم للاختبار.</li>
-                    </ol>
-                </div>
-            </div>
+          <h5 class="card-title">@Model.Name</h5>
+          <p class="card-text"><strong>الوظيفة:</strong> @ViewData["JobName"]</p>
+          <p class="card-text"><strong>وصف الاختبار:</strong> @Model.Description</p>
+          <p><strong>مستوى الصعوبة:</strong> @GetDifficultyName(Model.Difficulty)</p>
+          <p><strong>نوع الأسئلة:</strong> @GetQuestionTypeName(Model.QuestionType)</p>
+          <p><strong>عدد الأسئلة:</strong> @Model.TotalQuestionsPerCandidate</p>
+          <p><strong>مدة الاختبار:</strong> @Model.Duration دقيقة</p>
         </div>
+      </div>
     </div>
 
-    <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4 mb-5">
-        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-lg btn-primary me-md-2">
-            <i class="bi bi-pencil-square"></i> تعديل الأسئلة
-        </a>
-        <a asp-action="Index" class="btn btn-lg btn-secondary">
-            <i class="bi bi-list"></i> قائمة الاختبارات
-        </a>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">نتائج المعاينة</h5>
+        </div>
+        <div class="card-body text-center">
+          <div class="display-1 mb-3">@Math.Round((double)ViewData["Score"], 1)%</div>
+          <p class="lead">
+            <span class="badge bg-success">@ViewData["CorrectAnswers"]</span> إجابة صحيحة من
+            <span class="badge bg-secondary">@ViewData["TotalQuestions"]</span> سؤال
+          </p>
+
+          @{
+            double score = (double)ViewData["Score"];
+            string resultMessage = "";
+            string resultClass = "";
+
+            if (score >= 80)
+            {
+              resultMessage = "ممتاز!";
+              resultClass = "text-success";
+            }
+            else if (score >= 60)
+            {
+              resultMessage = "جيد";
+              resultClass = "text-primary";
+            }
+            else
+            {
+              resultMessage = "تحتاج إلى تحسين";
+              resultClass = "text-warning";
+            }
+          }
+
+          <h3 class="@resultClass mt-3">@resultMessage</h3>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div class="alert alert-info mb-4">
+    <h5>ملاحظات</h5>
+    <p>هذه نتائج معاينة فقط ولن يتم حفظها. عندما يقوم المرشحون بإجراء الاختبار الفعلي، سيتم حفظ نتائجهم.</p>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0">الخطوات التالية</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-12">
+          <ol>
+            <li>يمكنك العودة إلى صفحة تفاصيل الاختبار لتعديل الأسئلة إذا كنت بحاجة إلى ذلك.</li>
+            <li>قم بمشاركة رابط الاختبار مع المرشحين عندما تكون جاهزًا.</li>
+            <li>ستتمكن من مراجعة نتائج المرشحين بعد إكمالهم للاختبار.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4 mb-5">
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-lg btn-primary me-md-2">
+      <i class="bx bx-edit"></i> تعديل الأسئلة
+    </a>
+    <a asp-action="Index" class="btn btn-lg btn-secondary">
+      <i class="bx bx-list-ul"></i> قائمة الاختبارات
+    </a>
+  </div>
 </div>
 
 @functions {
-    private string GetQuestionTypeName(string type)
+  private string GetQuestionTypeName(string type)
+  {
+    return type switch
     {
-        return type switch
-        {
-            "MCQ" => "اختيار من متعدد",
-            "TF" => "صح / خطأ",
-            "open" => "إجابة مفتوحة",
-            "fillInTheBlank" => "ملء الفراغات",
-            "ordering" => "ترتيب",
-            "matching" => "مطابقة",
-            "multiSelect" => "اختيار متعدد",
-            "shortAnswer" => "إجابة قصيرة",
-            _ => type
-        };
-    }
+      "MCQ" => "اختيار من متعدد",
+      "TF" => "صح / خطأ",
+      "open" => "إجابة مفتوحة",
+      "fillInTheBlank" => "ملء الفراغات",
+      "ordering" => "ترتيب",
+      "matching" => "مطابقة",
+      "multiSelect" => "اختيار متعدد",
+      "shortAnswer" => "إجابة قصيرة",
+      _ => type
+    };
+  }
 
-    private string GetDifficultyName(string difficulty)
+  private string GetDifficultyName(string difficulty)
+  {
+    return difficulty switch
     {
-        return difficulty switch
-        {
-            "easy" => "سهل",
-            "medium" => "متوسط",
-            "hard" => "صعب",
-            _ => difficulty
-        };
-    }
+      "easy" => "سهل",
+      "medium" => "متوسط",
+      "hard" => "صعب",
+      _ => difficulty
+    };
+  }
 }

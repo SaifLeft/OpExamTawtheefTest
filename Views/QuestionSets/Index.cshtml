@@ -9,7 +9,7 @@
         <h1>مجموعات الأسئلة</h1>
         <div>
             <a href="@Url.Action("Create")" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> إنشاء مجموعة أسئلة جديدة
+                <i class="bx bx-plus-circle"></i> إنشاء مجموعة أسئلة جديدة
             </a>
         </div>
     </div>
@@ -66,7 +66,7 @@
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100 h-100">
-                        <i class="bi bi-search me-2"></i> بحث
+                        <i class="bx bx-search me-2"></i> بحث
                     </button>
                 </div>
             </form>
@@ -93,11 +93,11 @@
     {
         <div class="d-flex justify-content-end mb-3">
             <button id="btnSelectMultiple" class="btn btn-outline-primary me-2">
-                <i class="bi bi-check2-square"></i> تحديد متعدد
+                <i class="bx bx-check2-square"></i> تحديد متعدد
             </button>
             <div id="mergeActionsContainer" style="display: none;">
                 <button id="btnMerge" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mergeModal" disabled>
-                    <i class="bi bi-bezier2"></i> دمج المحدد
+                    <i class="bx bx-bezier2"></i> دمج المحدد
                 </button>
             </div>
         </div>
@@ -179,7 +179,7 @@
                                     <td>@questionSet.QuestionsGenerated / @questionSet.QuestionCount</td>
                                     <td>
                                         <span class="badge @questionSet.StatusClass">
-                                            <i class="bi bi-@questionSet.StatusIcon"></i>
+                                            <i class="bx bx-@questionSet.StatusIcon"></i>
                                             @(questionSet.Status switch {
                                                 QuestionSetStatus.Pending => "قيد الانتظار",
                                                 QuestionSetStatus.Processing => "قيد المعالجة",
@@ -227,7 +227,7 @@
     else
     {
         <div class="alert alert-info" role="alert">
-            <i class="bi bi-info-circle me-2"></i> لا توجد مجموعات أسئلة متطابقة مع معايير البحث.
+            <i class="bx bx-info-circle me-2"></i> لا توجد مجموعات أسئلة متطابقة مع معايير البحث.
         </div>
     }
 </div>
@@ -304,10 +304,10 @@
                 $('#mergeActionsContainer').toggle();
 
                 if ($('.selectColumn').is(':visible')) {
-                    $(this).html('<i class="bi bi-x-lg"></i> إلغاء التحديد');
+                    $(this).html('<i class="bx bx-x-lg"></i> إلغاء التحديد');
                     $(this).removeClass('btn-outline-primary').addClass('btn-outline-danger');
                 } else {
-                    $(this).html('<i class="bi bi-check2-square"></i> تحديد متعدد');
+                    $(this).html('<i class="bx bx-check2-square"></i> تحديد متعدد');
                     $(this).removeClass('btn-outline-danger').addClass('btn-outline-primary');
                     $('.set-checkbox').prop('checked', false);
                     $('#btnMerge').prop('disabled', true);

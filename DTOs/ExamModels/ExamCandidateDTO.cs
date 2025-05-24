@@ -5,9 +5,10 @@ namespace TawtheefTest.DTOs.ExamModels
   public class ExamCandidateDTO
   {
     public int Id { get; set; }
+    public int CandidateId { get; set; }
     public string Name { get; set; }
     public int Phone { get; set; }
-    public int Score { get; set; } = 0;
+    public decimal? Score { get; set; } = 0;
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public CandidateExamStatus Status { get; set; }

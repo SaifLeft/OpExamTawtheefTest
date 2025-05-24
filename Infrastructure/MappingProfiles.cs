@@ -30,7 +30,7 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Exam.Duration ?? 60))
           .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.TotalQuestions > 0
               ? src.TotalQuestions
-              : src.Exam.Questions.Count))
+              : src.Exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
           .ForMember(dest => dest.CompletedQuestions, opt => opt.MapFrom(src => src.CompletedQuestions > 0
               ? src.CompletedQuestions
               : src.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count()));
@@ -38,22 +38,17 @@ namespace TawtheefTest.Infrastructure
       // تخطيط Exam إلى ExamForCandidateViewModel
       CreateMap<Exam, ExamForCandidateViewModel>()
           .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Job.Title))
-          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.Questions.Count))
+          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
           .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60))
-          .ForMember(dest => dest.QuestionCountForEachCandidate, opt => opt.MapFrom(src => src.QuestionCountForEachCandidate));
+          .ForMember(dest => dest.QuestionCountForEachCandidate, opt => opt.MapFrom(src => src.TotalQuestionsPerCandidate));
 
       // تخطيط CandidateExam إلى CandidateExamResultViewModel
       CreateMap<CandidateExam, CandidateExamResultViewModel>()
           .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Candidate.Name))
           .ForMember(dest => dest.ExamTitle, opt => opt.MapFrom(src => src.Exam.Name))
           .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Exam.Job.Title))
-          .ForMember(dest => dest.Duration, opt => opt.MapFrom(src =>
-              src.StartTime.HasValue && src.EndTime.HasValue
-                  ? src.EndTime.Value - src.StartTime.Value
-                  : TimeSpan.FromMinutes(src.Exam.Duration ?? 0)))
-          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.TotalQuestions > 0
-              ? src.TotalQuestions
-              : src.Exam.Questions.Count))
+          .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Exam.Duration))
+          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.Exam.TotalQuestionsPerCandidate))
           .ForMember(dest => dest.CompletedQuestions, opt => opt.MapFrom(src => src.CompletedQuestions > 0
               ? src.CompletedQuestions
               : src.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count()));
@@ -66,7 +61,18 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty))
           .ForMember(dest => dest.SubmittedAt, opt => opt.MapFrom(src => src.UpdatedAt ?? src.CreatedAt));
 
-      CreateMap<QuestionOption, CandidateQuestionOptionViewModel>();
+      // تخطيط Question إلى CandidateQuestionViewModel
+      CreateMap<Question, CandidateQuestionViewModel>()
+          .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options))
+          .ForMember(dest => dest.OrderingItems, opt => opt.MapFrom(src => src.OrderingItems.Where(ss => ss.CorrectOrder == 0)))
+          .ForMember(dest => dest.MatchingPairs, opt => opt.MapFrom(src => src.MatchingPairs))
+          .ForMember(dest => dest.InstructionText, opt => opt.MapFrom(src => src.InstructionText));
+
+      CreateMap<QuestionOption, QuestionOptionViewModel>();
+      CreateMap<OrderingItem, OrderingItemViewModel>();
+      CreateMap<MatchingPair, MatchingPairViewModel>()
+          .ForMember(dest => dest.LeftSide, opt => opt.MapFrom(src => src.LeftItem))
+          .ForMember(dest => dest.RightSide, opt => opt.MapFrom(src => src.RightItem));
 
       // للتعامل مع نماذج توليد الأسئلة
       CreateMap<QuestionSet, QuestionSetDto>()
@@ -81,8 +87,6 @@ namespace TawtheefTest.Infrastructure
 
       CreateMap<Question, QuestionViewModel>();
       CreateMap<QuestionOption, QuestionOptionViewModel>();
-      CreateMap<MatchingPair, MatchingPairViewModel>();
-      CreateMap<OrderingItem, OrderingItemViewModel>();
 
       // تخطيط Notification إلى NotificationViewModel
       CreateMap<Notification, NotificationViewModel>()

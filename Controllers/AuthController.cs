@@ -56,7 +56,7 @@ namespace TawtheefTest.Controllers
 
       // البحث عن المرشح برقم الهاتف
       var candidate = await _context.Candidates
-          .Include(c => c.Job)
+          .Include(c => c.CandidateExams)
           .FirstOrDefaultAsync(c => c.Phone.ToString() == phoneNumber);
 
       if (candidate == null)
@@ -133,7 +133,7 @@ namespace TawtheefTest.Controllers
 
       // الحصول على بيانات المرشح
       var candidate = await _context.Candidates
-          .Include(c => c.Job)
+          .Include(c => c.CandidateExams)
           .FirstOrDefaultAsync(c => c.Phone.ToString() == phoneNumber);
 
       if (candidate == null)
@@ -149,8 +149,6 @@ namespace TawtheefTest.Controllers
       // تخزين معلومات المرشح في الجلسة
       HttpContext.Session.SetInt32("CandidateId", candidate.Id);
       HttpContext.Session.SetString("CandidateName", candidate.Name);
-      HttpContext.Session.SetInt32("JobId", candidate.JobId);
-      HttpContext.Session.SetString("JobTitle", candidate.Job?.Title ?? "");
 
       // إنشاء إشعار ترحيبي للمرشح
       await _notificationService.CreateNotificationAsync(

@@ -11,6 +11,7 @@ namespace TawtheefTest.DTOs
     public string AnswerText { get; set; } = string.Empty;
     public int? SelectedOptionId { get; set; }
     public bool? IsCorrect { get; set; }
+    public bool IsFlagged { get; set; } = false;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 

@@ -13,21 +13,21 @@
             {
                 <div class="btn-group me-2">
                     <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-gear"></i> الإجراءات
+                        <i class="bx bx-gear"></i> الإجراءات
                     </button>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#regenerateWarningModal">
-                                <i class="bi bi-arrow-clockwise"></i> إعادة توليد الأسئلة
+                                <i class="bx bx-arrow-clockwise"></i> إعادة توليد الأسئلة
                             </a></li>
                         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#shuffleOptionsModal">
-                                <i class="bi bi-shuffle"></i> خلط الأسئلة/الخيارات
+                                <i class="bx bx-shuffle"></i> خلط الأسئلة/الخيارات
                             </a></li>
                         <!-- عناصر أخرى في القائمة -->
                     </ul>
                 </div>
             }
             <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-right"></i> العودة للقائمة
+                <i class="bx bx-arrow-right"></i> العودة للقائمة
             </a>
         </div>
     </div>
@@ -94,7 +94,7 @@
                         <dt class="col-sm-4">الحالة:</dt>
                         <dd class="col-sm-8">
                             <span class="badge @Model.StatusClass">
-                                <i class="bi bi-@Model.StatusIcon"></i>
+                                <i class="bx bx-@Model.StatusIcon"></i>
                                 @(Model.Status switch {
                                     QuestionSetStatus.Pending => "قيد الانتظار",
                                     QuestionSetStatus.Processing => "قيد المعالجة",
@@ -127,33 +127,33 @@
                         @if (Model.Status == QuestionSetStatus.Completed)
                         {
                             <a href="@Url.Action("AddToExam", new { id = Model.Id })" class="btn btn-outline-success">
-                                <i class="bi bi-link"></i> إضافة إلى اختبار
+                                <i class="bx bx-link"></i> إضافة إلى اختبار
                             </a>
                             <a href="@Url.Action("Clone", "QuestionSets", new { id = Model.Id })" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="إنشاء نسخة من هذه المجموعة">
-                                <i class="bi bi-files"></i> نسخ المجموعة
+                                <i class="bx bx-files"></i> نسخ المجموعة
                             </a>
                             <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#regenerateModal">
-                                <i class="bi bi-arrow-repeat"></i> إعادة توليد الأسئلة
+                                <i class="bx bx-arrow-repeat"></i> إعادة توليد الأسئلة
                             </button>
                         }
                         else if (Model.Status == QuestionSetStatus.Failed)
                         {
                             <form asp-action="Retry" asp-route-id="@Model.Id" method="post">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-arrow-repeat"></i> إعادة المحاولة
+                                    <i class="bx bx-arrow-repeat"></i> إعادة المحاولة
                                 </button>
                             </form>
                         }
                         else if (Model.Status == QuestionSetStatus.Processing)
                         {
                             <button type="button" class="btn btn-secondary" disabled>
-                                <i class="bi bi-hourglass-split"></i> قيد المعالجة...
+                                <i class="bx bx-hourglass-split"></i> قيد المعالجة...
                             </button>
                         }
                         else if (Model.Status == QuestionSetStatus.Pending)
                         {
                             <button type="button" class="btn btn-secondary mt-2" disabled>
-                                <i class="bi bi-hourglass-split"></i> قيد الانتظار...
+                                <i class="bx bx-hourglass-split"></i> قيد الانتظار...
                             </button>
                         }
                     </div>
@@ -183,12 +183,12 @@
             {
                 <div class="card shadow-sm mb-4">
                     <div class="card-body text-center p-5">
-                        <i class="bi bi-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
+                        <i class="bx bx-exclamation-triangle-fill text-danger fs-1 mb-3"></i>
                         <h5>فشل في توليد الأسئلة</h5>
                         <p class="text-muted">@(string.IsNullOrEmpty(Model.ErrorMessage) ? "حدث خطأ أثناء توليد الأسئلة. يرجى المحاولة مرة أخرى." : Model.ErrorMessage)</p>
                         <form asp-action="Retry" asp-route-id="@Model.Id" method="post" class="mt-3">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-arrow-repeat"></i> إعادة المحاولة
+                                <i class="bx bx-arrow-repeat"></i> إعادة المحاولة
                             </button>
                         </form>
                     </div>
@@ -201,7 +201,7 @@
                         <h5 class="card-title mb-0">الأسئلة (@Model.QuestionsGenerated / @Model.QuestionCount)</h5>
                         <div>
                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#shuffleOptionsModal">
-                                <i class="bi bi-shuffle"></i> خلط الخيارات
+                                <i class="bx bx-shuffle"></i> خلط الخيارات
                             </button>
                         </div>
                     </div>
@@ -226,7 +226,7 @@
                                                         <div class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
                                                             @if (option.IsCorrect)
                                                             {
-                                                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                                <i class="bx bx-check-circle-fill text-success me-2"></i>
                                                             }
                                                             @option.Text
                                                         </div>
@@ -263,7 +263,7 @@
                                                         <div class="list-group-item">
                                                             <div class="row">
                                                                 <div class="col-5 border-end">@pair.LeftSide</div>
-                                                                <div class="col-2 text-center"><i class="bi bi-arrow-right"></i></div>
+                                                                <div class="col-2 text-center"><i class="bx bx-arrow-right"></i></div>
                                                                 <div class="col-5">@pair.RightSide</div>
                                                             </div>
                                                         </div>
@@ -320,7 +320,7 @@
             {
                 <div class="card shadow-sm mb-4">
                     <div class="card-body text-center p-5">
-                        <i class="bi bi-hourglass text-warning fs-1 mb-3"></i>
+                        <i class="bx bx-hourglass text-warning fs-1 mb-3"></i>
                         <h5>في انتظار توليد الأسئلة</h5>
                         <p class="text-muted">سيتم توليد الأسئلة قريبًا. يمكنك تحديث الصفحة للتحقق من الحالة.</p>
                     </div>
@@ -388,7 +388,7 @@
                                     @if (!string.IsNullOrEmpty(Model.FileName))
                                     {
                                         <a href="@Url.Action("DownloadFile", new { id = Model.Id })" class="btn btn-sm btn-outline-primary ms-2">
-                                            <i class="bi bi-download"></i> تنزيل
+                                            <i class="bx bx-download"></i> تنزيل
                                         </a>
                                     }
                                 </dd>
@@ -412,7 +412,7 @@
             <div class="modal-body">
                 <p>هل أنت متأكد من رغبتك في إعادة توليد الأسئلة؟ سيتم حذف الأسئلة الحالية واستبدالها بأسئلة جديدة.</p>
                 <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle-fill"></i> تحذير: لا يمكن التراجع عن هذه العملية.
+                    <i class="bx bx-exclamation-triangle-fill"></i> تحذير: لا يمكن التراجع عن هذه العملية.
                 </div>
             </div>
             <div class="modal-footer">
@@ -475,7 +475,7 @@
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <i class="bx bx-exclamation-triangle-fill me-2"></i>
                     <strong>تنبيه:</strong> إعادة توليد الأسئلة سيؤدي إلى حذف جميع الأسئلة الحالية وإنشاء أسئلة جديدة.
                     <br>
                     هل أنت متأكد من أنك تريد المتابعة؟

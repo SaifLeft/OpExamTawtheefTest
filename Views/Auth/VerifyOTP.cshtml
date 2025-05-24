@@ -6,12 +6,12 @@
 <div class="row justify-content-center">
   <div class="col-md-6">
     <div class="card shadow">
-      <div class="card-header bg-primary text-white text-center">
+      <div class="card-header text-center">
         <h5 class="mb-0">التحقق من رمز OTP</h5>
       </div>
       <div class="card-body">
         <div class="text-center mb-4">
-          <i class="bi bi-shield-lock-fill" style="font-size: 3rem; color: #0d6efd;"></i>
+          <i class="bx bx-shield-lock-fill" style="font-size: 3rem; color: #0d6efd;"></i>
         </div>
 
         @if (TempData["ErrorMessage"] != null)
@@ -22,7 +22,7 @@
         }
 
         <div class="alert alert-info">
-          <p class="mb-0"><i class="bi bi-info-circle-fill"></i> تم إرسال رمز التحقق إلى رقم الهاتف <strong
+          <p class="mb-0"><i class="bx bx-info-circle-fill"></i> تم إرسال رمز التحقق إلى رقم الهاتف <strong
               dir="ltr">@phoneNumber</strong></p>
           <p class="small mb-0 mt-1">ملاحظة: في هذه النسخة التجريبية، الرمز هو:
             <strong>@TempData["OTPCode"]</strong>
@@ -48,17 +48,17 @@
 
           <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary btn-lg">
-              <i class="bi bi-check-circle"></i> تحقق وتسجيل الدخول
+              <i class="bx bx-check-circle"></i> تحقق وتسجيل الدخول
             </button>
             <a asp-action="SendOTP" asp-route-phoneNumber="@phoneNumber" class="btn btn-outline-secondary">
-              <i class="bi bi-arrow-repeat"></i> إعادة إرسال الرمز
+              <i class="bx bx-arrow-repeat"></i> إعادة إرسال الرمز
             </a>
           </div>
         </form>
       </div>
       <div class="card-footer text-center">
         <a asp-action="Login" class="btn btn-link">
-          <i class="bi bi-arrow-left"></i> العودة لصفحة تسجيل الدخول
+          <i class="bx bx-arrow-left"></i> العودة لصفحة تسجيل الدخول
         </a>
       </div>
     </div>

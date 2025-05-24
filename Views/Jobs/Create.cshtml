@@ -7,15 +7,15 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>إنشاء وظيفة جديدة</h1>
   <a asp-action="Index" class="btn btn-secondary">
-    <i class="bi bi-arrow-return-left"></i> العودة للقائمة
+    <i class="bx bx-arrow-return-left"></i> العودة للقائمة
   </a>
 </div>
 
 <div class="row">
   <div class="col-md-8">
     <div class="card">
-      <div class="card-header bg-primary text-white">
-        <i class="bi bi-plus-circle"></i> معلومات الوظيفة
+      <div class="card-header">
+        <i class="bx bx-plus-circle"></i> معلومات الوظيفة
       </div>
       <div class="card-body">
         <form asp-action="Create">
@@ -23,7 +23,7 @@
 
           <div class="mb-3">
             <label asp-for="Name" class="form-label">
-              <i class="bi bi-briefcase"></i> اسم الوظيفة
+              <i class="bx bx-briefcase"></i> اسم الوظيفة
             </label>
             <input asp-for="Name" class="form-control" required placeholder="أدخل اسم الوظيفة" />
             <span asp-validation-for="Name" class="text-danger"></span>
@@ -31,7 +31,7 @@
 
           <div class="mb-3">
             <label asp-for="Description" class="form-label">
-              <i class="bi bi-card-text"></i> وصف الوظيفة
+              <i class="bx bx-card-text"></i> وصف الوظيفة
             </label>
             <textarea asp-for="Description" class="form-control" rows="4"
               placeholder="أدخل وصفاً مختصراً للوظيفة"></textarea>
@@ -40,7 +40,7 @@
 
           <div class="d-flex justify-content-end">
             <button type="submit" class="btn btn-primary">
-              <i class="bi bi-save"></i> حفظ الوظيفة
+              <i class="bx bx-save"></i> حفظ الوظيفة
             </button>
           </div>
         </form>

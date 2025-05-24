@@ -6,24 +6,24 @@
 
 <div class="container-fluid mt-4">
   <div class="card shadow">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
-      <h3 class="mb-0"><i class="bi bi-people-fill me-2"></i>المرشحون</h3>
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+      <h3 class="mb-0"><i class="bx bx-people-fill me-2"></i>المرشحون</h3>
       <div class="d-flex">
         <div class="dropdown me-2">
           <button class="btn btn-outline-light dropdown-toggle" type="button" id="exportDropdown"
             data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-download"></i> تصدير
+            <i class="bx bx-download"></i> تصدير
           </button>
           <ul class="dropdown-menu" aria-labelledby="exportDropdown">
             <li><a class="dropdown-item" href="#" id="exportExcel"><i
-                  class="bi bi-file-earmark-excel me-2"></i>Excel</a></li>
-            <li><a class="dropdown-item" href="#" id="exportPdf"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a></li>
-            <li><a class="dropdown-item" href="#" id="exportCsv"><i class="bi bi-file-earmark-text me-2"></i>CSV</a>
+                  class="bx bx-file-earmark-excel me-2"></i>Excel</a></li>
+            <li><a class="dropdown-item" href="#" id="exportPdf"><i class="bx bx-file-earmark-pdf me-2"></i>PDF</a></li>
+            <li><a class="dropdown-item" href="#" id="exportCsv"><i class="bx bx-file-earmark-text me-2"></i>CSV</a>
             </li>
           </ul>
         </div>
         <a asp-action="Create" class="btn btn-light">
-          <i class="bi bi-plus-circle-fill"></i> إضافة مرشح جديد
+          <i class="bx bx-plus-circle-fill"></i> إضافة مرشح جديد
         </a>
       </div>
     </div>
@@ -33,7 +33,7 @@
           <div class="input-group">
             <input type="text" id="searchInput" class="form-control" placeholder="بحث عن مرشح...">
             <button class="btn btn-outline-secondary" type="button" id="searchButton">
-              <i class="bi bi-search"></i>
+              <i class="bx bx-search"></i>
             </button>
           </div>
         </div>
@@ -51,7 +51,7 @@
       @if (TempData["SuccessMessage"] != null)
       {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-          <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+          <i class="bx bx-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       }
@@ -59,7 +59,7 @@
       @if (TempData["ErrorMessage"] != null)
       {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+          <i class="bx bx-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       }
@@ -90,7 +90,7 @@
                   <td>
                     <span class="badge bg-secondary p-2">
                       <a asp-action="ByJob" asp-route-id="@item.candidate.JobId" class="text-white text-decoration-none">
-                        <i class="bi bi-briefcase-fill me-1"></i>@item.candidate.JobName
+                        <i class="bx bx-briefcase-fill me-1"></i>@item.candidate.JobName
                       </a>
                     </span>
                   </td>
@@ -99,19 +99,19 @@
                     <div class="btn-group" role="group">
                       <a asp-action="Details" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip"
                         title="عرض التفاصيل" class="btn btn-sm btn-info">
-                        <i class="bi bi-eye-fill"></i>
+                        <i class="bx bx-eye-fill"></i>
                       </a>
                       <a asp-action="Edit" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip" title="تعديل البيانات"
                         class="btn btn-sm btn-primary">
-                        <i class="bi bi-pencil-square"></i>
+                        <i class="bx bx-pencil-square"></i>
                       </a>
                       <a asp-controller="CandidateExams" asp-action="ByCandidateId" asp-route-id="@item.candidate.Id"
                         data-bs-toggle="tooltip" title="الاختبارات" class="btn btn-sm btn-success">
-                        <i class="bi bi-file-earmark-text-fill"></i>
+                        <i class="bx bx-file-earmark-text-fill"></i>
                       </a>
                       <a asp-action="Delete" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip" title="حذف المرشح"
                         class="btn btn-sm btn-danger">
-                        <i class="bi bi-trash-fill"></i>
+                        <i class="bx bx-trash-fill"></i>
                       </a>
                     </div>
                   </td>
@@ -143,7 +143,7 @@
       {
         <div class="alert alert-warning">
           <div class="d-flex align-items-center">
-            <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
+            <i class="bx bx-exclamation-triangle-fill fs-3 me-3"></i>
             <div>
               <h4 class="mb-1">لا يوجد مرشحين</h4>
               <p class="mb-0">لم يتم إضافة أي مرشحين بعد.</p>
@@ -206,7 +206,7 @@
         // محاكاة تصدير البيانات
         const alertHtml = `
                             <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
-                                <i class="bi bi-info-circle-fill me-2"></i> جاري تصدير البيانات بتنسيق ${type.toUpperCase()}...
+                                <i class="bx bx-info-circle-fill me-2"></i> جاري تصدير البيانات بتنسيق ${type.toUpperCase()}...
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                         `;

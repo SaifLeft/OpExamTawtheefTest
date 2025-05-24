@@ -144,7 +144,7 @@ namespace TawtheefTest.Data.Structure
 
     // النسبة المئوية للنجاح
     public decimal? PassPercentage { get; set; } = 60;
-    public int QuestionCountForEachCandidate { get; set; } = 30;
+    public int TotalQuestionsPerCandidate { get; set; } = 30;
 
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
@@ -154,7 +154,6 @@ namespace TawtheefTest.Data.Structure
 
     // Navigation properties
     public virtual ICollection<ExamQuestionSet> ExamQuestionSets { get; set; } = new List<ExamQuestionSet>();
-    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
     public virtual ICollection<CandidateExam> CandidateExams { get; set; } = new List<CandidateExam>();
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -191,11 +190,6 @@ namespace TawtheefTest.Data.Structure
 
     [ForeignKey("QuestionSetId")]
     public virtual QuestionSet QuestionSet { get; set; } = null!;
-
-    public int? ExamId { get; set; }
-
-    [ForeignKey("ExamId")]
-    public virtual Exam? Exam { get; set; }
 
     [Required]
     public int Index { get; set; }
@@ -392,6 +386,8 @@ namespace TawtheefTest.Data.Structure
 
     [StringLength(2000)]
     public string? AnswerText { get; set; }
+
+    public bool? TrueFalseAnswer { get; set; }
 
     public int? SelectedOptionId { get; set; }
 

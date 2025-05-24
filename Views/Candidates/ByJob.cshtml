@@ -1,200 +1,204 @@
 @model CandidateListViewModel
 
 @{
-  ViewData["Title"] = "المرشحون حسب الوظيفة";
+    ViewData["Title"] = "المرشحون حسب الوظيفة";
 }
 
 <div class="container-fluid mt-4">
-  <div class="card shadow">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
-      <h3 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>مرشحو وظيفة: @Model.JobName</h3>
-      <div class="d-flex">
-        <div class="dropdown me-2">
-          <button class="btn btn-outline-light dropdown-toggle" type="button" id="exportDropdown"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-download"></i> تصدير
-          </button>
-          <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-            <li><a class="dropdown-item" href="#" id="exportExcel"><i
-                  class="bi bi-file-earmark-excel me-2"></i>Excel</a></li>
-            <li><a class="dropdown-item" href="#" id="exportPdf"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a></li>
-            <li><a class="dropdown-item" href="#" id="exportCsv"><i class="bi bi-file-earmark-text me-2"></i>CSV</a>
-            </li>
-          </ul>
-        </div>
-        <a asp-controller="Jobs" asp-action="Details" asp-route-id="@Model.JobId" class="btn btn-outline-light me-2">
-          <i class="bi bi-arrow-right-circle-fill"></i> العودة للوظيفة
-        </a>
-        <a asp-action="Create" class="btn btn-light">
-          <i class="bi bi-person-plus-fill"></i> إضافة مرشح جديد
-        </a>
-      </div>
-    </div>
-    <div class="card-body">
-      <div class="alert alert-info mb-3">
-        <div class="d-flex align-items-center">
-          <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-          <div>
-            <p class="mb-0 fw-bold">عدد المرشحين لهذه الوظيفة: @Model.Candidates.Count()</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mb-3">
-        <div class="col-12">
-          <div class="input-group">
-            <input type="text" id="searchInput" class="form-control" placeholder="بحث عن مرشح...">
-            <button class="btn btn-outline-secondary" type="button" id="searchButton">
-              <i class="bi bi-search"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      @if (TempData["SuccessMessage"] != null)
-      {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-          <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      }
-
-      @if (TempData["ErrorMessage"] != null)
-      {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      }
-
-      @if (Model.Candidates != null && Model.Candidates.Any())
-      {
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered" id="candidatesTable">
-            <thead class="table-dark">
-              <tr>
-                <th width="5%">#</th>
-                <th width="30%">الاسم</th>
-                <th width="25%">رقم الهاتف</th>
-                <th width="20%">تاريخ التسجيل</th>
-                <th width="20%">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach (var item in Model.Candidates.Select((candidate, index) => new { candidate, index }))
-              {
-                <tr data-candidate-id="@item.candidate.Id">
-                  <td class="text-center">@(item.index + 1)</td>
-                  <td>
-                    <span class="fw-bold">@item.candidate.Name</span>
-                  </td>
-                  <td dir="ltr" class="text-center">@item.candidate.PhoneNumber</td>
-                  <td class="text-center">@item.candidate.CreatedAt.ToString("yyyy-MM-dd")</td>
-                  <td>
-                    <div class="btn-group" role="group">
-                      <a asp-action="Details" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip"
-                        title="عرض التفاصيل" class="btn btn-sm btn-info">
-                        <i class="bi bi-eye-fill"></i>
-                      </a>
-                      <a asp-action="Edit" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip" title="تعديل البيانات"
-                        class="btn btn-sm btn-primary">
-                        <i class="bi bi-pencil-square"></i>
-                      </a>
-                      <a asp-controller="CandidateExams" asp-action="ByCandidateId" asp-route-id="@item.candidate.Id"
-                        data-bs-toggle="tooltip" title="الاختبارات" class="btn btn-sm btn-success">
-                        <i class="bi bi-file-earmark-text-fill"></i>
-                      </a>
-                      <a asp-action="Delete" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip" title="حذف المرشح"
-                        class="btn btn-sm btn-danger">
-                        <i class="bi bi-trash-fill"></i>
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3">
-          <div class="mb-2 mb-md-0">
-            <span class="badge bg-primary p-2 fs-6">إجمالي المرشحين: @Model.Candidates.Count()</span>
-          </div>
-          <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm justify-content-center justify-content-md-end mb-0">
-              <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1">السابق</a>
-              </li>
-              <li class="page-item active"><a class="page-link" href="#">1</a></li>
-              <li class="page-item"><a class="page-link" href="#">2</a></li>
-              <li class="page-item"><a class="page-link" href="#">3</a></li>
-              <li class="page-item">
-                <a class="page-link" href="#">التالي</a>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      }
-      else
-      {
-        <div class="alert alert-warning">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
-            <div>
-              <h4 class="mb-1">لا يوجد مرشحين</h4>
-              <p class="mb-0">لم يتم إضافة أي مرشحين لهذه الوظيفة بعد.</p>
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center py-3">
+            <h3 class="mb-0"><i class="bi bi-briefcase-fill me-2"></i>مرشحو وظيفة: @Model.JobName</h3>
+            <div class="d-flex">
+                <div class="dropdown me-2">
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="exportDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-download"></i> تصدير
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                        <li>
+                            <a class="dropdown-item" href="#" id="exportExcel">
+                                <i class="bi bi-file-earmark-excel me-2"></i>Excel
+                            </a>
+                        </li>
+                        <li><a class="dropdown-item" href="#" id="exportPdf"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</a></li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="exportCsv"><i class="bi bi-file-earmark-text me-2"></i>CSV</a>
+                        </li>
+                    </ul>
+                </div>
+                <a asp-controller="Jobs" asp-action="Details" asp-route-id="@Model.JobId" class="btn btn-outline-light me-2">
+                    <i class="bi bi-arrow-right-circle-fill"></i> العودة للوظيفة
+                </a>
+                <a asp-action="Create" class="btn btn-light">
+                    <i class="bi bi-person-plus-fill"></i> إضافة مرشح جديد
+                </a>
             </div>
-          </div>
         </div>
-      }
+        <div class="card-body">
+            <div class="alert alert-info mb-3">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                    <div>
+                        <p class="mb-0 fw-bold">عدد المرشحين لهذه الوظيفة: @Model.Candidates.Count()</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control" placeholder="بحث عن مرشح...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (Model.Candidates != null && Model.Candidates.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered" id="candidatesTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="30%">الاسم</th>
+                                <th width="25%">رقم الهاتف</th>
+                                <th width="20%">تاريخ التسجيل</th>
+                                <th width="20%">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Candidates.Select((candidate, index) => new { candidate, index }))
+                            {
+                                <tr data-candidate-id="@item.candidate.Id">
+                                    <td class="text-center">@(item.index + 1)</td>
+                                    <td>
+                                        <span class="fw-bold">@item.candidate.Name</span>
+                                    </td>
+                                    <td dir="ltr" class="text-center">@item.candidate.PhoneNumber</td>
+                                    <td class="text-center">@item.candidate.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip"
+                                               title="عرض التفاصيل" class="btn btn-sm btn-info">
+                                                <i class="bx bx-eye-alt bx-wiggle "></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip" title="تعديل البيانات"
+                                               class="btn btn-sm btn-primary">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <a asp-controller="CandidateExams" asp-action="ByCandidateId" asp-route-id="@item.candidate.Id"
+                                               data-bs-toggle="tooltip" title="الاختبارات" class="btn btn-sm btn-success">
+                                                <i class="bi bi-file-earmark-text-fill"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.candidate.Id" data-bs-toggle="tooltip" title="حذف المرشح"
+                                               class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3">
+                    <div class="mb-2 mb-md-0">
+                        <span class="badge bg-primary p-2 fs-6">إجمالي المرشحين: @Model.Candidates.Count()</span>
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm justify-content-center justify-content-md-end mb-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1">السابق</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">التالي</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill fs-3 me-3"></i>
+                        <div>
+                            <h4 class="mb-1">لا يوجد مرشحين</h4>
+                            <p class="mb-0">لم يتم إضافة أي مرشحين لهذه الوظيفة بعد.</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
-  </div>
 </div>
 
 @section Scripts {
-  <script>
-    $(document).ready(function () {
-      // تفعيل tooltips لجميع الأزرار
-      $('[data-bs-toggle="tooltip"]').tooltip();
+    <script>
+        $(document).ready(function () {
+          // تفعيل tooltips لجميع الأزرار
+          $('[data-bs-toggle="tooltip"]').tooltip();
 
-      // وظيفة البحث
-      $("#searchInput").on("keyup", function () {
-        var value = $(this).val().toLowerCase();
-        $("#candidatesTable tbody tr").filter(function () {
-          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+          // وظيفة البحث
+          $("#searchInput").on("keyup", function () {
+            var value = $(this).val().toLowerCase();
+            $("#candidatesTable tbody tr").filter(function () {
+              $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+          });
+
+          // وظائف تصدير البيانات
+          $("#exportExcel").on("click", function (e) {
+            e.preventDefault();
+            exportTable('excel');
+          });
+
+          $("#exportPdf").on("click", function (e) {
+            e.preventDefault();
+            exportTable('pdf');
+          });
+
+          $("#exportCsv").on("click", function (e) {
+            e.preventDefault();
+            exportTable('csv');
+          });
+
+          function exportTable(type) {
+            // محاكاة تصدير البيانات
+            const alertHtml = `
+                  <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> جاري تصدير البيانات بتنسيق ${type.toUpperCase()}...
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                `;
+            $('.card-body').prepend(alertHtml);
+
+            // إخفاء التنبيه بعد 3 ثوان
+            setTimeout(() => {
+              $('.alert').alert('close');
+            }, 3000);
+          }
         });
-      });
-
-      // وظائف تصدير البيانات
-      $("#exportExcel").on("click", function (e) {
-        e.preventDefault();
-        exportTable('excel');
-      });
-
-      $("#exportPdf").on("click", function (e) {
-        e.preventDefault();
-        exportTable('pdf');
-      });
-
-      $("#exportCsv").on("click", function (e) {
-        e.preventDefault();
-        exportTable('csv');
-      });
-
-      function exportTable(type) {
-        // محاكاة تصدير البيانات
-        const alertHtml = `
-              <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
-                <i class="bi bi-info-circle-fill me-2"></i> جاري تصدير البيانات بتنسيق ${type.toUpperCase()}...
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            `;
-        $('.card-body').prepend(alertHtml);
-
-        // إخفاء التنبيه بعد 3 ثوان
-        setTimeout(() => {
-          $('.alert').alert('close');
-        }, 3000);
-      }
-    });
-  </script>
+    </script>
 }

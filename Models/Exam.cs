@@ -18,7 +18,7 @@ namespace TawtheefTest.Models
 
     // Navigation properties
     public Job? Job { get; set; }
-    public ICollection<QuestionDTO>? Questions { get; set; }
+    public ICollection<ExamQuestionSet>? ExamQuestionSets { get; set; }
     public ICollection<CandidateExam>? CandidateExams { get; set; }
   }
 }

@@ -9,10 +9,10 @@
         <h1>تفاصيل المرشح</h1>
         <div>
             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary me-2">
-                <i class="bi bi-pencil-square"></i> تعديل
+                <i class="bx bx-pencil-square"></i> تعديل
             </a>
             <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> العودة للقائمة
+                <i class="bx bx-arrow-left"></i> العودة للقائمة
             </a>
         </div>
     </div>
@@ -20,7 +20,7 @@
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header">
                     <h5 class="mb-0">معلومات المرشح</h5>
                 </div>
                 <div class="card-body">
@@ -50,7 +50,7 @@
                     <p>عرض الاختبارات المتعلقة بهذا المرشح.</p>
                     <a asp-controller="CandidateExams" asp-action="ByCandidateId" asp-route-id="@Model.Id"
                         class="btn btn-info">
-                        <i class="bi bi-eye"></i> عرض الاختبارات
+                        <i class="bx bx-eye"></i> عرض الاختبارات
                     </a>
                 </div>
             </div>
