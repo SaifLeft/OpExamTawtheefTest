@@ -11,8 +11,8 @@ using TawtheefTest.Data.Structure;
 namespace TawtheefTest.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250503211456_MakeExamIdNullableInQuestion")]
-    partial class MakeExamIdNullableInQuestion
+    [Migration("20250524181159_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -79,6 +79,9 @@ namespace TawtheefTest.Migrations
                     b.Property<bool?>("IsCorrect")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsFlagged")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("MatchingPairsJson")
                         .HasMaxLength(2000)
                         .HasColumnType("TEXT");
@@ -96,6 +99,9 @@ namespace TawtheefTest.Migrations
                     b.Property<string>("SelectedOptionsJson")
                         .HasMaxLength(2000)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool?>("TrueFalseAnswer")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
@@ -118,15 +124,39 @@ namespace TawtheefTest.Migrations
                     b.Property<int>("CandidateId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("CompletedQuestions")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<TimeSpan?>("CompletionDuration")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<int>("EasyQuestionsCorrect")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ExamId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HardQuestionsCorrect")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MaxPossiblePoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MediumQuestionsCorrect")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("QuestionReplaced")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RankPosition")
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal?>("Score")
@@ -141,6 +171,12 @@ namespace TawtheefTest.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("NotStarted");
 
+                    b.Property<int>("TotalPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalQuestions")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -152,44 +188,6 @@ namespace TawtheefTest.Migrations
                         .IsUnique();
 
                     b.ToTable("CandidateExams");
-                });
-
-            modelBuilder.Entity("TawtheefTest.Data.Structure.ContentSource", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Content")
-                        .HasMaxLength(10000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ContentSourceType")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<int>("QuestionSetId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("UploadedFileId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Url")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuestionSetId");
-
-                    b.HasIndex("UploadedFileId");
-
-                    b.ToTable("ContentSources");
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Exam", b =>
@@ -222,10 +220,22 @@ namespace TawtheefTest.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal?>("PassPercentage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("SendExamLinkToApplicants")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ShowResultsImmediately")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalQuestionsPerCandidate")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -322,6 +332,49 @@ namespace TawtheefTest.Migrations
                     b.HasIndex("QuestionId");
 
                     b.ToTable("MatchingPairs");
+                });
+
+            modelBuilder.Entity("TawtheefTest.Data.Structure.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("info");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CandidateId");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.OptionChoice", b =>
@@ -428,7 +481,12 @@ namespace TawtheefTest.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<int?>("ExamId")
+                    b.Property<string>("DifficultyLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ExternalId")
@@ -442,6 +500,9 @@ namespace TawtheefTest.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Points")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("QuestionSetId")
                         .HasColumnType("INTEGER");
 
@@ -452,6 +513,7 @@ namespace TawtheefTest.Migrations
 
                     b.Property<string>("QuestionType")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SampleAnswer")
@@ -462,8 +524,6 @@ namespace TawtheefTest.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ExamId");
 
                     b.HasIndex("QuestionSetId");
 
@@ -503,6 +563,13 @@ namespace TawtheefTest.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Content")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentSourceType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
@@ -524,6 +591,12 @@ namespace TawtheefTest.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FileName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileUploadedCode")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Language")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -536,8 +609,8 @@ namespace TawtheefTest.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("NumberOfCorrectOptions")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("NumberOfCorrectOptions")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("NumberOfRows")
                         .HasColumnType("INTEGER");
@@ -557,57 +630,20 @@ namespace TawtheefTest.Migrations
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(0);
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
-
-                    b.ToTable("QuestionSets");
-                });
-
-            modelBuilder.Entity("TawtheefTest.Data.Structure.UploadedFile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("FileId")
-                        .IsRequired()
+                    b.Property<string>("Url")
                         .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FilePath")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FileType")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("UploadedFiles");
+                    b.ToTable("QuestionSets");
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Candidate", b =>
@@ -659,24 +695,6 @@ namespace TawtheefTest.Migrations
                     b.Navigation("Exam");
                 });
 
-            modelBuilder.Entity("TawtheefTest.Data.Structure.ContentSource", b =>
-                {
-                    b.HasOne("TawtheefTest.Data.Structure.QuestionSet", "QuestionSet")
-                        .WithMany("ContentSources")
-                        .HasForeignKey("QuestionSetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("TawtheefTest.Data.Structure.UploadedFile", "UploadedFile")
-                        .WithMany("ContentSources")
-                        .HasForeignKey("UploadedFileId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("QuestionSet");
-
-                    b.Navigation("UploadedFile");
-                });
-
             modelBuilder.Entity("TawtheefTest.Data.Structure.Exam", b =>
                 {
                     b.HasOne("TawtheefTest.Data.Structure.Job", "Job")
@@ -718,6 +736,17 @@ namespace TawtheefTest.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("TawtheefTest.Data.Structure.Notification", b =>
+                {
+                    b.HasOne("TawtheefTest.Data.Structure.Candidate", "Candidate")
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Candidate");
+                });
+
             modelBuilder.Entity("TawtheefTest.Data.Structure.OptionChoice", b =>
                 {
                     b.HasOne("TawtheefTest.Data.Structure.Question", "Question")
@@ -742,18 +771,11 @@ namespace TawtheefTest.Migrations
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Question", b =>
                 {
-                    b.HasOne("TawtheefTest.Data.Structure.Exam", "Exam")
-                        .WithMany("Questions")
-                        .HasForeignKey("ExamId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("TawtheefTest.Data.Structure.QuestionSet", "QuestionSet")
                         .WithMany("Questions")
                         .HasForeignKey("QuestionSetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Exam");
 
                     b.Navigation("QuestionSet");
                 });
@@ -784,8 +806,6 @@ namespace TawtheefTest.Migrations
                     b.Navigation("CandidateExams");
 
                     b.Navigation("ExamQuestionSets");
-
-                    b.Navigation("Questions");
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Job", b =>
@@ -810,16 +830,9 @@ namespace TawtheefTest.Migrations
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.QuestionSet", b =>
                 {
-                    b.Navigation("ContentSources");
-
                     b.Navigation("ExamQuestionSets");
 
                     b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("TawtheefTest.Data.Structure.UploadedFile", b =>
-                {
-                    b.Navigation("ContentSources");
                 });
 #pragma warning restore 612, 618
         }

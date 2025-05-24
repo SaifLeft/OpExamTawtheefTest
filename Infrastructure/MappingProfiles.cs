@@ -15,7 +15,11 @@ namespace TawtheefTest.Infrastructure
       // Map from Data Models to DTOs
       CreateMap<Job, JobDTO>();
       CreateMap<Exam, ExamDTO>();
-      CreateMap<Candidate, CandidateDTO>();
+      CreateMap<Candidate, CandidateDTO>()
+          .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Phone.ToString()))
+          .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Job != null ? src.Job.Title : null))
+          .ReverseMap();
+
       CreateMap<Question, ExamQuestionDTO>();
       CreateMap<QuestionOption, QuestionOptionDTO>();
       CreateMap<OTPVerification, OTPVerificationDto>();
@@ -27,7 +31,7 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Candidate.Name))
           .ForMember(dest => dest.ExamTitle, opt => opt.MapFrom(src => src.Exam.Name))
           .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Exam.Job.Title))
-          .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Exam.Duration ?? 60))
+          .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Exam.Duration))
           .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.TotalQuestions > 0
               ? src.TotalQuestions
               : src.Exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
@@ -39,7 +43,7 @@ namespace TawtheefTest.Infrastructure
       CreateMap<Exam, ExamForCandidateViewModel>()
           .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Job.Title))
           .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
-          .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60))
+          .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60m))
           .ForMember(dest => dest.QuestionCountForEachCandidate, opt => opt.MapFrom(src => src.TotalQuestionsPerCandidate));
 
       // تخطيط CandidateExam إلى CandidateExamResultViewModel
@@ -156,6 +160,10 @@ namespace TawtheefTest.Infrastructure
       CreateMap<CreateQuestionSetViewModel, CreateQuestionSetDto>();
       CreateMap<QuestionSetCreateViewModel, CreateQuestionSetDto>()
         .ForMember(dest => dest.ContentSourceType, opt => opt.MapFrom(src => src.ContentSourceType));
+
+      // Mapping لصفحة تعليمات الامتحان
+      CreateMap<ExamInstructionsDto, ExamInstructionsViewModel>();
+      CreateMap<ExamInstructionsViewModel, ExamInstructionsDto>();
     }
 
     private string GetStatusDescription(Enums.QuestionSetStatus status)

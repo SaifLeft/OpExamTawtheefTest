@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
-using Microsoft.EntityFrameworkCore;
+using TawtheefTest.Enums;
+using TawtheefTest.Models;
 
 namespace TawtheefTest.Services
 {
@@ -200,7 +202,7 @@ namespace TawtheefTest.Services
         public async Task<ExamStatisticsDTO> GetExamStatisticsAsync(int examId)
         {
             var candidateExams = await _context.CandidateExams
-                .Where(ce => ce.ExamId == examId && ce.Status == "Completed")
+                .Where(ce => ce.ExamId == examId && ce.Status == nameof(CandidateExamStatus.Completed))
                 .ToListAsync();
 
             if (!candidateExams.Any())

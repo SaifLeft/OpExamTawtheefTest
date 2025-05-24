@@ -1,273 +1,297 @@
 @model List<ExamQuestionDTO>
 @{
-    ViewData["title"] = "الأسئلة المضافة في الاختبار";
+  ViewData["title"] = "الأسئلة المضافة في الاختبار";
 }
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 class="fw-bold py-3 mb-4">
-        <span class="text-muted fw-light">
-            الاختبارات / <a href="@Url.Action("Details", new { id = ViewContext.RouteData.Values["id"] })">@ViewBag.ExamName</a>
-            /
-        </span> الأسئلة
-    </h4>
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible mb-3" role="alert">
-            <i class="bx bx-check-circle me-1"></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible mb-3" role="alert">
-            <i class="bx bx-error-circle me-1"></i>
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    <div class="card">
-        <div class="card-body">
-            <div class="card-title mb-0">
-                <div class="mb-0 text-primary">
-                    <h5 class="mb-0">الأسئلة في الاختبار (@Model.Count)</h5>
-                    <p class="text-muted mb-0">الوظيفة: @ViewBag.JobName</p>
-                </div>
-                <div class="card-title-elements ms-auto">
-                    <a href="@Url.Action("Details", new { id = ViewContext.RouteData.Values["id"] })"
-                       class="btn btn-outline-secondary">
-                        <i class="bx bx-arrow-back me-1"></i> العودة إلى الاختبار
-                    </a>
-                </div>
-            </div>
-            
-
-            @if (Model == null || Model.Count == 0)
-            {
-                <div class="alert alert-info text-center">
-                    <i class="bx bx-info-circle me-1"></i>
-                    لا توجد أسئلة مضافة للاختبار. يمكنك إضافة الأسئلة من مجموعات الأسئلة.
-                </div>
-            }
-            else
-            {
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bx bx-search"></i></span>
-                            <input type="text" id="search-questions" class="form-control" placeholder="البحث في الأسئلة...">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="btn-group float-end">
-                            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                <i class="bx bx-filter-alt me-1"></i> تصفية حسب النوع
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item filter-type" href="#" data-type="all">الكل</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="mcq">اختيار من متعدد</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="tf">صح / خطأ</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="open">إجابة مفتوحة</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="fillintheblank">ملء الفراغات</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="ordering">ترتيب</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="matching">مطابقة</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="multiselect">اختيار متعدد</a></li>
-                                <li><a class="dropdown-item filter-type" href="#" data-type="shortanswer">إجابة قصيرة</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="questions-container">
-                    @foreach (var question in Model)
-                    {
-                        <div class="card mb-3 question-card" data-question-type="@question.QuestionType.ToLower()">
-                            <div class="card-header d-flex align-items-center">
-                                <span class="me-2 question-number">@question.SequenceNumber.</span>
-                                <h6 class="mb-0 flex-fill">@question.QuestionText</h6>
-                                <span class="badge bg-label-primary">@GetQuestionTypeDisplay(question.QuestionType)</span>
-                            </div>
-                            <div class="card-body">
-                                @switch (question.QuestionType?.ToLower())
-                                {
-                                    case "mcq":
-                                    case "multiselect":
-                                        if (question.Options != null && question.Options.Count > 0)
-                                        {
-                                            <div class="mb-3">
-                                                <h6 class="text-muted mb-2">الخيارات:</h6>
-                                                <ul class="list-group">
-                                                    @foreach (var option in question.Options.OrderBy(o => o.Index))
-                                                    {
-                                                        <li class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
-                                                            @if (option.IsCorrect)
-                                                            {
-                                                                <i class="bx bx-check-circle me-1 text-success"></i>
-                                                            }
-                                                            @option.Text
-                                                        </li>
-                                                    }
-                                                </ul>
-                                            </div>
-                                        }
-                                        break;
-                                    case "tf":
-                                        if (question.TrueFalseAnswer.HasValue)
-                                        {
-                                            <div class="mb-3">
-                                                <h6 class="text-muted mb-2">الإجابة الصحيحة:</h6>
-                                                <div class="badge bg-success">@(question.TrueFalseAnswer.Value ? "صحيح" : "خطأ")</div>
-                                            </div>
-                                        }
-                                        break;
-                                    case "open":
-                                    case "shortanswer":
-                                    case "fillintheblank":
-                                        if (!string.IsNullOrEmpty(question.Answer))
-                                        {
-                                            <div class="mb-3">
-                                                <h6 class="text-muted mb-2">الإجابة الصحيحة:</h6>
-                                                <div class="p-3 border rounded bg-light">@question.Answer</div>
-                                            </div>
-                                        }
-                                        break;
-                                    case "ordering":
-                                        if (question.CorrectlyOrdered != null && question.CorrectlyOrdered.Count > 0)
-                                        {
-                                            <div class="mb-3">
-                                                @if (!string.IsNullOrEmpty(question.InstructionText))
-                                                {
-                                                    <div class="alert alert-info mb-3">
-                                                        <i class="bx bx-info-circle me-1"></i> @question.InstructionText
-                                                    </div>
-                                                }
-                                                <h6 class="text-muted mb-2">الترتيب الصحيح:</h6>
-                                                <ol class="list-group list-group-numbered">
-                                                    @foreach (var item in question.CorrectlyOrdered)
-                                                    {
-                                                        <li class="list-group-item">@item</li>
-                                                    }
-                                                </ol>
-
-                                                @if (question.ShuffledOrder != null && question.ShuffledOrder.Count > 0)
-                                                {
-                                                    <h6 class="text-muted mt-3 mb-2">الترتيب المخلوط:</h6>
-                                                    <ul class="list-group">
-                                                        @foreach (var item in question.ShuffledOrder)
-                                                        {
-                                                            <li class="list-group-item">@item</li>
-                                                        }
-                                                    </ul>
-                                                }
-                                            </div>
-                                        }
-                                        break;
-                                    case "matching":
-                                        if (question.MatchingPairs != null && question.MatchingPairs.Count > 0)
-                                        {
-                                            <div class="mb-3">
-                                                <h6 class="text-muted mb-2">أزواج المطابقة:</h6>
-                                                <div class="table-responsive">
-                                                    <table class="table table-bordered">
-                                                        <thead>
-                                                            <tr>
-                                                                <th style="width: 50%">العمود الأيمن</th>
-                                                                <th style="width: 50%">العمود الأيسر</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach (var pair in question.MatchingPairs.OrderBy(p => p.Index))
-                                                            {
-                                                                <tr>
-                                                                    <td>@pair.Right</td>
-                                                                    <td>@pair.Left</td>
-                                                                </tr>
-                                                            }
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        }
-                                        break;
-                                    default:
-                                        <div class="alert alert-warning">
-                                            <i class="bx bx-error-circle me-1"></i> نوع سؤال غير معروف: @question.QuestionType
-                                        </div>
-                                        break;
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-        </div>
+  <h4 class="fw-bold py-3 mb-4">
+    <span class="text-muted fw-light">
+      الاختبارات / <a
+        href="@Url.Action("Details", new { id = ViewContext.RouteData.Values["id"] })">@ViewBag.ExamName</a>
+      /
+    </span> الأسئلة
+  </h4>
+  @if (TempData["SuccessMessage"] != null)
+  {
+    <div class="alert alert-success alert-dismissible mb-3" role="alert">
+      <i class="bx bx-check-circle me-1"></i>
+      @TempData["SuccessMessage"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+  }
+
+  @if (TempData["ErrorMessage"] != null)
+  {
+    <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+      <i class="bx bx-error-circle me-1"></i>
+      @TempData["ErrorMessage"]
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  }
+  <div class="card">
+    <div class="card-body">
+      <div class="card-title mb-0">
+        <div class="mb-0 text-primary">
+          <h5 class="mb-0">الأسئلة في الاختبار (@Model.Count)</h5>
+          <p class="text-muted mb-0">الوظيفة: @ViewBag.JobName</p>
+        </div>
+        <div class="card-title-elements ms-auto">
+          <a href="@Url.Action("Details", new { id = ViewContext.RouteData.Values["id"] })"
+            class="btn btn-outline-secondary">
+            <i class="bx bx-arrow-back me-1"></i> العودة إلى الاختبار
+          </a>
+        </div>
+      </div>
+
+
+      @if (Model == null || Model.Count == 0)
+      {
+        <div class="alert alert-info text-center">
+          <i class="bx bx-info-circle me-1"></i>
+          لا توجد أسئلة مضافة للاختبار. يمكنك إضافة الأسئلة من مجموعات الأسئلة.
+        </div>
+      }
+      else
+      {
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bx bx-search"></i></span>
+              <input type="text" id="search-questions" class="form-control" placeholder="البحث في الأسئلة...">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="btn-group float-end">
+              <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="bx bx-filter-alt me-1"></i> تصفية حسب النوع
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item filter-type" href="#" data-type="all">الكل</a></li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="mcq">اختيار من متعدد</a></li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="tf">صح / خطأ</a></li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="open">إجابة مفتوحة</a></li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="fillintheblank">ملء
+                    الفراغات</a></li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="ordering">ترتيب</a></li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="matching">مطابقة</a></li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="multiselect">اختيار متعدد</a>
+                </li>
+                <li><a class="dropdown-item filter-type" href="#" data-type="shortanswer">إجابة قصيرة</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="questions-container">
+          @foreach (var question in Model)
+          {
+            <div class="card mb-3 question-card" data-question-type="@question.QuestionType.ToLower()">
+              <div class="card-header d-flex align-items-center">
+                <span class="me-2 question-number">@question.SequenceNumber.</span>
+                <h6 class="mb-0 flex-fill">@question.QuestionText</h6>
+                <span class="badge bg-label-primary">@GetQuestionTypeDisplay(question.QuestionType)</span>
+              </div>
+              <div class="card-body">
+                @switch (question.QuestionType?.ToLower())
+                {
+                  case "mcq":
+                  case "multiselect":
+                    if (question.Options != null && question.Options.Any())
+                    {
+                      <div class="mb-3">
+                        <h6 class="text-muted mb-2">الخيارات:</h6>
+                        <ul class="list-group">
+                          @foreach (var option in question.Options.OrderBy(o => o.Index))
+                          {
+                            <li class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
+                              @if (option.IsCorrect)
+                              {
+                                <i class="bx bx-check-circle me-1 text-success"></i>
+                              }
+                              @option.Text
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    break;
+                  case "tf":
+                    if (question.TrueFalseAnswer.HasValue)
+                    {
+                      <div class="mb-3">
+                        <h6 class="text-muted mb-2">الإجابة الصحيحة:</h6>
+                        <div class="badge bg-success">@(question.TrueFalseAnswer.Value ? "صحيح" : "خطأ")</div>
+                      </div>
+                    }
+                    break;
+                  case "open":
+                  case "shortanswer":
+                  case "fillintheblank":
+                    if (!string.IsNullOrEmpty(question.Answer))
+                    {
+                      <div class="mb-3">
+                        <h6 class="text-muted mb-2">الإجابة الصحيحة:</h6>
+                        <div class="p-3 border rounded bg-light">@question.Answer</div>
+                      </div>
+                    }
+
+                    @* عرض الخيارات إذا كانت موجودة لأسئلة ملء الفراغات *@
+                    @if (question.Options != null && question.Options.Any())
+                    {
+                      <div class="mb-3">
+                        <h6 class="text-muted mb-2">الخيارات المتاحة:</h6>
+                        <div class="list-group">
+                          @foreach (var option in question.Options)
+                          {
+                            <div class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
+                              @if (option.IsCorrect)
+                              {
+                                <i class="bx bx-check-circle text-success me-2"></i>
+                              }
+                              @option.Text
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                    break;
+                  case "ordering":
+                    if (question.CorrectlyOrdered != null && question.CorrectlyOrdered.Count > 0)
+                    {
+                      <div class="mb-3">
+                        @if (!string.IsNullOrEmpty(question.InstructionText))
+                        {
+                          <div class="alert alert-info mb-3">
+                            <i class="bx bx-info-circle me-1"></i> @question.InstructionText
+                          </div>
+                        }
+                        <h6 class="text-muted mb-2">الترتيب الصحيح:</h6>
+                        <ol class="list-group list-group-numbered">
+                          @foreach (var item in question.CorrectlyOrdered)
+                          {
+                            <li class="list-group-item">@item</li>
+                          }
+                        </ol>
+
+                        @if (question.ShuffledOrder != null && question.ShuffledOrder.Count > 0)
+                        {
+                          <h6 class="text-muted mt-3 mb-2">الترتيب المخلوط:</h6>
+                          <ul class="list-group">
+                            @foreach (var item in question.ShuffledOrder)
+                            {
+                              <li class="list-group-item">@item</li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    }
+                    break;
+                  case "matching":
+                    if (question.MatchingPairs != null && question.MatchingPairs.Count > 0)
+                    {
+                      <div class="mb-3">
+                        <h6 class="text-muted mb-2">أزواج المطابقة:</h6>
+                        <div class="table-responsive">
+                          <table class="table table-bordered">
+                            <thead>
+                              <tr>
+                                <th style="width: 50%">العمود الأيمن</th>
+                                <th style="width: 50%">العمود الأيسر</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @foreach (var pair in question.MatchingPairs.OrderBy(p => p.Index))
+                              {
+                                <tr>
+                                  <td>@pair.Right</td>
+                                  <td>@pair.Left</td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    }
+                    break;
+                  default:
+                    <div class="alert alert-warning">
+                      <i class="bx bx-error-circle me-1"></i> نوع سؤال غير معروف: @question.QuestionType
+                    </div>
+                    break;
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
 </div>
 
 <style>
-    .question-card {
-        border-radius: 0.5rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        transition: all 0.2s ease-in-out;
-    }
+  .question-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease-in-out;
+  }
 
-        .question-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+  .question-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 
-    .question-number {
-        font-weight: bold;
-        color: #696cff;
-        font-size: 1.1em;
-    }
+  .question-number {
+    font-weight: bold;
+    color: #696cff;
+    font-size: 1.1em;
+  }
 
-    .questions-container {
-        max-width: 900px;
-        margin: 0 auto;
-    }
+  .questions-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
 </style>
 
 @section Scripts {
-    <script>
-        $(document).ready(function () {
-          // البحث في الأسئلة
-          $("#search-questions").on("keyup", function () {
-            var value = $(this).val().toLowerCase();
-            $(".question-card").filter(function () {
-              $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-            });
-          });
-
-          // تصفية حسب النوع
-          $(".filter-type").on("click", function () {
-            var type = $(this).data("type");
-            if (type === "all") {
-              $(".question-card").show();
-            } else {
-              $(".question-card").hide();
-              $(".question-card[data-question-type='" + type + "']").show();
-            }
-          });
+  <script>
+    $(document).ready(function () {
+      // البحث في الأسئلة
+      $("#search-questions").on("keyup", function () {
+        var value = $(this).val().toLowerCase();
+        $(".question-card").filter(function () {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
         });
-    </script>
+      });
+
+      // تصفية حسب النوع
+      $(".filter-type").on("click", function () {
+        var type = $(this).data("type");
+        if (type === "all") {
+          $(".question-card").show();
+        } else {
+          $(".question-card").hide();
+          $(".question-card[data-question-type='" + type + "']").show();
+        }
+      });
+    });
+  </script>
 }
 
 @functions {
-    public string GetQuestionTypeDisplay(string questionType)
+  public string GetQuestionTypeDisplay(string questionType)
+  {
+    return questionType?.ToLower() switch
     {
-        return questionType?.ToLower() switch
-        {
-            "mcq" => "اختيار من متعدد",
-            "tf" => "صح / خطأ",
-            "open" => "إجابة مفتوحة",
-            "fillintheblank" => "ملء الفراغات",
-            "ordering" => "ترتيب",
-            "matching" => "مطابقة",
-            "multiselect" => "اختيار متعدد",
-            "shortanswer" => "إجابة قصيرة",
-            _ => questionType
-        };
-    }
+      "mcq" => "اختيار من متعدد",
+      "tf" => "صح / خطأ",
+      "open" => "إجابة مفتوحة",
+      "fillintheblank" => "ملء الفراغات",
+      "ordering" => "ترتيب",
+      "matching" => "مطابقة",
+      "multiselect" => "اختيار متعدد",
+      "shortanswer" => "إجابة قصيرة",
+      _ => questionType
+    };
+  }
 }

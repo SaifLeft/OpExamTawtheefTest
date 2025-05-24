@@ -37,7 +37,7 @@ namespace TawtheefTest.Controllers
             Description = e.Description,
             JobId = e.JobId,
             JobName = e.Job.Title,
-            Duration = e.Duration ?? 60,
+            Duration = e.Duration,
             StartDate = e.StartDate ?? DateTime.Now,
             EndDate = e.EndDate ?? DateTime.Now.AddDays(7),
             CreatedDate = e.CreatedAt,
@@ -96,7 +96,7 @@ namespace TawtheefTest.Controllers
         Description = exam.Description,
         JobId = exam.JobId,
         JobName = exam.Job.Title,
-        Duration = exam.Duration ?? 60,
+        Duration = exam.Duration,
         CreatedDate = exam.CreatedAt,
         ExamStartDate = exam.StartDate ?? DateTime.Now,
         ExamEndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
@@ -168,7 +168,7 @@ namespace TawtheefTest.Controllers
                   {
                     Left = m.LeftItem,
                     Right = m.RightItem,
-                    Index = m.DisplayOrder
+                    Index = m.DisplayOrder ?? 0
                   }).ToList()
                   : null,
             Options = q.Options?.Select(o => new QuestionOptionDTO
@@ -245,7 +245,7 @@ namespace TawtheefTest.Controllers
         Name = exam.Name,
         Description = exam.Description,
         JobId = exam.JobId,
-        Duration = exam.Duration ?? 60,
+        Duration = exam.Duration,
         StartDate = exam.StartDate ?? DateTime.Now,
         EndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
         ShowResultsImmediately = exam.ShowResultsImmediately,
@@ -371,7 +371,7 @@ namespace TawtheefTest.Controllers
             Name = e.Name,
             JobId = e.JobId,
             JobName = e.Job.Title,
-            Duration = e.Duration ?? 60,
+            Duration = e.Duration,
             QuestionsCount = e.ExamQuestionSets.Sum(eqs => eqs.QuestionSet.Questions.Count),
             CreatedDate = e.CreatedAt
           })

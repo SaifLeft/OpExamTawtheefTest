@@ -126,8 +126,39 @@ namespace TawtheefTest.DTOs.OpExam
     public string QuestionText { get; set; }
     [JsonPropertyName("answer")]
     public bool Answer { get; set; }
-    public string id { get; set; }
+    public string Id { get; set; }
   }
+
+
+  public class OpExamMultiSelectQuestionResponse
+  {
+    [JsonPropertyName("title")]
+    public string QuestionSetTitle { get; set; }
+    [JsonPropertyName("questions")]
+    public List<MultiSelectQuestion> Questions { get; set; }
+  }
+
+  public class MultiSelectQuestion
+  {
+    [JsonPropertyName("index")]
+    public int Index { get; set; }
+
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("question")]
+    public string QuestionText { get; set; }
+
+    [JsonPropertyName("options")]
+    public List<string> Options { get; set; }
+    public List<int> AnswerIndexs { get; set; }
+    public List<string> Answer { get; set; }
+  }
+
+
+
+
+
 
   #endregion
 }

@@ -1,0 +1,17 @@
+{
+  "title": "أسئلة إجابة قصيرة حول خصائص علمية عامة",
+  "questions": [
+    {
+      "index": 0,
+      "question": "ما هي خاصية فيزيائية عامة؟",
+      "answer": "الحجم",
+      "id": "ExampleShortAnswer1"
+    },
+    {
+      "index": 1,
+      "question": "ما هي الخاصية الرئيسية في علمية عبارات؟",
+      "answer": "الدقة",
+      "id": "ExampleShortAnswer2"
+    }
+  ]
+}

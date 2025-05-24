@@ -34,6 +34,7 @@ namespace TawtheefTest.Services
       {
         try
         {
+          await ProcessUnProcessedWithErrors(); // process question sets with status failed
           await GetFileUploadedCodeFromOpExams();
           await ProcessPendingQuestionSets();
         }
@@ -68,6 +69,8 @@ namespace TawtheefTest.Services
 
       // تحديث الحالة إلى "قيد المعالجة"
       pendingQuestionSet.Status = QuestionSetStatus.Processing;
+      pendingQuestionSet.UpdatedAt = DateTime.UtcNow;
+      pendingQuestionSet.RetryCount = pendingQuestionSet.RetryCount + 1;
       await context.SaveChangesAsync();
 
       try
@@ -130,8 +133,9 @@ namespace TawtheefTest.Services
 
         // تحديث الحالة إلى "فشل"
         pendingQuestionSet.Status = QuestionSetStatus.Failed;
+        pendingQuestionSet.RetryCount = pendingQuestionSet.RetryCount + 1;
         pendingQuestionSet.ErrorMessage = $"حدث خطأ غير متوقع: {ex.Message}";
-        pendingQuestionSet.ProcessedAt = DateTime.UtcNow;
+        pendingQuestionSet.UpdatedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
       }
     }
@@ -161,6 +165,24 @@ namespace TawtheefTest.Services
         }
       }
 
+    }
+    private async Task ProcessUnProcessedWithErrors()
+    {
+      using var scope = _serviceProvider.CreateScope();
+      var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+      var opExamsService = scope.ServiceProvider.GetRequiredService<IOpExamQuestionGenerationService>();
+
+      var questionSets = await context.QuestionSets
+          .Where(qs => (qs.Status == QuestionSetStatus.Processing || qs.Status == QuestionSetStatus.Failed) && qs.UpdatedAt != null && qs.UpdatedAt < DateTime.UtcNow.AddMinutes(-3))
+          .ToListAsync();
+
+      foreach (var questionSet in questionSets)
+      {
+        questionSet.Status = QuestionSetStatus.Pending;
+        questionSet.UpdatedAt = DateTime.UtcNow;
+      }
+
+      await context.SaveChangesAsync();
     }
   }
 }

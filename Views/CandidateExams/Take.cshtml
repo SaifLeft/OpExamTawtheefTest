@@ -402,36 +402,36 @@
             question.options.forEach(option => {
               const checked = answer == option.id ? 'checked' : '';
               html += `
-                                                                                          <div class="form-check mb-3 p-2 border-bottom">
-                                                                                            <input class="form-check-input answer-option" type="radio" name="answer"
-                                                                                              id="option-${option.id}" value="${option.id}" ${checked}
-                                                                                              data-question-id="${question.id}">
-                                                                                            <label class="form-check-label" for="option-${option.id}">
-                                                                                              ${option.text}
-                                                                                            </label>
-                                                                                          </div>
-                                                                                        `;
+                                                                                            <div class="form-check mb-3 p-2 border-bottom">
+                                                                                              <input class="form-check-input answer-option" type="radio" name="answer"
+                                                                                                id="option-${option.id}" value="${option.id}" ${checked}
+                                                                                                data-question-id="${question.id}">
+                                                                                              <label class="form-check-label" for="option-${option.id}">
+                                                                                                ${option.text}
+                                                                                              </label>
+                                                                                            </div>
+                                                                                          `;
             });
             html += '</div>';
             break;
 
           case 'TF':
             html += `
-                                                                                        <div class="mt-4">
-                                                                                          <div class="form-check form-check-inline mb-3 me-4">
-                                                                                            <input class="form-check-input answer-option" type="radio" name="answer"
-                                                                                              id="option-true" value="true" ${answer === 'true' ? 'checked' : ''}
-                                                                                              data-question-id="${question.id}">
-                                                                                            <label class="form-check-label fw-bold" for="option-true">صحيح</label>
+                                                                                          <div class="mt-4">
+                                                                                            <div class="form-check form-check-inline mb-3 me-4">
+                                                                                              <input class="form-check-input answer-option" type="radio" name="answer"
+                                                                                                id="option-true" value="true" ${answer === 'true' ? 'checked' : ''}
+                                                                                                data-question-id="${question.id}">
+                                                                                              <label class="form-check-label fw-bold" for="option-true">صحيح</label>
+                                                                                            </div>
+                                                                                            <div class="form-check form-check-inline mb-3">
+                                                                                              <input class="form-check-input answer-option" type="radio" name="answer"
+                                                                                                id="option-false" value="false" ${answer === 'false' ? 'checked' : ''}
+                                                                                                data-question-id="${question.id}">
+                                                                                              <label class="form-check-label fw-bold" for="option-false">خطأ</label>
+                                                                                            </div>
                                                                                           </div>
-                                                                                          <div class="form-check form-check-inline mb-3">
-                                                                                            <input class="form-check-input answer-option" type="radio" name="answer"
-                                                                                              id="option-false" value="false" ${answer === 'false' ? 'checked' : ''}
-                                                                                              data-question-id="${question.id}">
-                                                                                            <label class="form-check-label fw-bold" for="option-false">خطأ</label>
-                                                                                          </div>
-                                                                                        </div>
-                                                                                      `;
+                                                                                        `;
             break;
 
           case 'MULTISELECT':
@@ -449,15 +449,15 @@
             question.options.forEach(option => {
               const checked = selectedOptions.includes(option.id) ? 'checked' : '';
               html += `
-                                                                                          <div class="form-check mb-3 p-2 border-bottom">
-                                                                                            <input class="form-check-input multi-select-option" type="checkbox" name="answer-${option.id}"
-                                                                                              id="option-${option.id}" value="${option.id}" ${checked}
-                                                                                              data-question-id="${question.id}">
-                                                                                            <label class="form-check-label" for="option-${option.id}">
-                                                                                              ${option.text}
-                                                                                            </label>
-                                                                                          </div>
-                                                                                        `;
+                                                                                            <div class="form-check mb-3 p-2 border-bottom">
+                                                                                              <input class="form-check-input multi-select-option" type="checkbox" name="answer-${option.id}"
+                                                                                                id="option-${option.id}" value="${option.id}" ${checked}
+                                                                                                data-question-id="${question.id}">
+                                                                                              <label class="form-check-label" for="option-${option.id}">
+                                                                                                ${option.text}
+                                                                                              </label>
+                                                                                            </div>
+                                                                                          `;
             });
             html += '<button class="btn btn-sm btn-primary save-multi-select mt-2">حفظ الإجابات</button>';
             html += '</div>';
@@ -493,22 +493,22 @@
                 const matchedRightId = Object.keys(matchingPairs).find(key => matchingPairs[key] === leftItem.id);
 
                 html += `
-                                                                                            <div class="row mb-3 align-items-center matching-row">
-                                                                                              <div class="col-5">
-                                                                                                <div class="p-2 border rounded">${shuffledRightItems[index].text}</div>
-                                                                                                <input type="hidden" class="right-item-id" value="${shuffledRightItems[index].id}">
+                                                                                              <div class="row mb-3 align-items-center matching-row">
+                                                                                                <div class="col-5">
+                                                                                                  <div class="p-2 border rounded">${shuffledRightItems[index].text}</div>
+                                                                                                  <input type="hidden" class="right-item-id" value="${shuffledRightItems[index].id}">
+                                                                                                </div>
+                                                                                                <div class="col-2 text-center">
+                                                                                                  <i class="bx bx-link-alt"></i>
+                                                                                                </div>
+                                                                                                <div class="col-5">
+                                                                                                  <select class="form-select matching-select" data-left-id="${leftItem.id}">
+                                                                                                    <option value="">اختر العنصر المطابق</option>
+                                                                                                    ${leftItems.map(item => `<option value="${item.id}" ${matchedRightId == item.id ? 'selected' : ''}>${item.text}</option>`).join('')}
+                                                                                                  </select>
+                                                                                                </div>
                                                                                               </div>
-                                                                                              <div class="col-2 text-center">
-                                                                                                <i class="bx bx-link-alt"></i>
-                                                                                              </div>
-                                                                                              <div class="col-5">
-                                                                                                <select class="form-select matching-select" data-left-id="${leftItem.id}">
-                                                                                                  <option value="">اختر العنصر المطابق</option>
-                                                                                                  ${leftItems.map(item => `<option value="${item.id}" ${matchedRightId == item.id ? 'selected' : ''}>${item.text}</option>`).join('')}
-                                                                                                </select>
-                                                                                              </div>
-                                                                                            </div>
-                                                                                          `;
+                                                                                            `;
               });
               html += '</div>';
               html += '<button class="btn btn-sm btn-primary save-matching mt-3">حفظ المطابقة</button>';
@@ -577,12 +577,12 @@
                     return; // تخطي العناصر الفارغة
                   }
                   html += `
-                                                            <li class="list-group-item list-group-item-action d-flex align-items-center ordering-item" data-text="${item.text}" data-item-id="${item.id || ''}">
-                                                              <i class="bx bx-menu-alt-left ms-2 handle"></i>
-                                                              <span class="order-number badge bg-secondary me-2">${index + 1}</span>
-                                                              ${item.text}
-                                                            </li>
-                                                          `;
+                                                              <li class="list-group-item list-group-item-action d-flex align-items-center ordering-item" data-text="${item.text}" data-item-id="${item.id || ''}">
+                                                                <i class="bx bx-menu-alt-left ms-2 handle"></i>
+                                                                <span class="order-number badge bg-secondary me-2">${index + 1}</span>
+                                                                ${item.text}
+                                                              </li>
+                                                            `;
                 });
               }
               html += '</ul>';
@@ -596,22 +596,22 @@
           case 'FILLINTHEBLANK':
           case 'SHORTANSWER':
             html += `
-                                                                                        <div class="mt-4">
-                                                                                          <label class="form-label">أدخل إجابتك:</label>
-                                                                                          <input type="text" class="form-control text-answer" placeholder="اكتب إجابتك هنا..."
-                                                                                            data-question-id="${question.id}" value="${answer || ''}">
-                                                                                        </div>
-                                                                                      `;
+                                                                                          <div class="mt-4">
+                                                                                            <label class="form-label">أدخل إجابتك:</label>
+                                                                                            <input type="text" class="form-control text-answer" placeholder="اكتب إجابتك هنا..."
+                                                                                              data-question-id="${question.id}" value="${answer || ''}">
+                                                                                          </div>
+                                                                                        `;
             break;
 
           default: // OPEN or any other type
             html += `
-                                                                                        <div class="mt-4">
-                                                                                          <label class="form-label">أدخل إجابتك:</label>
-                                                                                          <textarea class="form-control text-answer" rows="4"
-                                                                                            placeholder="اكتب إجابتك هنا..." data-question-id="${question.id}">${answer || ''}</textarea>
-                                                                                        </div>
-                                                                                      `;
+                                                                                          <div class="mt-4">
+                                                                                            <label class="form-label">أدخل إجابتك:</label>
+                                                                                            <textarea class="form-control text-answer" rows="4"
+                                                                                              placeholder="اكتب إجابتك هنا..." data-question-id="${question.id}">${answer || ''}</textarea>
+                                                                                          </div>
+                                                                                        `;
             break;
         }
 

@@ -200,6 +200,15 @@
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">الأسئلة (@Model.QuestionsGenerated / @Model.QuestionCount)</h5>
                         <div>
+                            <button type="button" class="btn btn-sm btn-outline-success me-2" id="showAllAnswers">
+                                <i class="bx bx-show"></i> عرض جميع الإجابات
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning me-2" id="hideAllAnswers" style="display:none;">
+                                <i class="bx bx-hide"></i> إخفاء جميع الإجابات
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info me-2" data-bs-toggle="modal" data-bs-target="#answersSummaryModal">
+                                <i class="bx bx-list-check"></i> ملخص الإجابات
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#shuffleOptionsModal">
                                 <i class="bx bx-shuffle"></i> خلط الخيارات
                             </button>
@@ -253,6 +262,24 @@
                                                 <div class="alert alert-info">
                                                     @Html.Raw(question.Answer)
                                                 </div>
+
+                                                @* عرض الخيارات إذا كانت موجودة لأسئلة ملء الفراغات *@
+                                                @if (question.Options != null && question.Options.Any())
+                                                {
+                                                    <h6 class="mb-3">الخيارات المتاحة:</h6>
+                                                    <div class="list-group">
+                                                        @foreach (var option in question.Options)
+                                                        {
+                                                            <div class="list-group-item @(option.IsCorrect ? "list-group-item-success" : "")">
+                                                                @if (option.IsCorrect)
+                                                                {
+                                                                    <i class="bx bx-check-circle-fill text-success me-2"></i>
+                                                                }
+                                                                @option.Text
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
                                             }
                                             else if (question.QuestionType == "matching")
                                             {
@@ -307,7 +334,7 @@
                                                 </div>
                                             }
 
-                                            
+
                                         </div>
                                     </div>
                                 </div>
@@ -491,9 +518,166 @@
     </div>
 </div>
 
+<!-- Modal: ملخص الإجابات -->
+<div class="modal fade" id="answersSummaryModal" tabindex="-1" aria-labelledby="answersSummaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="answersSummaryModalLabel">ملخص الإجابات الصحيحة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                @if (Model.Status == QuestionSetStatus.Completed && Model.Questions != null && Model.Questions.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 60px;">#</th>
+                                    <th>السؤال</th>
+                                    <th style="width: 200px;">الإجابة الصحيحة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var question in Model.Questions.OrderBy(q => q.Index))
+                                {
+                                    <tr>
+                                        <td><strong>@(question.Index + 1)</strong></td>
+                                        <td class="text-wrap">@Html.Raw(question.QuestionText ?? question.InstructionText)</td>
+                                        <td>
+                                            @if (question.QuestionType == "MCQ" || question.QuestionType == "multiSelect")
+                                            {
+                                                @if (question.Options != null)
+                                                {
+                                                    @foreach (var option in question.Options.Where(o => o.IsCorrect))
+                                                    {
+                                                        <span class="badge bg-success me-1">@option.Text</span>
+                                                    }
+                                                }
+                                            }
+                                            else if (question.QuestionType == "TF")
+                                            {
+                                                <span class="badge @(question.TrueFalseAnswer == true ? "bg-success" : "bg-danger")">
+                                                    @(question.TrueFalseAnswer == true ? "صحيح" : "خطأ")
+                                                </span>
+                                            }
+                                            else if (question.QuestionType == "open" || question.QuestionType == "shortAnswer" || question.QuestionType == "fillInTheBlank")
+                                            {
+                                                <span class="text-info">@Html.Raw(question.Answer)</span>
+                                            }
+                                            else if (question.QuestionType == "ordering")
+                                            {
+                                                @if (question.OrderingItems != null)
+                                                {
+                                                    <small>
+                                                        @foreach (var item in question.OrderingItems.Where(ss => ss.DisplayOrder == 0).OrderBy(i => i.CorrectOrder))
+                                                        {
+                                                            <div>@item.CorrectOrder. @item.Text</div>
+                                                        }
+                                                    </small>
+                                                }
+                                            }
+                                            else if (question.QuestionType == "matching")
+                                            {
+                                                @if (question.MatchingPairs != null)
+                                                {
+                                                    <small>
+                                                        @foreach (var pair in question.MatchingPairs)
+                                                        {
+                                                            <div>@pair.LeftSide ← @pair.RightSide</div>
+                                                        }
+                                                    </small>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        لا توجد أسئلة متاحة لعرض ملخصها.
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" onclick="printAnswersSummary()">
+                    <i class="bx bx-printer"></i> طباعة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <style>
+        /* تأكيد عرض/إخفاء الأكورديون */
+        .accordion-collapse.show {
+            display: block !important;
+        }
+
+        .accordion-collapse:not(.show) {
+            display: none !important;
+        }
+
+        /* تحسين مظهر الأزرار */
+        .btn-group .btn {
+            margin-left: 0.25rem;
+        }
+
+        /* ضمان أن المحتوى مرئي عند الفتح */
+        .accordion-body {
+            padding: 1rem;
+        }
+    </style>
+
     <script>
         $(document).ready(function() {
+            // تشخيص العناصر عند تحميل الصفحة
+            console.log('تم تحميل الصفحة');
+            console.log('عدد أزرار الأكورديون:', $('#questionsAccordion .accordion-button').length);
+            console.log('عدد عناصر الأكورديون:', $('#questionsAccordion .accordion-collapse').length);
+            console.log('jQuery version:', $.fn.jquery);
+
+            // اختبار وجود الأزرار
+            console.log('زر عرض جميع الإجابات موجود:', $('#showAllAnswers').length > 0);
+            console.log('زر إخفاء جميع الإجابات موجود:', $('#hideAllAnswers').length > 0);
+
+            // طريقة بديلة للأزرار
+            $(document).on('click', '#showAllAnswers', function(e) {
+                e.preventDefault();
+                console.log('تم النقر على عرض جميع الإجابات');
+
+                // عرض جميع الأكورديون
+                $('#questionsAccordion .accordion-button.collapsed').each(function() {
+                    $(this)[0].click();
+                });
+
+                $(this).hide();
+                $('#hideAllAnswers').show();
+            });
+
+            $(document).on('click', '#hideAllAnswers', function(e) {
+                e.preventDefault();
+                console.log('تم النقر على إخفاء جميع الإجابات');
+
+                // إخفاء جميع الأكورديون
+                $('#questionsAccordion .accordion-button:not(.collapsed)').each(function() {
+                    $(this)[0].click();
+                });
+
+                $(this).hide();
+                $('#showAllAnswers').show();
+            });
+
             // تبديل عرض محتوى النص
             $('.text-content-toggle').click(function() {
                 var preview = $(this).closest('.text-content-preview');
@@ -527,6 +711,37 @@
                 var selectedValue = $('input[name="shuffleType"]:checked').val();
                 window.location.href = '@Url.Action("ShuffleOptions", new { id = Model.Id })' + '?shuffleType=' + selectedValue;
             });
+
+            // وظيفة طباعة ملخص الإجابات
+            window.printAnswersSummary = function() {
+                var printContent = document.getElementById('answersSummaryModal').querySelector('.modal-body').innerHTML;
+                var originalContent = document.body.innerHTML;
+
+                var printHtml = '<html dir="rtl">' +
+                    '<head>' +
+                    '<title>ملخص الإجابات - @Model.Name</title>' +
+                    '<style>' +
+                    'body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }' +
+                    'table { width: 100%; border-collapse: collapse; margin-top: 20px; }' +
+                    'th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }' +
+                    'th { background-color: #f2f2f2; font-weight: bold; }' +
+                    '.badge { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; }' +
+                    'h1 { text-align: center; color: #333; }' +
+                    '</style>' +
+                    '</head>' +
+                    '<body>' +
+                    '<h1>ملخص الإجابات الصحيحة</h1>' +
+                    '<h2>مجموعة الأسئلة: @Model.Name</h2>' +
+                    '<p>تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-SA') + '</p>' +
+                    printContent +
+                    '</body>' +
+                    '</html>';
+
+                document.body.innerHTML = printHtml;
+                window.print();
+                document.body.innerHTML = originalContent;
+                window.location.reload();
+            };
         });
     </script>
 }

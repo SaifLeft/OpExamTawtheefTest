@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace TawtheefTest.Migrations
 {
-    public partial class AddEmailFieldToCandidate : Migration
+    public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -57,8 +57,13 @@ namespace TawtheefTest.Migrations
                     QuestionCount = table.Column<int>(type: "INTEGER", nullable: false),
                     OptionsCount = table.Column<int>(type: "INTEGER", nullable: true),
                     NumberOfRows = table.Column<int>(type: "INTEGER", nullable: true),
-                    NumberOfCorrectOptions = table.Column<int>(type: "INTEGER", nullable: true),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false, defaultValue: 0),
+                    NumberOfCorrectOptions = table.Column<string>(type: "TEXT", nullable: true),
+                    ContentSourceType = table.Column<string>(type: "TEXT", nullable: false),
+                    Content = table.Column<string>(type: "TEXT", nullable: true),
+                    FileName = table.Column<string>(type: "TEXT", nullable: true),
+                    FileUploadedCode = table.Column<string>(type: "TEXT", nullable: true),
+                    Url = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    Status = table.Column<int>(type: "INTEGER", maxLength: 10000, nullable: false, defaultValue: 0),
                     ErrorMessage = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     ProcessedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
@@ -70,25 +75,6 @@ namespace TawtheefTest.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UploadedFiles",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    FileName = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    FileId = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    FileType = table.Column<string>(type: "TEXT", nullable: false),
-                    ContentType = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    FileSize = table.Column<long>(type: "INTEGER", nullable: false),
-                    FilePath = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UploadedFiles", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Candidates",
                 columns: table => new
                 {
@@ -96,7 +82,6 @@ namespace TawtheefTest.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Phone = table.Column<int>(type: "INTEGER", maxLength: 20, nullable: false),
-                    Email = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     JobId = table.Column<int>(type: "INTEGER", nullable: false),
                     IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()"),
@@ -124,8 +109,12 @@ namespace TawtheefTest.Migrations
                     JobId = table.Column<int>(type: "INTEGER", nullable: false),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
                     Duration = table.Column<int>(type: "INTEGER", nullable: true),
+                    PassPercentage = table.Column<decimal>(type: "TEXT", nullable: true),
+                    TotalQuestionsPerCandidate = table.Column<int>(type: "INTEGER", nullable: false),
                     StartDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     EndDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ShowResultsImmediately = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SendExamLinkToApplicants = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
@@ -141,33 +130,60 @@ namespace TawtheefTest.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ContentSources",
+                name: "Questions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ContentSourceType = table.Column<string>(type: "TEXT", nullable: false),
-                    Content = table.Column<string>(type: "TEXT", maxLength: 10000, nullable: true),
-                    Url = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
-                    UploadedFileId = table.Column<int>(type: "INTEGER", nullable: true),
                     QuestionSetId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Index = table.Column<int>(type: "INTEGER", nullable: false),
+                    QuestionType = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    QuestionText = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
+                    DifficultyLevel = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Points = table.Column<int>(type: "INTEGER", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "INTEGER", nullable: false),
+                    AnswerIndex = table.Column<int>(type: "INTEGER", nullable: true),
+                    Answer = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    TrueFalseAnswer = table.Column<bool>(type: "INTEGER", nullable: true),
+                    InstructionText = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    SampleAnswer = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
+                    ExternalId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ContentSources", x => x.Id);
+                    table.PrimaryKey("PK_Questions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ContentSources_QuestionSets_QuestionSetId",
+                        name: "FK_Questions_QuestionSets_QuestionSetId",
                         column: x => x.QuestionSetId,
                         principalTable: "QuestionSets",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CandidateId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Message = table.Column<string>(type: "TEXT", nullable: false),
+                    Type = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false, defaultValue: "info"),
+                    IsRead = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    ReadAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ContentSources_UploadedFiles_UploadedFileId",
-                        column: x => x.UploadedFileId,
-                        principalTable: "UploadedFiles",
+                        name: "FK_Notifications_Candidates_CandidateId",
+                        column: x => x.CandidateId,
+                        principalTable: "Candidates",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -182,6 +198,16 @@ namespace TawtheefTest.Migrations
                     StartTime = table.Column<DateTime>(type: "TEXT", nullable: true),
                     EndTime = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Score = table.Column<decimal>(type: "TEXT", nullable: true),
+                    TotalPoints = table.Column<int>(type: "INTEGER", nullable: false),
+                    MaxPossiblePoints = table.Column<int>(type: "INTEGER", nullable: false),
+                    EasyQuestionsCorrect = table.Column<int>(type: "INTEGER", nullable: false),
+                    MediumQuestionsCorrect = table.Column<int>(type: "INTEGER", nullable: false),
+                    HardQuestionsCorrect = table.Column<int>(type: "INTEGER", nullable: false),
+                    CompletionDuration = table.Column<TimeSpan>(type: "TEXT", nullable: true),
+                    RankPosition = table.Column<int>(type: "INTEGER", nullable: false),
+                    TotalQuestions = table.Column<int>(type: "INTEGER", nullable: false),
+                    CompletedQuestions = table.Column<int>(type: "INTEGER", nullable: false),
+                    QuestionReplaced = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
@@ -227,76 +253,6 @@ namespace TawtheefTest.Migrations
                         principalTable: "QuestionSets",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Questions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    QuestionSetId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ExamId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Index = table.Column<int>(type: "INTEGER", nullable: false),
-                    QuestionText = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
-                    QuestionType = table.Column<string>(type: "TEXT", nullable: false),
-                    AnswerIndex = table.Column<int>(type: "INTEGER", nullable: true),
-                    Answer = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
-                    TrueFalseAnswer = table.Column<bool>(type: "INTEGER", nullable: true),
-                    InstructionText = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
-                    SampleAnswer = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
-                    ExternalId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Questions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Questions_Exams_ExamId",
-                        column: x => x.ExamId,
-                        principalTable: "Exams",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Questions_QuestionSets_QuestionSetId",
-                        column: x => x.QuestionSetId,
-                        principalTable: "QuestionSets",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CandidateAnswers",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    CandidateExamId = table.Column<int>(type: "INTEGER", nullable: false),
-                    QuestionId = table.Column<int>(type: "INTEGER", nullable: false),
-                    AnswerText = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
-                    SelectedOptionId = table.Column<int>(type: "INTEGER", nullable: true),
-                    SelectedOptionsJson = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
-                    MatchingPairsJson = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
-                    OrderingJson = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
-                    IsCorrect = table.Column<bool>(type: "INTEGER", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CandidateAnswers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CandidateAnswers_CandidateExams_CandidateExamId",
-                        column: x => x.CandidateExamId,
-                        principalTable: "CandidateExams",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CandidateAnswers_Questions_QuestionId",
-                        column: x => x.QuestionId,
-                        principalTable: "Questions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -387,6 +343,42 @@ namespace TawtheefTest.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "CandidateAnswers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CandidateExamId = table.Column<int>(type: "INTEGER", nullable: false),
+                    QuestionId = table.Column<int>(type: "INTEGER", nullable: false),
+                    AnswerText = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
+                    TrueFalseAnswer = table.Column<bool>(type: "INTEGER", nullable: true),
+                    SelectedOptionId = table.Column<int>(type: "INTEGER", nullable: true),
+                    SelectedOptionsJson = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
+                    MatchingPairsJson = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
+                    OrderingJson = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
+                    IsCorrect = table.Column<bool>(type: "INTEGER", nullable: true),
+                    IsFlagged = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CandidateAnswers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CandidateAnswers_CandidateExams_CandidateExamId",
+                        column: x => x.CandidateExamId,
+                        principalTable: "CandidateExams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CandidateAnswers_Questions_QuestionId",
+                        column: x => x.QuestionId,
+                        principalTable: "Questions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_CandidateAnswers_CandidateExamId",
                 table: "CandidateAnswers",
@@ -420,16 +412,6 @@ namespace TawtheefTest.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ContentSources_QuestionSetId",
-                table: "ContentSources",
-                column: "QuestionSetId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ContentSources_UploadedFileId",
-                table: "ContentSources",
-                column: "UploadedFileId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ExamQuestionSets_ExamId_QuestionSetId",
                 table: "ExamQuestionSets",
                 columns: new[] { "ExamId", "QuestionSetId" },
@@ -449,6 +431,11 @@ namespace TawtheefTest.Migrations
                 name: "IX_MatchingPairs_QuestionId",
                 table: "MatchingPairs",
                 column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_CandidateId",
+                table: "Notifications",
+                column: "CandidateId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OptionChoices_QuestionId",
@@ -471,11 +458,6 @@ namespace TawtheefTest.Migrations
                 column: "QuestionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Questions_ExamId",
-                table: "Questions",
-                column: "ExamId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Questions_QuestionSetId",
                 table: "Questions",
                 column: "QuestionSetId");
@@ -487,13 +469,13 @@ namespace TawtheefTest.Migrations
                 name: "CandidateAnswers");
 
             migrationBuilder.DropTable(
-                name: "ContentSources");
-
-            migrationBuilder.DropTable(
                 name: "ExamQuestionSets");
 
             migrationBuilder.DropTable(
                 name: "MatchingPairs");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "OptionChoices");
@@ -509,9 +491,6 @@ namespace TawtheefTest.Migrations
 
             migrationBuilder.DropTable(
                 name: "CandidateExams");
-
-            migrationBuilder.DropTable(
-                name: "UploadedFiles");
 
             migrationBuilder.DropTable(
                 name: "Questions");

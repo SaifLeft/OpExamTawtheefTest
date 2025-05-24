@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Folder Include="Files\Document\" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

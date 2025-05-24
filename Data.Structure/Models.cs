@@ -109,6 +109,7 @@ namespace TawtheefTest.Data.Structure
 
     [Required]
     public QuestionSetStatus Status { get; set; } = QuestionSetStatus.Pending;
+    public int? RetryCount { get; set; } = 0;
     [StringLength(1000)]
     public string? ErrorMessage { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -140,7 +141,7 @@ namespace TawtheefTest.Data.Structure
     [Required]
     public ExamStatus Status { get; set; } = ExamStatus.Draft;
 
-    public int? Duration { get; set; } // Duration in minutes
+    public int Duration { get; set; } = 30; // Duration in minutes
 
     // النسبة المئوية للنجاح
     public decimal? PassPercentage { get; set; } = 60;
@@ -204,7 +205,7 @@ namespace TawtheefTest.Data.Structure
 
     // مستوى صعوبة السؤال والنقاط المرتبطة به
     [StringLength(20)]
-    public string? DifficultyLevel { get; set; } // easy, medium, hard
+    public string DifficultyLevel { get; set; } // easy, medium, hard
 
     public int Points { get; set; } = 1; // النقاط المخصصة للسؤال حسب صعوبته
 
@@ -309,7 +310,8 @@ namespace TawtheefTest.Data.Structure
     [StringLength(1000)]
     public string RightItem { get; set; } = string.Empty;
 
-    public int DisplayOrder { get; set; }
+    public int? CorrectOrder { get; set; }
+    public int? DisplayOrder { get; set; }
   }
 
   public class OrderingItem
