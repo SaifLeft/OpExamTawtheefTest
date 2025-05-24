@@ -78,14 +78,16 @@
                             <label class="col-sm-2 col-form-label">خيارات إضافية</label>
                             <div class="col-sm-10">
                                 <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" asp-for="ShowResultImmediately" />
-                                    <label class="form-check-label" asp-for="ShowResultImmediately">إظهار النتائج
+                                    <input class="form-check-input" type="checkbox" asp-for="ShowResultsImmediately" />
+                                    <label class="form-check-label" asp-for="ShowResultsImmediately">إظهار النتائج
                                         للمتقدم مباشرة</label>
                                 </div>
 
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" asp-for="SendExamLinks" />
-                                    <label class="form-check-label" asp-for="SendExamLinks">إرسال روابط الاختبار
+                                    <input class="form-check-input" type="checkbox"
+                                        asp-for="SendExamLinkToApplicants" />
+                                    <label class="form-check-label" asp-for="SendExamLinkToApplicants">إرسال روابط
+                                        الاختبار
                                         للمتقدمين</label>
                                 </div>
                             </div>

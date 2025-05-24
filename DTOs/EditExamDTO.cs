@@ -31,9 +31,9 @@ namespace TawtheefTest.DTOs
     public DateTime EndDate { get; set; }
 
     [Display(Name = "إظهار النتائج للمتقدم مباشرة")]
-    public bool ShowResultImmediately { get; set; }
+    public bool ShowResultsImmediately { get; set; }
 
     [Display(Name = "إرسال روابط الاختبار للمتقدمين")]
-    public bool SendExamLinks { get; set; }
+    public bool SendExamLinkToApplicants { get; set; }
   }
 }

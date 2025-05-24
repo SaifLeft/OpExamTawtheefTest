@@ -19,9 +19,54 @@
 
 @if (!Model.ShowResultsImmediately)
 {
-    <div class="alert alert-info">
-        <h4 class="mb-0">لم يتم إعلان النتائج بعد</h4>
-        <p>سيتم إعلان النتائج في وقت لاحق وفقًا لتوجيهات المشرف.</p>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h4 class="mb-0">
+                        <i class="bx bx-time fs-2"></i>
+                        <br>
+                        تم تسليم الاختبار بنجاح
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="my-4">
+                        <i class="bx bx-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="mb-3">شكراً لك على إنهاء الاختبار!</h5>
+                    <p class="text-muted mb-4">
+                        تم تسليم إجاباتك بنجاح. سيتم إعلان النتائج في وقت لاحق وفقاً لتوجيهات المشرف.
+                    </p>
+
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h6 class="text-muted">تاريخ البدء</h6>
+                                <span class="fw-bold">@Model.StartTime?.ToString("yyyy-MM-dd HH:mm")</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-muted">تاريخ الانتهاء</h6>
+                            <span class="fw-bold">@Model.EndTime?.ToString("yyyy-MM-dd HH:mm")</span>
+                        </div>
+                    </div>
+
+                    @if (Model.StartTime.HasValue && Model.EndTime.HasValue)
+                    {
+                        var duration = Model.EndTime.Value - Model.StartTime.Value;
+                        <div class="alert alert-info">
+                            <i class="bx bx-stopwatch me-2"></i>
+                            <strong>المدة المستغرقة:</strong> @duration.Hours ساعة و @duration.Minutes دقيقة و @duration.Seconds ثانية
+                        </div>
+                    }
+
+                    <div class="alert alert-warning mb-4">
+                        <i class="bx bx-info-circle me-2"></i>
+                        <strong>ملاحظة:</strong> ستتمكن من مراجعة نتائجك التفصيلية عند إعلانها من قبل المشرف.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 }
 else

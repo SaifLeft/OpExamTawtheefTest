@@ -247,7 +247,9 @@ namespace TawtheefTest.Controllers
         JobId = exam.JobId,
         Duration = exam.Duration ?? 60,
         StartDate = exam.StartDate ?? DateTime.Now,
-        EndDate = exam.EndDate ?? DateTime.Now.AddDays(7)
+        EndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
+        ShowResultsImmediately = exam.ShowResultsImmediately,
+        SendExamLinkToApplicants = exam.SendExamLinkToApplicants
       };
 
       ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title", exam.JobId);
@@ -281,6 +283,8 @@ namespace TawtheefTest.Controllers
           exam.Duration = examDto.Duration;
           exam.StartDate = examDto.StartDate;
           exam.EndDate = examDto.EndDate;
+          exam.ShowResultsImmediately = examDto.ShowResultsImmediately;
+          exam.SendExamLinkToApplicants = examDto.SendExamLinkToApplicants;
           exam.UpdatedAt = DateTime.UtcNow;
 
           _context.Update(exam);
@@ -440,6 +444,70 @@ namespace TawtheefTest.Controllers
         QuestionSetStatus.Failed => "فشل",
         _ => status.ToString()
       };
+    }
+
+    // POST: Exams/ToggleShowResults
+    [HttpPost]
+    public async Task<IActionResult> ToggleShowResults(int id)
+    {
+      try
+      {
+        var exam = await _context.Exams.FindAsync(id);
+        if (exam == null)
+        {
+          return Json(new { success = false, message = "الاختبار غير موجود" });
+        }
+
+        // تبديل حالة عرض النتائج
+        exam.ShowResultsImmediately = !exam.ShowResultsImmediately;
+        exam.UpdatedAt = DateTime.UtcNow;
+
+        _context.Update(exam);
+        await _context.SaveChangesAsync();
+
+        return Json(new
+        {
+          success = true,
+          newValue = exam.ShowResultsImmediately,
+          message = exam.ShowResultsImmediately ? "تم تفعيل عرض النتائج للمرشحين فوراً" : "تم إلغاء عرض النتائج للمرشحين فوراً"
+        });
+      }
+      catch (Exception ex)
+      {
+        return Json(new { success = false, message = "حدث خطأ أثناء تحديث الإعداد" });
+      }
+    }
+
+    // POST: Exams/ToggleExamLinks
+    [HttpPost]
+    public async Task<IActionResult> ToggleExamLinks(int id)
+    {
+      try
+      {
+        var exam = await _context.Exams.FindAsync(id);
+        if (exam == null)
+        {
+          return Json(new { success = false, message = "الاختبار غير موجود" });
+        }
+
+        // تبديل حالة إرسال الروابط
+        exam.SendExamLinkToApplicants = !exam.SendExamLinkToApplicants;
+        exam.UpdatedAt = DateTime.UtcNow;
+
+        _context.Update(exam);
+        await _context.SaveChangesAsync();
+
+        return Json(new
+        {
+          success = true,
+          newValue = exam.SendExamLinkToApplicants,
+          message = exam.SendExamLinkToApplicants ? "تم تفعيل إرسال روابط الاختبار للمرشحين" : "تم إلغاء إرسال روابط الاختبار للمرشحين"
+        });
+      }
+      catch (Exception ex)
+      {
+        return Json(new { success = false, message = "حدث خطأ أثناء تحديث الإعداد" });
+      }
     }
 
     private bool ExamExists(int id)

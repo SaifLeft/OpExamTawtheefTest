@@ -20,12 +20,14 @@ namespace TawtheefTest.Controllers
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
     private readonly INotificationService _notificationService;
+    private readonly ExamEvaluationService _evaluationService;
 
-    public CandidateExamsController(ApplicationDbContext context, IMapper mapper, INotificationService notificationService)
+    public CandidateExamsController(ApplicationDbContext context, IMapper mapper, INotificationService notificationService, ExamEvaluationService evaluationService)
     {
       _context = context;
       _mapper = mapper;
       _notificationService = notificationService;
+      _evaluationService = evaluationService;
     }
 
     // التحقق من تسجيل دخول المرشح
@@ -237,10 +239,34 @@ namespace TawtheefTest.Controllers
         {
           return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
         }
-        else
+      }
+
+      // chack if the exam is expired
+      if (candidateExam.Exam.Duration.HasValue && candidateExam.StartTime.HasValue)
+      {
+        var endTime = candidateExam.StartTime.Value.AddMinutes(candidateExam.Exam.Duration.Value);
+        if (DateTime.UtcNow > endTime)
         {
-          return RedirectToAction(nameof(Start), new { id = candidateExam.Id });
+          // update the candidate exam status to expired
+          candidateExam.Status = CandidateExamStatus.Expired.ToString();
+          _context.Update(candidateExam);
+          await _context.SaveChangesAsync();
+
+          // create a notification for the candidate
+          await _notificationService.CreateNotificationAsync(
+              candidateId.Value,
+              "الاختبار منتهي",
+              $"لقد انتهى الاختبار {candidateExam.Exam.Name}.",
+              "warning"
+          );
+
+          TempData["ErrorMessage"] = "لقد انتهى الاختبار.";
+          return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
         }
+      }
+      else
+      {
+        return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
       }
 
       // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
@@ -491,32 +517,28 @@ namespace TawtheefTest.Controllers
         return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
       }
 
-      // حساب الدرجة
-      var totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions :
-          candidateExam.Exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count();
-      var answeredQuestions = candidateExam.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count();
-      var correctAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect == true);
-      var score = totalQuestions > 0 ? (decimal)correctAnswers / totalQuestions * 100 : 0;
-
-      // تحديث اختبار المرشح
+      // تحديث حالة الاختبار أولاً
       candidateExam.EndTime = DateTime.UtcNow;
-      candidateExam.Score = Math.Round(score, 2);
       candidateExam.Status = CandidateExamStatus.Completed.ToString();
       candidateExam.UpdatedAt = DateTime.UtcNow;
-      candidateExam.CompletedQuestions = answeredQuestions;
-      candidateExam.TotalQuestions = totalQuestions;
 
       _context.Update(candidateExam);
       await _context.SaveChangesAsync();
 
-      // إنشاء إشعار بنتيجة الاختبار
+      // حساب النتيجة باستخدام نظام التقييم المحسن
+      var evaluationResult = await _evaluationService.CalculateEnhancedScoreAsync(candidateExam.Id);
+
+      // حفظ ترتيب المرشحين للاختبار
+      await _evaluationService.RankCandidatesAsync(candidateExam.ExamId);
+
+      // إنشاء إشعار بنتيجة الاختبار المحسنة
       var passPercentage = candidateExam.Exam.PassPercentage ?? 60;
-      var hasPassed = candidateExam.Score >= passPercentage;
+      var hasPassed = evaluationResult.ScorePercentage >= passPercentage;
 
       await _notificationService.CreateNotificationAsync(
           candidateId.Value,
           "نتيجة الاختبار",
-          $"لقد أنهيت اختبار {candidateExam.Exam.Name} بنجاح. الدرجة: {candidateExam.Score}%. " + (hasPassed ? "مبروك! لقد اجتزت الاختبار." : "للأسف، لم تحقق درجة النجاح."),
+          $"لقد أنهيت اختبار {candidateExam.Exam.Name} بنجاح. النقاط: {evaluationResult.TotalPointsEarned}/{evaluationResult.MaxPossiblePoints} - النسبة: {evaluationResult.ScorePercentage:F1}%. " + (hasPassed ? "مبروك! لقد اجتزت الاختبار." : "للأسف، لم تحقق درجة النجاح."),
           hasPassed ? "success" : "warning"
       );
 
@@ -564,6 +586,9 @@ namespace TawtheefTest.Controllers
 
       var candidateExamResult = _mapper.Map<CandidateExamResultViewModel>(candidateExam);
 
+      // تعيين إعداد عرض النتائج من بيانات الاختبار
+      candidateExamResult.ShowResultsImmediately = candidateExam.Exam.ShowResultsImmediately;
+
       // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
       var allQuestions = candidateExam.Exam.ExamQuestionSets
           .SelectMany(eqs => eqs.QuestionSet.Questions)
@@ -580,34 +605,6 @@ namespace TawtheefTest.Controllers
       return View(candidateExamResult);
     }
 
-    // GET: CandidateExams/MyExams
-    public async Task<IActionResult> MyExams()
-    {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
-      if (candidateId == null)
-      {
-        TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
-        return RedirectToAction("Login", "Auth");
-      }
-
-      var candidateExams = await _context.CandidateExams
-          .Where(ce => ce.CandidateId == candidateId)
-          .Include(ce => ce.Exam)
-          .OrderByDescending(ce => ce.StartTime)
-          .ToListAsync();
-
-      var candidateExamViewModels = _mapper.Map<List<CandidateExamViewModel>>(candidateExams);
-
-      var candidate = await _context.Candidates
-          .Include(c => c.Job)
-          .FirstOrDefaultAsync(c => c.Id == candidateId);
-
-      ViewData["Candidate"] = _mapper.Map<CandidateViewModel>(candidate);
-      ViewData["CandidateExams"] = candidateExamViewModels;
-
-      return View();
-    }
 
     // POST: CandidateExams/ReplaceQuestion
     [HttpPost]
@@ -887,7 +884,7 @@ namespace TawtheefTest.Controllers
         question = questionViewModel,
         currentIndex = questionIndex,
         totalQuestions = allQuestions.Count,
-        answer = candidateAnswer?.AnswerText 
+        answer = candidateAnswer?.AnswerText
       });
     }
 

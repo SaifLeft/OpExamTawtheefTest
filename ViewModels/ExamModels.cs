@@ -14,7 +14,7 @@ namespace TawtheefTest.ViewModels
     public string Status { get; set; }
     public decimal? PassPercentage { get; set; }
     public int TotalQuestions { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public DateTime StartTime { get; set; }
 
     // الخصائص المضافة لإصلاح الأخطاء
     public string QuestionType { get; set; }
@@ -49,7 +49,6 @@ namespace TawtheefTest.ViewModels
     // خصائص إضافية لإصلاح أخطاء Index.cshtml
     public string ExamName => ExamTitle;
     public string JobName => JobTitle;
-    public string QuestionType { get; set; }
   }
 
   public class CandidateExamResultViewModel

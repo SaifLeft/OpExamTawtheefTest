@@ -43,10 +43,16 @@ namespace TawtheefTest.Enums
 
   public enum CandidateExamStatus
   {
+    [Description("لم يبدأ")]
     NotStarted,
+    [Description("قيد التقدم")]
     InProgress,
+    [Description("مكتمل")]
     Completed,
-    Abandoned
+    [Description("ملغي")]
+    Abandoned,
+    [Description("منتهي")]
+    Expired
   }
 
   public enum QuestionSetLanguage

@@ -28,6 +28,7 @@ builder.Services.AddTransient<IQuestionSetLibraryService, QuestionSetLibraryServ
 builder.Services.AddScoped<IQuestionGenerationService, QuestionGenerationService>();
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ExamEvaluationService>();
 
 // Register background service
 builder.Services.AddHostedService<QuestionGenerationBackgroundService>();

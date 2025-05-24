@@ -1,0 +1,426 @@
+@model ExamRankingsViewModel
+
+@{
+    ViewData["Title"] = "ترتيب المرشحين - " + Model.ExamName;
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">ترتيب المرشحين</h1>
+                    <p class="text-muted">
+                        <strong>الاختبار:</strong> @Model.ExamName |
+                        <strong>الوظيفة:</strong> @Model.JobName
+                    </p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="refreshResults()">
+                        <i class="bx bx-refresh"></i> تحديث النتائج
+                    </button>
+                    <a href="@Url.Action("ExportResults", new { examId = Model.ExamId })" class="btn btn-success">
+                        <i class="bx bx-download"></i> تصدير النتائج
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="avatar avatar-lg bg-primary bg-label-primary mx-auto mb-2">
+                        <i class="bx bx-user-check"></i>
+                    </div>
+                    <h4 class="mb-1">@Model.Statistics.TotalCandidates</h4>
+                    <p class="text-muted mb-0">إجمالي المرشحين</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="avatar avatar-lg bg-success bg-label-success mx-auto mb-2">
+                        <i class="bx bx-trending-up"></i>
+                    </div>
+                    <h4 class="mb-1">@Model.Statistics.AverageScore.ToString("F1")%</h4>
+                    <p class="text-muted mb-0">المتوسط العام</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="avatar avatar-lg bg-warning bg-label-warning mx-auto mb-2">
+                        <i class="bx bx-time"></i>
+                    </div>
+                    <h4 class="mb-1">@Model.Statistics.AverageCompletionTimeMinutes.ToString("F0")</h4>
+                    <p class="text-muted mb-0">متوسط الوقت (دقيقة)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="avatar avatar-lg bg-info bg-label-info mx-auto mb-2">
+                        <i class="bx bx-trophy"></i>
+                    </div>
+                    <h4 class="mb-1">@Model.Statistics.HighestScore.ToString("F1")%</h4>
+                    <p class="text-muted mb-0">أعلى نتيجة</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Difficulty Breakdown -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bx bx-bar-chart me-2"></i>
+                        متوسط الإجابات الصحيحة حسب الصعوبة
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                <span class="badge bg-success me-2">سهل</span>
+                                <span class="h4 mb-0">@Model.Statistics.AverageEasyQuestionsCorrect.ToString("F1")</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                <span class="badge bg-warning me-2">متوسط</span>
+                                <span class="h4 mb-0">@Model.Statistics.AverageMediumQuestionsCorrect.ToString("F1")</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center mb-2">
+                                <span class="badge bg-danger me-2">صعب</span>
+                                <span class="h4 mb-0">@Model.Statistics.AverageHardQuestionsCorrect.ToString("F1")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rankings Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bx bx-list-ol me-2"></i>
+                        ترتيب المرشحين
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Rankings?.Any() == true)
+                    {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center">الترتيب</th>
+                                            <th>اسم المرشح</th>
+                                            <th class="text-center">النقاط</th>
+                                            <th class="text-center">النسبة المئوية</th>
+                                            <th class="text-center">سهل</th>
+                                            <th class="text-center">متوسط</th>
+                                            <th class="text-center">صعب</th>
+                                            <th class="text-center">وقت الإكمال</th>
+                                            <th class="text-center">الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var candidate in Model.Rankings)
+                                        {
+                                                <tr class="@(candidate.Rank <= 3 ? "table-warning" : "")">
+                                                    <td class="text-center">
+                                                        @if (candidate.Rank == 1)
+                                                        {
+                                                                <span class="badge bg-warning">
+                                                                    <i class="bx bx-trophy"></i> #@candidate.Rank
+                                                                </span>
+                                                        }
+                                                        else if (candidate.Rank <= 3)
+                                                        {
+                                                                <span class="badge bg-secondary">
+                                                                    <i class="bx bx-medal"></i> #@candidate.Rank
+                                                                </span>
+                                                        }
+                                                        else
+                                                        {
+                                                                <span class="badge bg-outline-secondary">#@candidate.Rank</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <strong>@candidate.CandidateName</strong>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-primary">
+                                                            @candidate.TotalPoints/@candidate.MaxPossiblePoints
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="@(candidate.ScorePercentage >= 70 ? "text-success" : candidate.ScorePercentage >= 50 ? "text-warning" : "text-danger")">
+                                                            <strong>@candidate.ScorePercentage.ToString("F1")%</strong>
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-success">@candidate.EasyCorrect</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-warning">@candidate.MediumCorrect</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-danger">@candidate.HardCorrect</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <small class="text-muted">
+                                                            @((int)candidate.CompletionTimeMinutes) دقيقة
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                                <i class="bx bx-dots-vertical-rounded"></i>
+                                                            </button>
+                                                            <ul class="dropdown-menu">
+                                                                <li>
+                                                                    <a class="dropdown-item" href="@Url.Action("CandidateResult", new { candidateExamId = candidate.CandidateId })">
+                                                                        <i class="bx bx-detail me-2"></i>
+                                                                        عرض التفاصيل
+                                                                    </a>
+                                                                </li>
+                                                                <li>
+                                                                    <button class="dropdown-item" onclick="selectForComparison(@candidate.CandidateId)">
+                                                                        <i class="bx bx-compare me-2"></i>
+                                                                        إضافة للمقارنة
+                                                                    </button>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                    }
+                    else
+                    {
+                            <div class="text-center py-5">
+                                <div class="avatar avatar-xl bg-light rounded-circle mx-auto mb-3">
+                                    <i class="bx bx-user-x fs-1 text-muted"></i>
+                                </div>
+                                <h5 class="mb-2">لا توجد نتائج</h5>
+                                <p class="text-muted">لا يوجد مرشحون أكملوا هذا الاختبار بعد</p>
+                            </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Panel -->
+    <div id="comparisonPanel" class="position-fixed bottom-0 start-0 end-0 bg-primary text-white p-3" style="display: none; z-index: 1050;">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>المقارنة:</strong>
+                    <span id="selectedCandidatesCount">0</span> مرشح محدد
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-light me-2" onclick="compareCandidates()">
+                        <i class="bx bx-compare"></i> مقارنة
+                    </button>
+                    <button class="btn btn-sm btn-outline-light" onclick="clearComparison()">
+                        <i class="bx bx-x"></i> إلغاء
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <script>
+            let selectedCandidates = [];
+
+            function selectForComparison(candidateId) {
+                if (selectedCandidates.includes(candidateId)) {
+                    selectedCandidates = selectedCandidates.filter(id => id !== candidateId);
+                } else {
+                    selectedCandidates.push(candidateId);
+                }
+
+                updateComparisonPanel();
+            }
+
+            function updateComparisonPanel() {
+                const panel = document.getElementById('comparisonPanel');
+                const countSpan = document.getElementById('selectedCandidatesCount');
+
+                countSpan.textContent = selectedCandidates.length;
+
+                if (selectedCandidates.length > 0) {
+                    panel.style.display = 'block';
+                } else {
+                    panel.style.display = 'none';
+                }
+            }
+
+            function clearComparison() {
+                selectedCandidates = [];
+                updateComparisonPanel();
+            }
+
+            function compareCandidates() {
+                if (selectedCandidates.length < 2) {
+                    alert('يجب اختيار مرشحين على الأقل للمقارنة');
+                    return;
+                }
+
+                fetch('@Url.Action("CompareCandidates")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(selectedCandidates)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showComparisonModal(data.data);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('خطأ:', error);
+                    alert('حدث خطأ أثناء المقارنة');
+                });
+            }
+
+            function showComparisonModal(comparisonData) {
+                // إنشاء مودال المقارنة
+                let modalContent = `
+                    <div class="modal fade" id="comparisonModal" tabindex="-1">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">مقارنة المرشحين</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>المرشح</th>
+                                                    <th>النقاط الإجمالية</th>
+                                                    <th>النسبة المئوية</th>
+                                                    <th>أسئلة سهلة</th>
+                                                    <th>أسئلة متوسطة</th>
+                                                    <th>أسئلة صعبة</th>
+                                                    <th>وقت الإكمال</th>
+                                                    <th>الترتيب</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>`;
+
+                comparisonData.forEach(candidate => {
+                    modalContent += `
+                        <tr>
+                            <td><strong>${candidate.candidateName}</strong></td>
+                            <td>${candidate.totalPoints}/${candidate.maxPoints}</td>
+                            <td><span class="badge ${candidate.scorePercentage >= 70 ? 'bg-success' : candidate.scorePercentage >= 50 ? 'bg-warning' : 'bg-danger'}">${candidate.scorePercentage.toFixed(1)}%</span></td>
+                            <td><span class="badge bg-success">${candidate.easyCorrect}</span></td>
+                            <td><span class="badge bg-warning">${candidate.mediumCorrect}</span></td>
+                            <td><span class="badge bg-danger">${candidate.hardCorrect}</span></td>
+                            <td>${Math.round(candidate.completionTime)} دقيقة</td>
+                            <td><span class="badge bg-primary">#${candidate.rank}</span></td>
+                        </tr>`;
+                });
+
+                modalContent += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                document.body.insertAdjacentHTML('beforeend', modalContent);
+
+                const modal = new bootstrap.Modal(document.getElementById('comparisonModal'));
+                modal.show();
+
+                document.getElementById('comparisonModal').addEventListener('hidden.bs.modal', function () {
+                    this.remove();
+                    clearComparison();
+                });
+            }
+
+            function refreshResults() {
+                const examId = @Model.ExamId;
+
+                fetch(`@Url.Action("RecalculateResults")?examId=${examId}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('خطأ:', error);
+                    alert('حدث خطأ أثناء تحديث النتائج');
+                });
+            }
+        </script>
+}
+
+<style>
+    .table-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        transition: box-shadow 0.15s ease-in-out;
+    }
+
+    .ranking-card {
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .ranking-card.top-3 {
+        border-left-color: #ffc107;
+        background-color: rgba(255, 193, 7, 0.05);
+    }
+
+    .ranking-card.first-place {
+        border-left-color: #28a745;
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+</style>

@@ -53,7 +53,7 @@ namespace TawtheefTest.Migrations
                     b.HasIndex("Phone")
                         .IsUnique();
 
-                    b.ToTable("Candidates");
+                    b.ToTable("Candidates", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.CandidateAnswer", b =>
@@ -107,7 +107,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("CandidateAnswers");
+                    b.ToTable("CandidateAnswers", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.CandidateExam", b =>
@@ -161,7 +161,7 @@ namespace TawtheefTest.Migrations
                     b.HasIndex("CandidateId", "ExamId")
                         .IsUnique();
 
-                    b.ToTable("CandidateExams");
+                    b.ToTable("CandidateExams", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Exam", b =>
@@ -216,7 +216,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("JobId");
 
-                    b.ToTable("Exams");
+                    b.ToTable("Exams", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.ExamQuestionSet", b =>
@@ -241,7 +241,7 @@ namespace TawtheefTest.Migrations
                     b.HasIndex("ExamId", "QuestionSetId")
                         .IsUnique();
 
-                    b.ToTable("ExamQuestionSets");
+                    b.ToTable("ExamQuestionSets", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Job", b =>
@@ -273,7 +273,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Jobs");
+                    b.ToTable("Jobs", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.MatchingPair", b =>
@@ -302,7 +302,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("MatchingPairs");
+                    b.ToTable("MatchingPairs", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Notification", b =>
@@ -345,7 +345,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("CandidateId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.OptionChoice", b =>
@@ -372,7 +372,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("OptionChoices");
+                    b.ToTable("OptionChoices", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.OrderingItem", b =>
@@ -399,7 +399,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("OrderingItems");
+                    b.ToTable("OrderingItems", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.OTPVerification", b =>
@@ -431,7 +431,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("PhoneNumber");
 
-                    b.ToTable("OTPVerifications");
+                    b.ToTable("OTPVerifications", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Question", b =>
@@ -495,7 +495,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("QuestionSetId");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.QuestionOption", b =>
@@ -522,7 +522,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("QuestionOptions");
+                    b.ToTable("QuestionOptions", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.QuestionSet", b =>
@@ -611,7 +611,7 @@ namespace TawtheefTest.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("QuestionSets");
+                    b.ToTable("QuestionSets", (string)null);
                 });
 
             modelBuilder.Entity("TawtheefTest.Data.Structure.Candidate", b =>

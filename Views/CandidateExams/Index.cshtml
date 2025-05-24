@@ -6,251 +6,448 @@
   var candidateExams = ViewData["CandidateExams"] as IEnumerable<CandidateExamViewModel>;
 }
 
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0"><i class="bi bi-file-earmark-text"></i> الاختبارات المتاحة</h1>
-    <a asp-controller="Auth" asp-action="Logout" class="btn btn-outline-danger">
-      <i class="bi bi-power"></i> تسجيل الخروج
-    </a>
-  </div>
+<style>
+  .exam-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    background: white;
+  }
 
-  <div class="card mb-4 border-primary">
-    <div class="card-body">
-      <div class="row align-items-center">
-        <div class="col-auto">
-          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-            style="width: 60px; height: 60px;">
-            <i class="bi bi-person-badge" style="font-size: 1.5rem;"></i>
+  .exam-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .exam-card.available {
+    border-color: #0d6efd;
+  }
+
+  .exam-card.in-progress {
+    border-color: #ffc107;
+    animation: pulse 2s infinite;
+  }
+
+  .exam-card.completed {
+    border-color: #198754;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .stats-card {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    transition: transform 0.3s ease;
+  }
+
+  .stats-card:hover {
+    transform: scale(1.05);
+  }
+
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+
+  @@keyframes pulse
+  {
+    0% {
+      transform: scale(1);
+    }
+
+      50% {
+        transform: scale(1.02);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .page-background {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+
+    .section-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .badge-score {
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .progress-bar-custom {
+      height: 8px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+    }
+  </style>
+
+  <div class="page-background">
+    <div class="container-fluid py-4">
+      <!-- Header Section -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-lg border-0 gradient-bg text-white">
+            <div class="card-body py-4">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center"
+                    style="width: 80px; height: 80px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                    <i class="bi bi-person-badge" style="font-size: 2rem;"></i>
+                  </div>
+                </div>
+                <div class="col">
+                  <h1 class="mb-2 fw-bold">مرحباً، @candidate.Name</h1>
+                  <p class="mb-2 fs-5">
+                    <i class="bi bi-briefcase me-2"></i>
+                    أنت مسجل للوظيفة: <span class="badge bg-white text-primary fs-6">@candidate.JobName</span>
+                  </p>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    <span id="current-date" class="me-3"></span>
+                    <i class="bi bi-clock me-2"></i>
+                    <span id="current-time"></span>
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <a asp-controller="Auth" asp-action="Logout" class="btn btn-light btn-lg">
+                    <i class="bi bi-power"></i> تسجيل الخروج
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="col">
-          <h4 class="mb-1">مرحباً، @candidate.Name</h4>
-          <p class="mb-0">أنت مسجل للوظيفة: <span class="badge bg-primary">@candidate.JobName</span></p>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+          <div class="card border-0 shadow-sm h-100 stats-card text-white">
+            <div class="card-body text-center">
+              <div
+                class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center mx-auto mb-3"
+                style="width: 60px; height: 60px;">
+                <i class="bi bi-clipboard-check" style="font-size: 1.5rem;"></i>
+              </div>
+              <h5 class="card-title">إجمالي الاختبارات</h5>
+              <h2 class="fw-bold">@Model.Count()</h2>
+            </div>
+          </div>
         </div>
-        <div class="col-auto">
-          <div class="text-end text-muted">
-            <div id="current-date"></div>
-            <div id="current-time"></div>
+        <div class="col-md-3 mb-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);">
+              <div
+                class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center mx-auto mb-3"
+                style="width: 60px; height: 60px;">
+                <i class="bi bi-check-circle text-white" style="font-size: 1.5rem;"></i>
+              </div>
+              <h5 class="card-title text-white">مكتملة</h5>
+              <h2 class="text-white fw-bold">@candidateExams.Count(ce => ce.IsCompleted)</h2>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center" style="background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);">
+              <div
+                class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center mx-auto mb-3"
+                style="width: 60px; height: 60px;">
+                <i class="bi bi-hourglass-split text-white" style="font-size: 1.5rem;"></i>
+              </div>
+              <h5 class="card-title text-white">قيد التنفيذ</h5>
+              <h2 class="text-white fw-bold">@candidateExams.Count(ce => !ce.IsCompleted)</h2>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 mb-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <div
+                class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center mx-auto mb-3"
+                style="width: 60px; height: 60px;">
+                <i class="bi bi-percent text-white" style="font-size: 1.5rem;"></i>
+              </div>
+              <h5 class="card-title text-white">متوسط النتائج</h5>
+              <h2 class="text-white fw-bold">
+              @{
+                  var completedWithScores = candidateExams.Where(ce => ce.IsCompleted && ce.Score.HasValue);
+                  var avgScore = completedWithScores.Any() ? Math.Round((decimal)completedWithScores.Average(ce =>
+                  ce.Score.Value), 1) : 0;
+                }
+              @avgScore%
+            </h2>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- الاختبارات قيد التقديم -->
-  @if (candidateExams.Any(ce => !ce.IsCompleted))
-  {
-    <div class="card mb-4 border-warning">
-      <div class="card-header bg-warning text-dark">
-        <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> الاختبارات قيد التقديم</h5>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead class="table-light">
-              <tr>
-                <th>الاختبار</th>
-                <th>تاريخ البدء</th>
-                <th>الحالة</th>
-                <th>الإجراء</th>
-              </tr>
-            </thead>
-            <tbody>
+    <!-- الاختبارات قيد التقديم -->
+    @if (candidateExams.Any(ce => !ce.IsCompleted))
+        {
+        <div class="card mb-4 border-0 shadow-lg section-card">
+          <div class="card-header" style="background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); border: none;">
+            <h4 class="mb-0 text-white fw-bold">
+              <i class="bi bi-hourglass-split me-2"></i> الاختبارات قيد التقديم
+            </h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
               @foreach (var exam in candidateExams.Where(ce => !ce.IsCompleted))
               {
-                <tr>
-                  <td>
-                    <div class="fw-bold">@exam.ExamName</div>
-                    <small class="text-muted">@exam.JobName - @GetQuestionTypeName(exam.QuestionType)</small>
-                  </td>
-                  <td>@exam.StartTime?.ToString("yyyy-MM-dd HH:mm")</td>
-                  <td>
-                    <span class="badge bg-warning text-dark">قيد التقديم</span>
-                  </td>
-                  <td>
-                    <a asp-action="Take" asp-route-id="@exam.Id" class="btn btn-warning btn-sm">
-                      <i class="bi bi-arrow-right-circle"></i> متابعة الاختبار
-                    </a>
-                  </td>
-                </tr>
+                <div class="col-md-6 col-lg-4 mb-3">
+                  <div class="card border-warning exam-card in-progress h-100">
+                    <div class="card-header bg-warning bg-opacity-10">
+                      <h5 class="mb-0 fw-bold">@exam.ExamName</h5>
+                      <small class="text-muted">@exam.JobName</small>
+                    </div>
+                    <div class="card-body">
+                      <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span><i class="bi bi-calendar-event"></i> تاريخ البدء</span>
+                          <span class="fw-bold">@exam.StartTime?.ToString("yyyy-MM-dd HH:mm")</span>
+                        </div>
+                      </div>
+                      <div class="d-grid">
+                        <a asp-action="Take" asp-route-id="@exam.Id" class="btn btn-warning btn-lg">
+                          <i class="bi bi-arrow-right-circle me-2"></i> متابعة الاختبار
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               }
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- الاختبارات المكتملة -->
-  @if (candidateExams.Any(ce => ce.IsCompleted))
-  {
-    <div class="card mb-4 border-success">
-      <div class="card-header bg-success text-white">
-        <h5 class="mb-0"><i class="bi bi-check-circle"></i> الاختبارات المكتملة</h5>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead class="table-light">
-              <tr>
-                <th>الاختبار</th>
-                <th>تاريخ البدء</th>
-                <th>تاريخ الانتهاء</th>
-                <th>النتيجة</th>
-                <th>الإجراء</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach (var exam in candidateExams.Where(ce => ce.IsCompleted))
-              {
-                <tr>
-                  <td>
-                    <div class="fw-bold">@exam.ExamName</div>
-                    <small class="text-muted">@exam.JobName - @GetQuestionTypeName(exam.QuestionType)</small>
-                  </td>
-                  <td>@exam.StartTime?.ToString("yyyy-MM-dd HH:mm")</td>
-                  <td>@exam.EndTime?.ToString("yyyy-MM-dd HH:mm")</td>
-                  <td>
-                    @if (exam.Score.HasValue)
-                    {
-                      string badgeClass = exam.Score >= 60 ? "bg-success" : "bg-danger";
-                      <span class="badge @badgeClass">
-                        @Math.Round((decimal)exam.Score.Value, 2)%
-                      </span>
-                    }
-                  </td>
-                  <td>
-                    <a asp-action="Results" asp-route-id="@exam.Id" class="btn btn-outline-primary btn-sm">
-                      <i class="bi bi-eye"></i> عرض النتائج
-                    </a>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- الاختبارات المتاحة -->
-  <div class="card border-info">
-    <div class="card-header bg-info text-white">
-      <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> الاختبارات المتاحة لك</h5>
-    </div>
-    <div class="card-body">
-      @if (!Model.Any())
-      {
-        <div class="alert alert-warning">
-          <i class="bi bi-exclamation-triangle"></i> لا توجد اختبارات متاحة لهذه الوظيفة حالياً.
+            </div>
+          </div>
         </div>
       }
-      else
-      {
-        <div class="row">
-          @foreach (var exam in Model)
-          {
-            var takenExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && !ce.IsCompleted);
-            var completedExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && ce.IsCompleted);
-            string cardClass = "border-info";
 
-            if (takenExam != null)
-            {
-              cardClass = "border-warning";
-            }
-            else if (completedExam != null)
-            {
-              cardClass = "border-success";
-            }
-
-            <div class="col-md-4 mb-4">
-              <div class="card h-100 @cardClass">
-                <div class="card-header">
-                  <h5 class="mb-0">@exam.Name</h5>
-                  <small class="text-muted">@exam.JobName</small>
+    <!-- الاختبارات المكتملة -->
+    @if (candidateExams.Any(ce => ce.IsCompleted))
+        {
+        <div class="card mb-4 border-0 shadow-lg section-card">
+          <div class="card-header" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); border: none;">
+            <h4 class="mb-0 text-white fw-bold">
+              <i class="bi bi-check-circle me-2"></i> الاختبارات المكتملة
+            </h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              @foreach (var exam in candidateExams.Where(ce => ce.IsCompleted))
+              {
+                <div class="col-md-6 col-lg-4 mb-3">
+                  <div class="card border-success exam-card completed h-100">
+                    <div class="card-header bg-success bg-opacity-10">
+                      <h5 class="mb-0 fw-bold">@exam.ExamName</h5>
+                      <small class="text-muted">@exam.JobName</small>
+                    </div>
+                    <div class="card-body">
+                      <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span><i class="bi bi-calendar-check"></i> تاريخ البدء</span>
+                          <span class="fw-bold">@exam.StartTime?.ToString("MM-dd HH:mm")</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span><i class="bi bi-calendar-x"></i> تاريخ الانتهاء</span>
+                          <span class="fw-bold">@exam.EndTime?.ToString("MM-dd HH:mm")</span>
+                        </div>
+                        @if (exam.Score.HasValue)
+                        {
+                          <div class="text-center my-3">
+                            <div class="progress-bar-custom mb-2"
+                              style="width: 100%; height: 10px; background: linear-gradient(90deg, #ff6b6b @(exam.Score < 30 ? 100 : 0)%, #feca57 @(exam.Score >= 30 && exam.Score < 60 ? 100 : 0)%, #48dbfb @(exam.Score >= 60 && exam.Score < 80 ? 100 : 0)%, #ff9ff3 @(exam.Score >= 80 ? 100 : 0)%);">
+                            </div>
+                            <span class="badge badge-score @(exam.Score >= 60 ? "bg-success" : "bg-danger")">
+                              @Math.Round((decimal)exam.Score.Value, 1)%
+                            </span>
+                          </div>
+                        }
+                      </div>
+                      <div class="d-grid">
+                        <a asp-action="Results" asp-route-id="@exam.Id" class="btn btn-outline-success">
+                          <i class="bi bi-eye me-2"></i> عرض النتائج
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="card-body">
-                  <ul class="list-group list-group-flush mb-3">
-                    <li class="list-group-item d-flex justify-content-between">
-                      <span><i class="bi bi-journal-text"></i> نوع الاختبار</span>
-                      <span>@GetQuestionTypeName(exam.QuestionType)</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                      <span><i class="bi bi-bar-chart"></i> مستوى الصعوبة</span>
-                      <span>@GetDifficultyName(exam.Difficulty)</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                      <span><i class="bi bi-list-ol"></i> عدد الأسئلة</span>
-                      <span>@exam.QuestionCountForEachCandidate</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                      <span><i class="bi bi-clock"></i> المدة</span>
-                      <span>@exam.Duration دقيقة</span>
-                    </li>
-                  </ul>
+              }
+            </div>
+          </div>
+        </div>
+      }
 
-                  @if (takenExam != null)
-                  {
-                    <div class="alert alert-warning">
-                      <i class="bi bi-exclamation-circle"></i> لديك اختبار قيد التقدم
-                    </div>
-                    <div class="d-grid">
-                      <a asp-action="Take" asp-route-id="@takenExam.Id" class="btn btn-warning btn-lg">
-                        <i class="bi bi-arrow-right-circle"></i> متابعة الاختبار
-                      </a>
-                    </div>
-                  }
-                  else if (completedExam != null)
-                  {
-                    <div class="alert alert-success">
-                      <i class="bi bi-check-circle"></i> أكملت هذا الاختبار بنتيجة
-                      <strong>@Math.Round((decimal)completedExam.Score.Value, 2)%</strong>
-                    </div>
-                    <div class="d-grid">
-                      <a asp-action="Results" asp-route-id="@completedExam.Id" class="btn btn-outline-primary">
-                        <i class="bi bi-eye"></i> عرض النتائج
-                      </a>
-                    </div>
-                  }
-                  else
-                  {
-                    <div class="alert alert-info mb-3">
-                      <i class="bi bi-info-circle"></i> اختبار متاح للتقديم
-                    </div>
-                    <div class="d-grid">
-                      <a asp-action="Start" asp-route-id="@exam.Id" class="btn btn-primary btn-lg">
-                        <i class="bi bi-play-circle"></i> بدء الاختبار
-                      </a>
-                    </div>
-                  }
+    <!-- الاختبارات المتاحة -->
+    <div class="card border-0 shadow-lg section-card">
+      <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+        <h4 class="mb-0 text-white fw-bold">
+          <i class="bi bi-clipboard-check me-2"></i> الاختبارات المتاحة لك
+        </h4>
+      </div>
+      <div class="card-body">
+        @if (!Model.Any())
+                {
+            <div class="alert alert-warning border-0 shadow-sm">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle fs-1 me-3"></i>
+                <div>
+                  <h5 class="alert-heading">لا توجد اختبارات متاحة</h5>
+                  <p class="mb-0">لا توجد اختبارات متاحة لهذه الوظيفة حالياً. يرجى المراجعة لاحقاً.</p>
                 </div>
               </div>
             </div>
           }
-        </div>
-      }
+                else
+                {
+            <div class="row">
+              @foreach (var exam in Model)
+              {
+                var takenExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && !ce.IsCompleted);
+                var completedExam = candidateExams.FirstOrDefault(ce => ce.ExamId == exam.Id && ce.IsCompleted);
+
+                string cardClass = "border-primary available";
+                string headerBg = "bg-primary bg-opacity-10";
+                string buttonClass = "btn-primary";
+                string buttonText = "بدء الاختبار";
+                string buttonIcon = "bi-play-circle";
+                string actionName = "Start";
+                string actionId = exam.Id.ToString();
+
+                if (takenExam != null)
+                {
+                  cardClass = "border-warning in-progress";
+                  headerBg = "bg-warning bg-opacity-10";
+                  buttonClass = "btn-warning";
+                  buttonText = "متابعة الاختبار";
+                  buttonIcon = "bi-arrow-right-circle";
+                  actionName = "Take";
+                  actionId = takenExam.Id.ToString();
+                }
+                else if (completedExam != null)
+                {
+                  cardClass = "border-success completed";
+                  headerBg = "bg-success bg-opacity-10";
+                  buttonClass = "btn-outline-success";
+                  buttonText = "عرض النتائج";
+                  buttonIcon = "bi-eye";
+                  actionName = "Results";
+                  actionId = completedExam.Id.ToString();
+                }
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                  <div class="card h-100 exam-card @cardClass">
+                    <div class="card-header @headerBg">
+                      <h5 class="mb-1 fw-bold">@exam.Name</h5>
+                      <small class="text-muted">@exam.JobName</small>
+                    </div>
+                    <div class="card-body">
+                      <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                          <span><i class="bi bi-list-ol text-primary me-2"></i> عدد الأسئلة</span>
+                          <span class="badge bg-light text-dark">@exam.QuestionCountForEachCandidate</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                          <span><i class="bi bi-clock text-info me-2"></i> المدة</span>
+                          <span class="badge bg-light text-dark">@exam.Duration دقيقة</span>
+                        </li>
+                      </ul>
+
+                      @if (takenExam != null)
+                      {
+                        <div class="alert alert-warning border-0 mb-3">
+                          <i class="bi bi-exclamation-circle me-2"></i>
+                          <strong>لديك اختبار قيد التقدم</strong>
+                        </div>
+                      }
+                      else if (completedExam != null)
+                      {
+                        <div class="alert alert-success border-0 mb-3">
+                          <i class="bi bi-check-circle me-2"></i>
+                          <strong>أكملت هذا الاختبار بنتيجة @Math.Round((decimal)completedExam.Score.Value, 1)%</strong>
+                        </div>
+                      }
+                      else
+                      {
+                        <div class="alert alert-info border-0 mb-3">
+                          <i class="bi bi-info-circle me-2"></i>
+                          <strong>اختبار متاح للتقديم</strong>
+                        </div>
+                      }
+
+                      <div class="d-grid">
+                        <a asp-action="@actionName" asp-route-id="@actionId" class="btn @buttonClass btn-lg">
+                          <i class="@buttonIcon me-2"></i> @buttonText
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+      </div>
     </div>
   </div>
 </div>
 
 @section Scripts {
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // عرض التاريخ والوقت الحالي
-      function updateDateTime() {
-        const now = new Date();
-        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        // عرض التاريخ والوقت الحالي
+        function updateDateTime() {
+          const now = new Date();
+          const dateOptions = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            calendar: 'islamic-umalqura'
+          };
+          const timeOptions = {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+          };
 
-        document.getElementById('current-date').textContent = now.toLocaleDateString('ar-SA', dateOptions);
-        document.getElementById('current-time').textContent = now.toLocaleTimeString('ar-SA', timeOptions);
-      }
+          document.getElementById('current-date').textContent = now.toLocaleDateString('ar-SA', dateOptions);
+          document.getElementById('current-time').textContent = now.toLocaleTimeString('ar-SA', timeOptions);
+        }
 
-      updateDateTime();
-      setInterval(updateDateTime, 1000);
-    });
-  </script>
-}
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // إضافة تأثيرات تفاعلية للبطاقات
+        const examCards = document.querySelectorAll('.exam-card');
+        examCards.forEach(card => {
+          card.addEventListener('mouseenter', function () {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+          });
+
+          card.addEventListener('mouseleave', function () {
+            this.style.transform = 'translateY(0) scale(1)';
+          });
+        });
+
+        // إضافة تأثير للبطاقات الإحصائية
+        const statsCards = document.querySelectorAll('.stats-card');
+        statsCards.forEach(card => {
+          card.addEventListener('mouseenter', function () {
+            this.style.transform = 'scale(1.05) rotate(1deg)';
+          });
+
+          card.addEventListener('mouseleave', function () {
+            this.style.transform = 'scale(1) rotate(0deg)';
+          });
+        });
+      });
+    </script>
+  }
 
 @functions {
   private string GetQuestionTypeName(string type)

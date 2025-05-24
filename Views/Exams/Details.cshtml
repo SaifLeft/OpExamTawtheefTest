@@ -812,13 +812,17 @@
                                         <div class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center">
                                             <span>عرض النتائج للمتقدمين فوراً:</span>
                                             <div class="form-check form-switch mb-0">
-                                                <input class="form-check-input" type="checkbox" id="showResultsSwitch" @(Model.ShowResultsImmediately ? "checked" : "") disabled>
+                                                <input class="form-check-input toggle-setting" type="checkbox" id="showResultsSwitch"
+                                                       data-setting="ShowResults" data-exam-id="@Model.Id"
+                                                       @(Model.ShowResultsImmediately ? "checked" : "")>
                                             </div>
                                         </div>
                                         <div class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center">
                                             <span>إرسال روابط الامتحان للمتقدمين:</span>
                                             <div class="form-check form-switch mb-0">
-                                                <input class="form-check-input" type="checkbox" id="sendLinksSwitch" @(Model.SendExamLinkToApplicants ? "checked" : "") disabled>
+                                                <input class="form-check-input toggle-setting" type="checkbox" id="sendLinksSwitch"
+                                                       data-setting="ExamLinks" data-exam-id="@Model.Id"
+                                                       @(Model.SendExamLinkToApplicants ? "checked" : "")>
                                             </div>
                                         </div>
                                         <div class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center">
@@ -953,6 +957,54 @@
               $("#noResultsMessage").addClass("d-none");
             }
           }
+
+          // معالج تبديل الإعدادات
+          $(".toggle-setting").on("change", function() {
+            var $switch = $(this);
+            var setting = $switch.data("setting");
+            var examId = $switch.data("exam-id");
+            var isChecked = $switch.prop("checked");
+
+            // تعطيل المفتاح أثناء المعالجة
+            $switch.prop("disabled", true);
+
+            var actionUrl = setting === "ShowResults" ?
+              '@Url.Action("ToggleShowResults", "Exams")' :
+              '@Url.Action("ToggleExamLinks", "Exams")';
+
+            $.ajax({
+              url: actionUrl,
+              type: 'POST',
+              data: { id: examId },
+              headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+              },
+              success: function(response) {
+                if (response.success) {
+                  // تحديث حالة المفتاح حسب القيمة الجديدة
+                  $switch.prop("checked", response.newValue);
+
+                  // إظهار رسالة نجاح
+                  toastr.success(response.message, 'تم التحديث');
+                } else {
+                  // إعادة المفتاح لحالته الأصلية في حالة الخطأ
+                  $switch.prop("checked", !isChecked);
+
+                  toastr.error(response.message || 'حدث خطأ أثناء تحديث الإعداد', 'خطأ!');
+                }
+              },
+              error: function() {
+                // إعادة المفتاح لحالته الأصلية في حالة الخطأ
+                $switch.prop("checked", !isChecked);
+
+                toastr.error('حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.', 'خطأ!');
+              },
+              complete: function() {
+                // إعادة تفعيل المفتاح
+                $switch.prop("disabled", false);
+              }
+            });
+          });
         });
     </script>
 

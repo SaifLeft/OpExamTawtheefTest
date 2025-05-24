@@ -202,6 +202,12 @@ namespace TawtheefTest.Data.Structure
     [StringLength(1000)]
     public string QuestionText { get; set; } = string.Empty;
 
+    // مستوى صعوبة السؤال والنقاط المرتبطة به
+    [StringLength(20)]
+    public string? DifficultyLevel { get; set; } // easy, medium, hard
+
+    public int Points { get; set; } = 1; // النقاط المخصصة للسؤال حسب صعوبته
+
     // ترتيب عرض السؤال في الاختبار
     public int DisplayOrder { get; set; }
 
@@ -350,6 +356,15 @@ namespace TawtheefTest.Data.Structure
     public DateTime? EndTime { get; set; }
 
     public decimal? Score { get; set; }
+
+    // نظام التقييم المحسن
+    public int TotalPoints { get; set; } = 0; // إجمالي النقاط المحققة
+    public int MaxPossiblePoints { get; set; } = 0; // أقصى نقاط ممكنة
+    public int EasyQuestionsCorrect { get; set; } = 0; // عدد الأسئلة السهلة الصحيحة
+    public int MediumQuestionsCorrect { get; set; } = 0; // عدد الأسئلة المتوسطة الصحيحة
+    public int HardQuestionsCorrect { get; set; } = 0; // عدد الأسئلة الصعبة الصحيحة
+    public TimeSpan? CompletionDuration { get; set; } // مدة إكمال الاختبار
+    public int RankPosition { get; set; } = 0; // ترتيب المرشح
 
     // إجمالي عدد الأسئلة في الاختبار
     public int TotalQuestions { get; set; }
