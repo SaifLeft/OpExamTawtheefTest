@@ -52,13 +52,13 @@ namespace TawtheefTest.Services
         OTPCode = otp,
         IsVerified = false,
         ExpiresAt = expirationTime,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
       };
 
       // Map DTO to data model
-      var otpVerification = _mapper.Map<OTPVerification>(otpVerificationDto);
+      var otpVerification = _mapper.Map<Otpverification>(otpVerificationDto);
 
-      _context.OTPVerifications.Add(otpVerification);
+      _context.Otpverifications.Add(otpVerification);
       await _context.SaveChangesAsync();
 
       // In a real application, send the OTP via email
@@ -69,7 +69,7 @@ namespace TawtheefTest.Services
     public async Task<bool> VerifyOTPAsync(int PhoneNumber, string otp)
     {
       // Find the most recent OTP for this phone number
-      var otpVerificationModel = await _context.OTPVerifications
+      var otpVerificationModel = await _context.Otpverifications
           .Where(o => o.PhoneNumber == PhoneNumber && !o.IsVerified)
           .OrderByDescending(o => o.CreatedAt)
           .FirstOrDefaultAsync();

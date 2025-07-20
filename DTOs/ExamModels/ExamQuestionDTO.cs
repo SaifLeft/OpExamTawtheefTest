@@ -4,8 +4,8 @@ namespace TawtheefTest.DTOs.ExamModels
 {
   public class ExamQuestionDTO
   {
-    public int Id { get; set; }
-    public int SequenceNumber { get; set; }
+    public long Id { get; set; }
+    public long SequenceNumber { get; set; }
     public string QuestionText { get; set; }
     public string QuestionType { get; set; }
     public List<QuestionOptionDTO> Options { get; set; }
@@ -24,16 +24,16 @@ namespace TawtheefTest.DTOs.ExamModels
 
   public class QuestionOptionDTO
   {
-    public int Id { get; set; }
+    public long Id { get; set; }
     public string Text { get; set; }
-    public int Index { get; set; }
-    public bool IsCorrect { get; set; }
+    public long Index { get; set; }
+    public long IsCorrect { get; set; }
   }
 
   public class MatchingPairDTO
   {
     public string Left { get; set; }
     public string Right { get; set; }
-    public int Index { get; set; }
+    public long Index { get; set; }
   }
 }

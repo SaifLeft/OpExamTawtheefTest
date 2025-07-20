@@ -21,9 +21,9 @@ public class CandidateQuestionService : ICandidateQuestionService
 
   public async Task<List<QuestionDto>> GetCandidateQuestion(int candidateExamId, int? questionIndex)
   {
-    var candidateExam = await _context.CandidateExams
+    var candidateExam = await _context.Assignments
     .Include(ce => ce.Exam)
-    .ThenInclude(e => e.ExamQuestionSets)
+    .ThenInclude(e => e.ExamQuestionSetManppings)
     .ThenInclude(eqs => eqs.QuestionSet)
     .ThenInclude(qs => qs.Questions)
     .FirstOrDefaultAsync(ce => ce.Id == candidateExamId);
@@ -33,7 +33,7 @@ public class CandidateQuestionService : ICandidateQuestionService
       return Enumerable.Empty<QuestionDto>().ToList();
     }
 
-    var questions = candidateExam.Exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).ToList();
+    var questions = candidateExam.Exam.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).ToList();
     if (questionIndex == null)
     {
       var mappedQuestions = _mapper.Map<List<QuestionDto>>(questions);

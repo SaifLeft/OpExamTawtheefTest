@@ -28,7 +28,7 @@ namespace TawtheefTest.Controllers
           .Include(e => e.CandidateExams)
           .Include(e => e.Job)
             .ThenInclude(e => e.Candidates)
-          .Include(e => e.ExamQuestionSets)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
           .Select(e => new ExamDto
           {
@@ -42,7 +42,7 @@ namespace TawtheefTest.Controllers
             EndDate = e.EndDate ?? DateTime.Now.AddDays(7),
             CreatedDate = e.CreatedAt,
             CandidatesCount = e.Job.Candidates.Count(),
-            QuestionSets = e.ExamQuestionSets.Select(eqs => new QuestionSetDto
+            QuestionSets = e.ExamQuestionSetManppings.Select(eqs => new QuestionSetDto
             {
               Id = eqs.QuestionSet.Id,
               Name = eqs.QuestionSet.Name,
@@ -65,18 +65,18 @@ namespace TawtheefTest.Controllers
 
       var exam = await _context.Exams
           .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSets)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
-          .Include(e => e.ExamQuestionSets)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
-                      .ThenInclude(q => q.Options)
-          .Include(e => e.ExamQuestionSets)
+                      .ThenInclude(q => q.QuestionOptions)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
                       .ThenInclude(q => q.MatchingPairs)
-          .Include(e => e.ExamQuestionSets)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
                       .ThenInclude(q => q.OrderingItems)
@@ -104,7 +104,7 @@ namespace TawtheefTest.Controllers
         ShowResultsImmediately = exam.ShowResultsImmediately,
         SendExamLinkToApplicants = exam.SendExamLinkToApplicants,
         Status = exam.Status,
-        QuestionSets = exam.ExamQuestionSets
+        QuestionSets = exam.ExamQuestionSetManppings
             .OrderBy(eqs => eqs.DisplayOrder)
             .Select(eqs => new QuestionSetDto
             {
@@ -113,8 +113,8 @@ namespace TawtheefTest.Controllers
               Description = eqs.QuestionSet.Description,
               QuestionType = eqs.QuestionSet.QuestionType,
               QuestionCount = eqs.QuestionSet.QuestionCount,
-              Status = eqs.QuestionSet.Status,
-              StatusDescription = GetStatusDescription(eqs.QuestionSet.Status),
+              Status = (QuestionSetStatus)eqs.QuestionSet.Status,
+              StatusDescription = GetStatusDescription((QuestionSetStatus)eqs.QuestionSet.Status),
               ContentSourceType = eqs.QuestionSet.ContentSourceType,
               Difficulty = eqs.QuestionSet.Difficulty,
               ProcessedAt = eqs.QuestionSet.UpdatedAt,
@@ -140,7 +140,7 @@ namespace TawtheefTest.Controllers
       TempData["StatusDebug"] = $"قيمة Status في الـ DTO: {examDetailsDto.Status} | قيمة Status في النموذج الأصلي: {exam.Status}";
 
       // جلب الأسئلة للاختبار
-      var allQuestions = exam.ExamQuestionSets
+      var allQuestions = exam.ExamQuestionSetManppings
           .SelectMany(eqs => eqs.QuestionSet.Questions)
           .ToList();
 
@@ -171,7 +171,7 @@ namespace TawtheefTest.Controllers
                     Index = m.DisplayOrder ?? 0
                   }).ToList()
                   : null,
-            Options = q.Options?.Select(o => new QuestionOptionDTO
+            Options = q.QuestionOptions?.Select(o => new QuestionOptionDTO
             {
               Id = o.Id,
               Text = o.Text,
@@ -206,10 +206,10 @@ namespace TawtheefTest.Controllers
           Description = model.Description,
           JobId = model.JobId,
           Duration = model.Duration,
-          StartDate = model.ExamStartDate,
-          EndDate = model.ExamEndDate,
-          Status = ExamStatus.Draft,
-          CreatedAt = DateTime.UtcNow,
+          StartDate = model.ExamStartDate.ToString("yyyy-MM-dd HH:mm:ss"),
+          EndDate = model.ExamEndDate.ToString("yyyy-MM-dd HH:mm:ss"),
+          Status = ExamStatus.Draft.GetHashCode(),
+          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
           ShowResultsImmediately = model.ShowResultsImmediately,
           SendExamLinkToApplicants = model.SendExamLinkToApplicants
         };
@@ -281,11 +281,11 @@ namespace TawtheefTest.Controllers
           exam.Description = examDto.Description;
           exam.JobId = examDto.JobId;
           exam.Duration = examDto.Duration;
-          exam.StartDate = examDto.StartDate;
-          exam.EndDate = examDto.EndDate;
+          exam.StartDate = examDto.StartDate.ToString("yyyy-MM-dd HH:mm:ss");
+          exam.EndDate = examDto.EndDate.ToString("yyyy-MM-dd HH:mm:ss");
           exam.ShowResultsImmediately = examDto.ShowResultsImmediately;
           exam.SendExamLinkToApplicants = examDto.SendExamLinkToApplicants;
-          exam.UpdatedAt = DateTime.UtcNow;
+          exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
           _context.Update(exam);
           await _context.SaveChangesAsync();
@@ -333,9 +333,9 @@ namespace TawtheefTest.Controllers
         Id = ce.Id,
         ExamId = ce.ExamId,
         ApplicantName = ce.Candidate.Name,
-        StartTime = ce.StartTime,
-        EndTime = ce.EndTime,
-        Score = ce.Score.HasValue ? (double)ce.Score.Value : 0,
+        StartTime = ce.StartTime.ToString("yyyy-MM-dd HH:mm:ss"),
+        EndTime = ce.EndTime.ToString("yyyy-MM-dd HH:mm:ss"),
+        Score = ce.Score,
         Status = ce.Status.ToString()
       }).ToList();
 
@@ -362,7 +362,7 @@ namespace TawtheefTest.Controllers
       var exams = await _context.Exams
           .Where(e => e.JobId == id)
           .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSets)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
           .Select(e => new ExamListDTO
@@ -372,7 +372,7 @@ namespace TawtheefTest.Controllers
             JobId = e.JobId,
             JobName = e.Job.Title,
             Duration = e.Duration,
-            QuestionsCount = e.ExamQuestionSets.Sum(eqs => eqs.QuestionSet.Questions.Count),
+            QuestionsCount = e.ExamQuestionSetManppings.Sum(eqs => eqs.QuestionSet.Questions.Count),
             CreatedDate = e.CreatedAt
           })
           .ToListAsync();
@@ -393,10 +393,10 @@ namespace TawtheefTest.Controllers
       }
 
       var exam = await _context.Exams
-          .Include(e => e.ExamQuestionSets)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
-                    .ThenInclude(q => q.Options)
+                    .ThenInclude(q => q.QuestionOptions)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (exam == null)
@@ -405,7 +405,7 @@ namespace TawtheefTest.Controllers
       }
 
       // تجميع الأسئلة من جميع مجموعات الأسئلة
-      var allQuestions = exam.ExamQuestionSets
+      var allQuestions = exam.ExamQuestionSetManppings
           .SelectMany(eqs => eqs.QuestionSet.Questions)
           .ToList();
 
@@ -460,7 +460,7 @@ namespace TawtheefTest.Controllers
 
         // تبديل حالة عرض النتائج
         exam.ShowResultsImmediately = !exam.ShowResultsImmediately;
-        exam.UpdatedAt = DateTime.UtcNow;
+        exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
         _context.Update(exam);
         await _context.SaveChangesAsync();
@@ -492,7 +492,7 @@ namespace TawtheefTest.Controllers
 
         // تبديل حالة إرسال الروابط
         exam.SendExamLinkToApplicants = !exam.SendExamLinkToApplicants;
-        exam.UpdatedAt = DateTime.UtcNow;
+        exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
         _context.Update(exam);
         await _context.SaveChangesAsync();
@@ -560,7 +560,7 @@ namespace TawtheefTest.Controllers
       }
 
       // التحقق من أن الاختبار يحتوي على أسئلة
-      var questionsCount = await _context.ExamQuestionSets
+      var questionsCount = await _context.ExamQuestionSetManppings
           .Where(eqs => eqs.ExamId == id)
           .SelectMany(eqs => eqs.QuestionSet.Questions)
           .CountAsync();
@@ -600,13 +600,13 @@ namespace TawtheefTest.Controllers
 
       var exam = await _context.Exams
           .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSets)
+          .Include(e => e.ExamQuestionSetManppings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
           .FirstOrDefaultAsync(e => e.Id == model.ExamId);
 
       // check if exam has questions
-      if (exam.ExamQuestionSets.Count == 0)
+      if (exam.ExamQuestionSetManppings.Count == 0)
       {
         TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
         return RedirectToAction(nameof(Details), new { id = model.ExamId });
@@ -625,7 +625,7 @@ namespace TawtheefTest.Controllers
 
       // check if exam has n no of questions to be published
 
-      if (exam.TotalQuestionsPerCandidate > exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count())
+      if (exam.TotalQuestionsPerCandidate > exam.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count())
       {
         TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
         return RedirectToAction(nameof(Details), new { id = model.ExamId });
@@ -638,9 +638,9 @@ namespace TawtheefTest.Controllers
       }
 
       // تعديل حالة الاختبار ليكون منشوراً
-      exam.Status = ExamStatus.Published;
+      exam.Status = ExamStatus.Published.GetHashCode();
       exam.SendExamLinkToApplicants = true;
-      exam.UpdatedAt = DateTime.UtcNow;
+      exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
       _context.Update(exam);
       await _context.SaveChangesAsync();
@@ -726,18 +726,18 @@ namespace TawtheefTest.Controllers
       }
 
       // تبديل حالة النشر
-      if (exam.Status == ExamStatus.Published)
+      if (exam.Status == ExamStatus.Published.GetHashCode())
       {
-        exam.Status = ExamStatus.Draft;
+        exam.Status = ExamStatus.Draft.GetHashCode();
         TempData["SuccessMessage"] = "تم إلغاء نشر الاختبار";
       }
       else
       {
-        exam.Status = ExamStatus.Published;
+        exam.Status = ExamStatus.Published.GetHashCode();
         TempData["SuccessMessage"] = "تم نشر الاختبار";
       }
 
-      exam.UpdatedAt = DateTime.UtcNow;
+      exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
       _context.Update(exam);
       await _context.SaveChangesAsync();
 
@@ -751,7 +751,7 @@ namespace TawtheefTest.Controllers
       {
         // التحقق من وجود الامتحان
         var exam = await _context.Exams
-            .Include(e => e.ExamQuestionSets)
+            .Include(e => e.ExamQuestionSetManppings)
             .FirstOrDefaultAsync(e => e.Id == examId);
 
         if (exam == null)
@@ -760,7 +760,7 @@ namespace TawtheefTest.Controllers
         }
 
         // حذف مجموعات الأسئلة الحالية المرتبطة بالامتحان
-        _context.ExamQuestionSets.RemoveRange(exam.ExamQuestionSets);
+        _context.ExamQuestionSetManppings.RemoveRange(exam.ExamQuestionSetManppings);
 
         // إضافة مجموعات الأسئلة المحددة إلى الامتحان
         int displayOrder = 1;
@@ -772,7 +772,7 @@ namespace TawtheefTest.Controllers
             QuestionSetId = questionSetId,
             DisplayOrder = displayOrder++
           };
-          _context.ExamQuestionSets.Add(examQuestionSet);
+          _context.ExamQuestionSetManppings.Add(examQuestionSet);
         }
 
         await _context.SaveChangesAsync();
@@ -793,7 +793,7 @@ namespace TawtheefTest.Controllers
       // الحصول على السؤال من خلال معرّفه
       var question = await _context.Questions
           .Include(q => q.QuestionSet)
-              .ThenInclude(qs => qs.ExamQuestionSets)
+              .ThenInclude(qs => qs.ExamQuestionSetManppings)
           .FirstOrDefaultAsync(q => q.Id == id);
 
       if (question == null)
@@ -802,7 +802,7 @@ namespace TawtheefTest.Controllers
       }
 
       // التحقق من أن السؤال ينتمي إلى مجموعة أسئلة مرتبطة بامتحان
-      var examId = question.QuestionSet.ExamQuestionSets.FirstOrDefault()?.ExamId;
+      var examId = question.QuestionSet.ExamQuestionSetManppings.FirstOrDefault()?.ExamId;
 
       if (examId == null)
       {
@@ -828,7 +828,7 @@ namespace TawtheefTest.Controllers
     public IActionResult AddQuestion(int id)
     {
       var questionSets = _context.QuestionSets
-          .Where(qs => qs.ExamQuestionSets.Any(eqs => eqs.ExamId == id))
+          .Where(qs => qs.ExamQuestionSetManppings.Any(eqs => eqs.ExamId == id))
           .ToList();
 
       if (questionSets.Count == 0)
@@ -858,7 +858,7 @@ namespace TawtheefTest.Controllers
         {
           // التحقق من وجود الامتحان
           var exam = await _context.Exams
-              .Include(e => e.ExamQuestionSets)
+              .Include(e => e.ExamQuestionSetManppings)
                   .ThenInclude(eqs => eqs.QuestionSet)
                       .ThenInclude(qs => qs.Questions)
               .FirstOrDefaultAsync(e => e.Id == id);
@@ -876,12 +876,12 @@ namespace TawtheefTest.Controllers
             QuestionType = model.QuestionType,
             Index = 0, // سيتم تحديثه لاحقًا
             DisplayOrder = 0, // سيتم تحديثه لاحقًا
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
           };
 
           if (model.QuestionType == "TF")
           {
-            question.TrueFalseAnswer = model.TrueFalseAnswer;
+            question.TrueFalseAnswer = model.TrueFalseAnswer.GetHashCode();
           }
           else if (model.QuestionType == "ShortAnswer" || model.QuestionType == "FillInTheBlank")
           {
@@ -892,7 +892,7 @@ namespace TawtheefTest.Controllers
           await _context.SaveChangesAsync();
 
           // تحديث مؤشر السؤال
-          var questionCount = exam.ExamQuestionSets
+          var questionCount = exam.ExamQuestionSetManppings
               .SelectMany(eqs => eqs.QuestionSet.Questions)
               .Count();
 
@@ -930,7 +930,7 @@ namespace TawtheefTest.Controllers
 
       // إعادة تحميل البيانات في حالة حدوث خطأ
       var questionSets = await _context.QuestionSets
-          .Where(qs => qs.ExamQuestionSets.Any(eqs => eqs.ExamId == id))
+          .Where(qs => qs.ExamQuestionSetManppings.Any(eqs => eqs.ExamId == id))
           .ToListAsync();
 
       ViewBag.QuestionSets = new SelectList(questionSets, "Id", "Name");

@@ -66,7 +66,7 @@ namespace TawtheefTest.Controllers
       }
 
       // التحقق من حالة المرشح
-      if (!candidate.IsActive)
+      if (candidate.IsActive == 0)
       {
         TempData["ErrorMessage"] = "هذا الحساب غير نشط. يرجى الاتصال بالإدارة.";
         return RedirectToAction(nameof(Login));
@@ -143,7 +143,7 @@ namespace TawtheefTest.Controllers
       }
 
       // تسجيل آخر تسجيل دخول
-      candidate.UpdatedAt = DateTime.UtcNow;
+      candidate.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
       await _context.SaveChangesAsync();
 
       // تخزين معلومات المرشح في الجلسة
@@ -154,7 +154,7 @@ namespace TawtheefTest.Controllers
       await _notificationService.CreateNotificationAsync(
           candidate.Id,
           "مرحباً بعودتك!",
-          $"مرحباً {candidate.Name}، تم تسجيل دخولك بنجاح. لديك {await _context.CandidateExams.CountAsync(ce => ce.CandidateId == candidate.Id && ce.Status == "InProgress")} اختبارات قيد التنفيذ.",
+          $"مرحباً {candidate.Name}، تم تسجيل دخولك بنجاح. لديك {await _context.Assignments.CountAsync(ce => ce.CandidateId == candidate.Id && ce.Status == "InProgress")} اختبارات قيد التنفيذ.",
           "success"
       );
 
@@ -200,7 +200,7 @@ namespace TawtheefTest.Controllers
           Phone = model.Phone,
           JobId = model.JobId,
           IsActive = true,
-          CreatedAt = DateTime.UtcNow
+          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
         };
 
         _context.Add(candidate);

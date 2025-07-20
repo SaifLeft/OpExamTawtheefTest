@@ -82,8 +82,8 @@ namespace TawtheefTest.Controllers
           Name = model.Name,
           Phone = model.Phone,
           JobId = model.JobId,
-          IsActive = true,
-          CreatedAt = DateTime.UtcNow
+          IsActive = 1,
+          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss").ToString("yyyy-MM-dd HH:mm:ss")
         };
 
         _context.Add(candidate);
@@ -146,7 +146,7 @@ namespace TawtheefTest.Controllers
           candidate.Name = model.Name;
           candidate.Phone = int.Parse(model.PhoneNumber);
           candidate.JobId = model.JobId;
-          candidate.UpdatedAt = DateTime.UtcNow;
+          candidate.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
           _context.Update(candidate);
           await _context.SaveChangesAsync();

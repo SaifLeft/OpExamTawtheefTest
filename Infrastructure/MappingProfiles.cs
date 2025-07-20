@@ -5,6 +5,7 @@ using TawtheefTest.DTOs.ExamModels;
 using TawtheefTest.ViewModels;
 using System.Linq;
 using System;
+using TawtheefTest.Enums;
 
 namespace TawtheefTest.Infrastructure
 {
@@ -22,7 +23,12 @@ namespace TawtheefTest.Infrastructure
 
       CreateMap<Question, ExamQuestionDTO>();
       CreateMap<QuestionOption, QuestionOptionDTO>();
-      CreateMap<OTPVerification, OTPVerificationDto>();
+      CreateMap<Otpverification, OTPVerificationDto>()
+        .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => (int)src.PhoneNumber))
+        .ForMember(dest => dest.OTPCode, opt => opt.MapFrom(src => src.Otpcode))
+        .ForMember(dest => dest.IsVerified, opt => opt.MapFrom(src => src.IsVerified == 1))
+        .ForMember(dest => dest.ExpiresAt, opt => opt.MapFrom(src => DateTime.Parse(src.ExpiresAt)))
+        .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Parse(src.CreatedAt)));
       CreateMap<CandidateAnswer, CandidateAnswerDTO>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty));
 
@@ -34,7 +40,7 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Exam.Duration))
           .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.TotalQuestions > 0
               ? src.TotalQuestions
-              : src.Exam.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
+              : src.Exam.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
           .ForMember(dest => dest.CompletedQuestions, opt => opt.MapFrom(src => src.CompletedQuestions > 0
               ? src.CompletedQuestions
               : src.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count()));
@@ -42,7 +48,7 @@ namespace TawtheefTest.Infrastructure
       // تخطيط Exam إلى ExamForCandidateViewModel
       CreateMap<Exam, ExamForCandidateViewModel>()
           .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Job.Title))
-          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.ExamQuestionSets.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
+          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
           .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60m))
           .ForMember(dest => dest.QuestionCountForEachCandidate, opt => opt.MapFrom(src => src.TotalQuestionsPerCandidate));
 
@@ -80,7 +86,7 @@ namespace TawtheefTest.Infrastructure
 
       // للتعامل مع نماذج توليد الأسئلة
       CreateMap<QuestionSet, QuestionSetDto>()
-          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetQuestionSetStatusDescription(src.Status)))
+          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetQuestionSetStatusDescription((QuestionSetStatus)src.Status)))
           .ForMember(dest => dest.Questions, opt => opt.Ignore())
           .ForMember(dest => dest.UsageCount, opt => opt.Ignore())
           .ForMember(dest => dest.UsedInExams, opt => opt.Ignore());
@@ -108,7 +114,12 @@ namespace TawtheefTest.Infrastructure
       CreateMap<EditExamDTO, Exam>();
       CreateMap<CreateJobDTO, Job>();
       CreateMap<EditJobDTO, Job>();
-      CreateMap<OTPVerificationDto, OTPVerification>();
+      CreateMap<OTPVerificationDto, Otpverification>()
+        .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => (long)src.PhoneNumber))
+        .ForMember(dest => dest.Otpcode, opt => opt.MapFrom(src => src.OTPCode))
+        .ForMember(dest => dest.IsVerified, opt => opt.MapFrom(src => src.IsVerified ? 1L : 0L))
+        .ForMember(dest => dest.ExpiresAt, opt => opt.MapFrom(src => src.ExpiresAt.ToString("yyyy-MM-dd HH:mm:ss")))
+        .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")));
 
       // Map from Data Models to ViewModels
       CreateMap<Candidate, CandidateViewModel>()
@@ -116,7 +127,7 @@ namespace TawtheefTest.Infrastructure
 
       CreateMap<QuestionSet, QuestionSetDetailsViewModel>()
           .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
-          .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSets.FirstOrDefault().ExamId));
+          .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSetManppings.FirstOrDefault().ExamId));
       CreateMap<QuestionSet, QuestionSetStatusViewModel>()
           .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
           .ForMember(dest => dest.QuestionsGenerated, opt => opt.MapFrom(src => src.Questions.Count));
@@ -178,7 +189,7 @@ namespace TawtheefTest.Infrastructure
       };
     }
 
-    private string GetQuestionSetStatusDescription(Enums.QuestionSetStatus status)
+    private string GetQuestionSetStatusDescription(QuestionSetStatus status)
     {
       return status switch
       {

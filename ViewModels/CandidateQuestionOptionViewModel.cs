@@ -4,10 +4,10 @@ namespace TawtheefTest.ViewModels
 {
   public class CandidateQuestionOptionViewModel
   {
-    public int Id { get; set; }
-    public int QuestionId { get; set; }
+    public long Id { get; set; }
+    public long QuestionId { get; set; }
     public string Text { get; set; }
-    public bool IsCorrect { get; set; }
-    public bool IsSelected { get; set; }
+    public long IsCorrect { get; set; }
+    public long IsSelected { get; set; }
   }
 }

@@ -93,7 +93,7 @@ namespace TawtheefTest.Services
           Title = jobDTO.Name,
           Description = string.Empty,
           IsActive = true,
-          CreatedAt = DateTime.UtcNow
+          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
         };
 
         _context.Add(job);
@@ -117,7 +117,7 @@ namespace TawtheefTest.Services
         }
 
         job.Title = jobDTO.Name;
-        job.UpdatedAt = DateTime.UtcNow;
+        job.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
         _context.Update(job);
         await _context.SaveChangesAsync();

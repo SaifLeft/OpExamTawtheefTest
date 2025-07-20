@@ -8,912 +8,1106 @@
   CandidateAnswerDTO>();
 }
 
-@Html.AntiForgeryToken()
+<style>
+  /* تحسينات العداد التنازلي */
+  .timer-display {
+    min-width: 280px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 
-<!-- رسالة فقدان الاتصال -->
-<div id="connection-lost-alert" class="alert alert-danger alert-dismissible fade" role="alert"
-  style="display:none; position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:9999; width:80%; max-width:500px;">
-  <i class="bx bx-wifi-off me-2"></i> انقطع الاتصال بالخادم
-  <button id="reconnect-button" type="button" class="btn btn-sm btn-danger ms-3">إعادة الاتصال</button>
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
-</div>
+  .timer-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 3px;
+    text-align: center;
+    margin: 5px 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  }
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-  <h1>@Model.ExamTitle</h1>
-  <div>
-    <div id="countdown" class="alert alert-warning mb-0 d-inline-block me-3">
-      <i class="bx bx-clock"></i> <span id="timer">@(Model.RemainingTime?.ToString(@"hh\:mm\:ss") ?? "00:00:00")</span>
+  .timer-label {
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  .timer-units {
+    display: flex;
+    justify-content: space-between;
+    text-align: center;
+    margin-top: 5px;
+  }
+
+  .time-unit {
+    flex: 1;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #666;
+  }
+
+  #countdown.alert-danger {
+    animation: pulse 2s infinite;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+  }
+
+  #countdown.alert-danger .timer-value {
+    color: #dc3545;
+    text-shadow: 1px 1px 2px rgba(220, 53, 69, 0.2);
+  }
+
+  #countdown.alert-danger .time-unit {
+    color: #dc3545;
+  }
+
+  @@keyframes pulse
+  {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.02);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* تحسين مظهر التنبيهات */
+    .alert.position-fixed {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border: none;
+    }
+
+    /* تحسين مظهر modal انتهاء الوقت */
+    #timeUpModal .modal-content {
+      border: 3px solid #dc3545;
+    }
+
+    #countdown-final {
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+
+    /* تحسينات للشاشات الصغيرة */
+    @@media (max-width: 768px) {
+        .timer-display {
+          min-width: 240px;
+          padding: 12px 15px;
+        }
+
+        .timer-value {
+          font-size: 2rem;
+          letter-spacing: 2px;
+        }
+      }
+    </style>
+
+    @Html.AntiForgeryToken()
+
+    <!-- رسالة فقدان الاتصال -->
+    <div id="connection-lost-alert" class="alert alert-danger alert-dismissible fade" role="alert"
+      style="display:none; position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:9999; width:80%; max-width:500px;">
+      <i class="bx bx-wifi-off me-2"></i> انقطع الاتصال بالخادم
+      <button id="reconnect-button" type="button" class="btn btn-sm btn-danger ms-3">إعادة الاتصال</button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
     </div>
-    <form asp-action="Submit" method="post">
-      <input type="hidden" name="id" value="@Model.Id" />
-      <button type="submit" class="btn btn-danger"
-        onclick="return confirm('هل أنت متأكد من رغبتك في إنهاء الاختبار وتسليم الإجابات؟')">
-        <i class="bx bx-check-circle"></i> تسليم الاختبار
-      </button>
-    </form>
-  </div>
-</div>
 
-<div class="row">
-  <div class="col-md-4">
-    <div class="card shadow mb-4">
-      <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">معلومات الاختبار</h5>
-        <span class="badge bg-light text-dark">@Model.CompletedQuestions / @Model.TotalQuestions</span>
-      </div>
-      <div class="card-body">
-        <div class="mb-3">
-          <div class="progress">
-            <div class="progress-bar" id="progress-bar" role="progressbar" style="width: @progressPercentage%;"
-              aria-valuenow="@progressPercentage" aria-valuemin="0" aria-valuemax="100">
-              @progressPercentage%
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+      <h1>@Model.ExamTitle</h1>
+      <div>
+        <div id="countdown" class="alert alert-warning mb-0 d-inline-block me-3 timer-display">
+          <div class="d-flex align-items-center">
+            <i class="bx bx-clock fs-3 me-2"></i>
+            <div class="timer-content">
+              <div class="timer-label small text-muted">الوقت المتبقي</div>
+              <div id="timer" class="timer-value">@(Model.RemainingTime?.ToString(@"hh\:mm\:ss") ?? "00:00:00")</div>
+              <div class="timer-units small">
+                <span class="time-unit">ساعة</span>
+                <span class="time-unit">دقيقة</span>
+                <span class="time-unit">ثانية</span>
+              </div>
             </div>
           </div>
         </div>
-
-        <ul class="list-group">
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span><i class="bx bx-person-fill"></i> المرشح:</span>
-            <strong>@Model.CandidateName</strong>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span><i class="bx bx-briefcase-fill"></i> الوظيفة:</span>
-            <strong>@Model.JobTitle</strong>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span><i class="bx bx-clock-fill"></i> وقت البدء:</span>
-            <strong>@Model.StartTime?.ToString("yyyy-MM-dd HH:mm")</strong>
-          </li>
-          <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span><i class="bx bx-hourglass-split"></i> المدة:</span>
-            <strong>@Model.Duration دقيقة</strong>
-          </li>
-        </ul>
+        <form asp-action="Submit" method="post">
+          <input type="hidden" name="id" value="@Model.Id" />
+          <button type="submit" class="btn btn-danger"
+            onclick="return confirm('هل أنت متأكد من رغبتك في إنهاء الاختبار وتسليم الإجابات؟')">
+            <i class="bx bx-check-circle"></i> تسليم الاختبار
+          </button>
+        </form>
       </div>
     </div>
 
-    <!-- جزء تنقل الاختبار - مشابه للصورة المرجعية -->
-    <div class="card shadow">
-      <div class="card-header">
-        <h5 class="mb-0">تنقل الاختبار</h5>
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card shadow mb-4">
+          <div class="card-header d-flex justify-content-between">
+            <h5 class="mb-0">معلومات الاختبار</h5>
+            <span class="badge bg-light text-dark">@Model.CompletedQuestions / @Model.TotalQuestions</span>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <div class="progress">
+                <div class="progress-bar" id="progress-bar" role="progressbar" style="width: @progressPercentage%;"
+                  aria-valuenow="@progressPercentage" aria-valuemin="0" aria-valuemax="100">
+                  @progressPercentage%
+                </div>
+              </div>
+            </div>
+
+            <ul class="list-group">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bx bx-person-fill"></i> المرشح:</span>
+                <strong>@Model.CandidateName</strong>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bx bx-briefcase-fill"></i> الوظيفة:</span>
+                <strong>@Model.JobTitle</strong>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bx bx-clock-fill"></i> وقت البدء:</span>
+                <strong>@Model.StartTime?.ToString("yyyy-MM-dd HH:mm")</strong>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bx bx-hourglass-split"></i> المدة:</span>
+                <strong>@Model.Duration دقيقة</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- جزء تنقل الاختبار - مشابه للصورة المرجعية -->
+        <div class="card shadow">
+          <div class="card-header">
+            <h5 class="mb-0">تنقل الاختبار</h5>
+          </div>
+          <div class="card-body">
+            <div class="row quiz-navigation">
+              @for (int i = 0; i < Model.Questions.Count; i++)
+              {
+                var question = Model.Questions[i];
+                var isAnswered = answersDictionary.ContainsKey(question.Id);
+                var isFlagged = Model.FlaggedQuestions.Contains(question.Id);
+                var btnClass = isAnswered ? "btn-success" : "btn-outline-secondary";
+
+                if (isFlagged)
+                {
+                  btnClass = "btn-warning";
+                }
+
+                <div class="col-2 mb-2">
+                  <button type="button" class="btn @btnClass question-btn w-100" data-question-index="@i"
+                    data-question-id="@question.Id">
+                    @(i + 1)
+                  </button>
+                </div>
+              }
+            </div>
+            <hr>
+            <div class="d-flex flex-wrap justify-content-between">
+              <div class="mb-2">
+                <span class="badge bg-success me-1">&nbsp;</span> مجاب
+              </div>
+              <div class="mb-2">
+                <span class="badge bg-warning me-1">&nbsp;</span> معلم للمراجعة
+              </div>
+              <div class="mb-2">
+                <span class="badge bg-secondary me-1">&nbsp;</span> غير مجاب
+              </div>
+            </div>
+            <div class="d-grid mt-3">
+              <a href="javascript:void(0)" class="btn btn-outline-primary show-flagged-btn">
+                عرض الأسئلة المعلمة فقط
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card-body">
-        <div class="row quiz-navigation">
-          @for (int i = 0; i < Model.Questions.Count; i++)
-          {
-            var question = Model.Questions[i];
-            var isAnswered = answersDictionary.ContainsKey(question.Id);
-            var isFlagged = Model.FlaggedQuestions.Contains(question.Id);
-            var btnClass = isAnswered ? "btn-success" : "btn-outline-secondary";
 
-            if (isFlagged)
-            {
-              btnClass = "btn-warning";
-            }
-
-            <div class="col-2 mb-2">
-              <button type="button" class="btn @btnClass question-btn w-100" data-question-index="@i"
-                data-question-id="@question.Id">
-                @(i + 1)
+      <div class="col-md-8">
+        <div class="card shadow">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              السؤال <span id="current-question-num">1</span> من <span id="total-questions">@Model.TotalQuestions</span>
+            </h5>
+            <div id="flag-container">
+              <button type="button" class="btn btn-outline-warning flag-question-btn me-2" data-flagged="false">
+                <i class="bx bx-flag-fill me-1"></i> تعليم للمراجعة
+              </button>
+              <button type="button" class="btn btn-outline-danger replace-question-btn"
+                title="يمكن استخدام هذه الميزة مرة واحدة فقط خلال الاختبار">
+                <i class="bx bx-arrow-repeat me-1"></i> استبدال السؤال
               </button>
             </div>
-          }
-        </div>
-        <hr>
-        <div class="d-flex flex-wrap justify-content-between">
-          <div class="mb-2">
-            <span class="badge bg-success me-1">&nbsp;</span> مجاب
           </div>
-          <div class="mb-2">
-            <span class="badge bg-warning me-1">&nbsp;</span> معلم للمراجعة
+          <div class="card-body">
+            <div id="question-container" data-current-index="0">
+              <!-- سيتم تحميل السؤال هنا -->
+            </div>
+            <div class="text-end">
+              <span id="saved-indicator" class="text-success fade-out" style="display: none;">
+                <i class="bx bx-check-circle"></i> تم حفظ إجابتك
+              </span>
+            </div>
           </div>
-          <div class="mb-2">
-            <span class="badge bg-secondary me-1">&nbsp;</span> غير مجاب
+          <div class="card-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-primary prev-question-btn">
+              <i class="bx bx-arrow-right me-1"></i> السابق
+            </button>
+            <button type="button" class="btn btn-outline-primary next-question-btn">
+              التالي <i class="bx bx-arrow-left me-1"></i>
+            </button>
           </div>
-        </div>
-        <div class="d-grid mt-3">
-          <a href="javascript:void(0)" class="btn btn-outline-primary show-flagged-btn">
-            عرض الأسئلة المعلمة فقط
-          </a>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="col-md-8">
-    <div class="card shadow">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-          السؤال <span id="current-question-num">1</span> من <span id="total-questions">@Model.TotalQuestions</span>
-        </h5>
-        <div id="flag-container">
-          <button type="button" class="btn btn-outline-warning flag-question-btn me-2" data-flagged="false">
-            <i class="bx bx-flag-fill me-1"></i> تعليم للمراجعة
-          </button>
-          <button type="button" class="btn btn-outline-danger replace-question-btn"
-            title="يمكن استخدام هذه الميزة مرة واحدة فقط خلال الاختبار">
-            <i class="bx bx-arrow-repeat me-1"></i> استبدال السؤال
-          </button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div id="question-container" data-current-index="0">
-          <!-- سيتم تحميل السؤال هنا -->
-        </div>
-        <div class="text-end">
-          <span id="saved-indicator" class="text-success fade-out" style="display: none;">
-            <i class="bx bx-check-circle"></i> تم حفظ إجابتك
-          </span>
-        </div>
-      </div>
-      <div class="card-footer d-flex justify-content-between">
-        <button type="button" class="btn btn-outline-primary prev-question-btn">
-          <i class="bx bx-arrow-right me-1"></i> السابق
-        </button>
-        <button type="button" class="btn btn-outline-primary next-question-btn">
-          التالي <i class="bx bx-arrow-left me-1"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+    @section Scripts {
+      <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+      <script>
+        $(document).ready(function () {
+          // بيانات الاختبار
+          const candidateExamId = "@Model.Id";
+          let currentQuestionIndex = parseInt("@Model.CurrentQuestionIndex");
+          const totalQuestions = parseInt("@Model.TotalQuestions");
+          let isOnline = true;
 
-@section Scripts {
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script>
-    $(document).ready(function () {
-      // بيانات الاختبار
-      const candidateExamId = "@Model.Id";
-      let currentQuestionIndex = parseInt("@Model.CurrentQuestionIndex");
-      const totalQuestions = parseInt("@Model.TotalQuestions");
-      let isOnline = true;
-
-      // التحقق من حالة الاتصال
-      function checkConnection() {
-        return window.navigator.onLine;
-      }
-
-      // تحديث حالة الاتصال
-      function updateConnectionStatus() {
-        const online = checkConnection();
-
-        if (online && !isOnline) {
-          // استعدنا الاتصال
-          $('#connection-lost-alert').removeClass('show');
-          setTimeout(() => {
-            $('#connection-lost-alert').hide();
-          }, 500);
-
-          isOnline = true;
-        } else if (!online && isOnline) {
-          // فقدنا الاتصال
-          $('#connection-lost-alert').show();
-          setTimeout(() => {
-            $('#connection-lost-alert').addClass('show');
-          }, 10);
-
-          isOnline = false;
-        }
-      }
-
-      // متابعة تغيرات حالة الاتصال
-      window.addEventListener('online', updateConnectionStatus);
-      window.addEventListener('offline', updateConnectionStatus);
-
-      // زر إعادة تحميل الصفحة
-      $('#reconnect-button').on('click', function () {
-        location.reload();
-      });
-
-      // دعم التنقل باستخدام لوحة المفاتيح
-      $(document).on('keydown', function (e) {
-        // عدم تفعيل الأزرار عند الكتابة في حقول النص
-        if ($(document.activeElement).is('input, textarea, select')) {
-          return;
-        }
-
-        // السهم الأيمن (للتنقل للسؤال السابق)
-        if (e.keyCode === 39) {
-          if (currentQuestionIndex > 0) {
-            loadQuestion(currentQuestionIndex - 1);
+          // التحقق من حالة الاتصال
+          function checkConnection() {
+            return window.navigator.onLine;
           }
-        }
 
-        // السهم الأيسر (للتنقل للسؤال التالي)
-        if (e.keyCode === 37) {
-          if (currentQuestionIndex < totalQuestions - 1) {
-            loadQuestion(currentQuestionIndex + 1);
+          // تحديث حالة الاتصال
+          function updateConnectionStatus() {
+            const online = checkConnection();
+
+            if (online && !isOnline) {
+              // استعدنا الاتصال
+              $('#connection-lost-alert').removeClass('show');
+              setTimeout(() => {
+                $('#connection-lost-alert').hide();
+              }, 500);
+
+              isOnline = true;
+            } else if (!online && isOnline) {
+              // فقدنا الاتصال
+              $('#connection-lost-alert').show();
+              setTimeout(() => {
+                $('#connection-lost-alert').addClass('show');
+              }, 10);
+
+              isOnline = false;
+            }
           }
-        }
-      });
 
-      // التحذير قبل مغادرة الصفحة
-      window.addEventListener('beforeunload', function (e) {
-        // إذا كان النموذج قيد الإرسال (مثل تسليم الاختبار)، لا نعرض التحذير
-        if (window.isSubmitting) return;
+          // متابعة تغيرات حالة الاتصال
+          window.addEventListener('online', updateConnectionStatus);
+          window.addEventListener('offline', updateConnectionStatus);
 
-        // إنشاء رسالة تحذير
-        const confirmationMessage = 'هل أنت متأكد من مغادرة الصفحة؟ قد تفقد إجاباتك غير المحفوظة.';
+          // زر إعادة تحميل الصفحة
+          $('#reconnect-button').on('click', function () {
+            location.reload();
+          });
 
-        // للمتصفحات الحديثة
-        e.returnValue = confirmationMessage;
+          // دعم التنقل باستخدام لوحة المفاتيح
+          $(document).on('keydown', function (e) {
+            // عدم تفعيل الأزرار عند الكتابة في حقول النص
+            if ($(document.activeElement).is('input, textarea, select')) {
+              return;
+            }
 
-        // للمتصفحات القديمة
-        return confirmationMessage;
-      });
+            // السهم الأيمن (للتنقل للسؤال السابق)
+            if (e.keyCode === 39) {
+              if (currentQuestionIndex > 0) {
+                loadQuestion(currentQuestionIndex - 1);
+              }
+            }
 
-      // تعيين علامة عند إرسال النموذج
-      $('form').on('submit', function () {
-        window.isSubmitting = true;
-      });
+            // السهم الأيسر (للتنقل للسؤال التالي)
+            if (e.keyCode === 37) {
+              if (currentQuestionIndex < totalQuestions - 1) {
+                loadQuestion(currentQuestionIndex + 1);
+              }
+            }
+          });
 
-      // تحميل السؤال الأول
-      loadQuestion(currentQuestionIndex);
+          // التحذير قبل مغادرة الصفحة
+          window.addEventListener('beforeunload', function (e) {
+            // إذا كان النموذج قيد الإرسال (مثل تسليم الاختبار)، لا نعرض التحذير
+            if (window.isSubmitting) return;
 
-      // تحديث زر العلامة للمراجعة
-      updateFlagButton();
+            // إنشاء رسالة تحذير
+            const confirmationMessage = 'هل أنت متأكد من مغادرة الصفحة؟ قد تفقد إجاباتك غير المحفوظة.';
 
-      // بدء العداد التنازلي
-      startCountdown();
+            // للمتصفحات الحديثة
+            e.returnValue = confirmationMessage;
 
-      // أحداث أزرار التنقل
-      $('.question-btn').on('click', function () {
-        const index = $(this).data('question-index');
-        loadQuestion(index);
-      });
+            // للمتصفحات القديمة
+            return confirmationMessage;
+          });
 
-      $('.prev-question-btn').on('click', function () {
-        if (currentQuestionIndex > 0) {
-          loadQuestion(currentQuestionIndex - 1);
-        }
-      });
+          // تعيين علامة عند إرسال النموذج
+          $('form').on('submit', function () {
+            window.isSubmitting = true;
+          });
 
-      $('.next-question-btn').on('click', function () {
-        if (currentQuestionIndex < totalQuestions - 1) {
-          loadQuestion(currentQuestionIndex + 1);
-        }
-      });
+          // تحميل السؤال الأول
+          loadQuestion(currentQuestionIndex);
 
-      // تفعيل زر العلامة للمراجعة
-      $('.flag-question-btn').on('click', function () {
-        const btn = $(this);
-        const isFlagged = btn.data('flagged') === true;
-        const questionId = btn.data('question-id');
+          // تحديث زر العلامة للمراجعة
+          updateFlagButton();
 
-        // تبديل حالة العلامة
-        flagQuestion(questionId, !isFlagged);
-      });
+          // بدء العداد التنازلي
+          startCountdown();
 
-      // دالة تحميل السؤال
-      function loadQuestion(index) {
-        $.ajax({
-          url: '/CandidateExams/GetQuestion',
-          type: 'GET',
-          data: {
-            candidateExamId: candidateExamId,
-            questionIndex: index
-          },
-          success: function (response) {
-            if (response.success) {
-              console.log(response);
-              // تحديث رقم السؤال الحالي
-              currentQuestionIndex = response.currentIndex;
-              $('#current-question-num').text(currentQuestionIndex + 1);
+          // أحداث أزرار التنقل
+          $('.question-btn').on('click', function () {
+            const index = $(this).data('question-index');
+            loadQuestion(index);
+          });
 
-              // تحديث محتوى السؤال
-              const question = response.question;
-              renderQuestion(question, response.answer);
+          $('.prev-question-btn').on('click', function () {
+            if (currentQuestionIndex > 0) {
+              loadQuestion(currentQuestionIndex - 1);
+            }
+          });
 
-              // تحديث زر العلامة
-              $('.flag-question-btn').data('question-id', question.id);
-              $('.flag-question-btn').data('question-type', question.questionType.toUpperCase());
-              $('.flag-question-btn').data('flagged', question.isFlagged);
-              updateFlagButton();
+          $('.next-question-btn').on('click', function () {
+            if (currentQuestionIndex < totalQuestions - 1) {
+              loadQuestion(currentQuestionIndex + 1);
+            }
+          });
 
-              // تفعيل/تعطيل أزرار التنقل
-              $('.prev-question-btn').prop('disabled', currentQuestionIndex === 0);
-              $('.next-question-btn').prop('disabled', currentQuestionIndex === totalQuestions - 1);
+          // تفعيل زر العلامة للمراجعة
+          $('.flag-question-btn').on('click', function () {
+            const btn = $(this);
+            const isFlagged = btn.data('flagged') === true;
+            const questionId = btn.data('question-id');
 
-              // تحديث التصفح المرئي
-              $('.question-btn').removeClass('active');
-              $(`.question-btn[data-question-index="${currentQuestionIndex}"]`).addClass('active');
+            // تبديل حالة العلامة
+            flagQuestion(questionId, !isFlagged);
+          });
+
+          // دالة تحميل السؤال
+          function loadQuestion(index) {
+            $.ajax({
+              url: '/CandidateExams/GetQuestion',
+              type: 'GET',
+              data: {
+                candidateExamId: candidateExamId,
+                questionIndex: index
+              },
+              success: function (response) {
+                if (response.success) {
+                  console.log(response);
+                  // تحديث رقم السؤال الحالي
+                  currentQuestionIndex = response.currentIndex;
+                  $('#current-question-num').text(currentQuestionIndex + 1);
+
+                  // تحديث محتوى السؤال
+                  const question = response.question;
+                  renderQuestion(question, response.answer);
+
+                  // تحديث زر العلامة
+                  $('.flag-question-btn').data('question-id', question.id);
+                  $('.flag-question-btn').data('question-type', question.questionType.toUpperCase());
+                  $('.flag-question-btn').data('flagged', question.isFlagged);
+                  updateFlagButton();
+
+                  // تفعيل/تعطيل أزرار التنقل
+                  $('.prev-question-btn').prop('disabled', currentQuestionIndex === 0);
+                  $('.next-question-btn').prop('disabled', currentQuestionIndex === totalQuestions - 1);
+
+                  // تحديث التصفح المرئي
+                  $('.question-btn').removeClass('active');
+                  $(`.question-btn[data-question-index="${currentQuestionIndex}"]`).addClass('active');
+                } else {
+                  alert(response.message);
+                }
+              },
+              error: function () {
+                alert('حدث خطأ أثناء تحميل السؤال');
+              }
+            });
+          }
+
+          // دالة لتحديث زر العلامة
+          function updateFlagButton() {
+            const btn = $('.flag-question-btn');
+            const isFlagged = btn.data('flagged');
+
+            if (isFlagged) {
+              btn.removeClass('btn-outline-warning').addClass('btn-warning');
+              btn.html('<i class="bx bx-flag-fill me-1"></i> إلغاء التعليم');
             } else {
-              alert(response.message);
+              btn.removeClass('btn-warning').addClass('btn-outline-warning');
+              btn.html('<i class="bx bx-flag me-1"></i> تعليم للمراجعة');
             }
-          },
-          error: function () {
-            alert('حدث خطأ أثناء تحميل السؤال');
           }
-        });
-      }
 
-      // دالة لتحديث زر العلامة
-      function updateFlagButton() {
-        const btn = $('.flag-question-btn');
-        const isFlagged = btn.data('flagged');
+          // دالة تعليم السؤال للمراجعة لاحقاً
+          function flagQuestion(questionId, flagged) {
+            $.ajax({
+              url: '/CandidateExams/FlagQuestion',
+              type: 'POST',
+              data: {
+                CandidateExamId: candidateExamId,
+                QuestionId: questionId,
+                IsFlagged: flagged
+              },
+              success: function (response) {
+                if (response.success) {
+                  // تحديث حالة العلامة في واجهة المستخدم
+                  $('.flag-question-btn').data('flagged', flagged);
+                  updateFlagButton();
 
-        if (isFlagged) {
-          btn.removeClass('btn-outline-warning').addClass('btn-warning');
-          btn.html('<i class="bx bx-flag-fill me-1"></i> إلغاء التعليم');
-        } else {
-          btn.removeClass('btn-warning').addClass('btn-outline-warning');
-          btn.html('<i class="bx bx-flag me-1"></i> تعليم للمراجعة');
-        }
-      }
-
-      // دالة تعليم السؤال للمراجعة لاحقاً
-      function flagQuestion(questionId, flagged) {
-        $.ajax({
-          url: '/CandidateExams/FlagQuestion',
-          type: 'POST',
-          data: {
-            CandidateExamId: candidateExamId,
-            QuestionId: questionId,
-            IsFlagged: flagged
-          },
-          success: function (response) {
-            if (response.success) {
-              // تحديث حالة العلامة في واجهة المستخدم
-              $('.flag-question-btn').data('flagged', flagged);
-              updateFlagButton();
-
-              // تحديث شكل زر السؤال في منطقة التنقل
-              const btn = $(`.question-btn[data-question-id="${questionId}"]`);
-              if (flagged) {
-                btn.removeClass('btn-outline-secondary btn-success').addClass('btn-warning');
-              } else {
-                // إعادة اللون الأصلي
-                const isAnswered = btn.hasClass('answered');
-                btn.removeClass('btn-warning');
-                if (isAnswered) {
-                  btn.addClass('btn-success');
-                } else {
-                  btn.addClass('btn-outline-secondary');
-                }
-              }
-
-              // عرض رسالة نجاح
-              $('#saved-indicator').text(response.message).show();
-              setTimeout(function () {
-                $('#saved-indicator').fadeOut();
-              }, 2000);
-            }
-          },
-          error: function () {
-            alert('حدث خطأ أثناء تعليم السؤال');
-          }
-        });
-      }
-
-      // دالة عرض السؤال وخيارات الإجابة
-      function renderQuestion(question, answer) {
-        const container = $('#question-container');
-        let html = `<h5 class="mb-4">${question.questionText}</h5>`;
-
-        // تحديث معلومات السؤال في زر العلامة
-        $('.flag-question-btn').data('question-id', question.id);
-        $('.flag-question-btn').data('question-type', question.questionType.toUpperCase());
-        $('.flag-question-btn').data('flagged', question.isFlagged);
-
-        // إنشاء عناصر الإجابة حسب نوع السؤال
-        switch (question.questionType.toUpperCase()) {
-          case 'MCQ':
-            html += '<div class="mt-3">';
-            question.options.forEach(option => {
-              const checked = answer == option.id ? 'checked' : '';
-              html += `
-                                                                                            <div class="form-check mb-3 p-2 border-bottom">
-                                                                                              <input class="form-check-input answer-option" type="radio" name="answer"
-                                                                                                id="option-${option.id}" value="${option.id}" ${checked}
-                                                                                                data-question-id="${question.id}">
-                                                                                              <label class="form-check-label" for="option-${option.id}">
-                                                                                                ${option.text}
-                                                                                              </label>
-                                                                                            </div>
-                                                                                          `;
-            });
-            html += '</div>';
-            break;
-
-          case 'TF':
-            html += `
-                                                                                          <div class="mt-4">
-                                                                                            <div class="form-check form-check-inline mb-3 me-4">
-                                                                                              <input class="form-check-input answer-option" type="radio" name="answer"
-                                                                                                id="option-true" value="true" ${answer === 'true' ? 'checked' : ''}
-                                                                                                data-question-id="${question.id}">
-                                                                                              <label class="form-check-label fw-bold" for="option-true">صحيح</label>
-                                                                                            </div>
-                                                                                            <div class="form-check form-check-inline mb-3">
-                                                                                              <input class="form-check-input answer-option" type="radio" name="answer"
-                                                                                                id="option-false" value="false" ${answer === 'false' ? 'checked' : ''}
-                                                                                                data-question-id="${question.id}">
-                                                                                              <label class="form-check-label fw-bold" for="option-false">خطأ</label>
-                                                                                            </div>
-                                                                                          </div>
-                                                                                        `;
-            break;
-
-          case 'MULTISELECT':
-            let selectedOptions = [];
-            try {
-              if (answer) {
-                selectedOptions = JSON.parse(answer);
-              }
-            } catch (e) {
-              selectedOptions = [];
-            }
-
-            html += '<div class="mt-3">';
-            html += '<p class="text-muted mb-3">يمكنك اختيار أكثر من إجابة صحيحة</p>';
-            question.options.forEach(option => {
-              const checked = selectedOptions.includes(option.id) ? 'checked' : '';
-              html += `
-                                                                                            <div class="form-check mb-3 p-2 border-bottom">
-                                                                                              <input class="form-check-input multi-select-option" type="checkbox" name="answer-${option.id}"
-                                                                                                id="option-${option.id}" value="${option.id}" ${checked}
-                                                                                                data-question-id="${question.id}">
-                                                                                              <label class="form-check-label" for="option-${option.id}">
-                                                                                                ${option.text}
-                                                                                              </label>
-                                                                                            </div>
-                                                                                          `;
-            });
-            html += '<button class="btn btn-sm btn-primary save-multi-select mt-2">حفظ الإجابات</button>';
-            html += '</div>';
-            break;
-
-          case 'MATCHING':
-            let matchingPairs = {};
-            try {
-              if (answer) {
-                matchingPairs = JSON.parse(answer);
-              }
-            } catch (e) {
-              matchingPairs = {};
-            }
-
-            if (question.matchingPairs && question.matchingPairs.length > 0) {
-              html += '<div class="matching-container mt-4">';
-              html += '<div class="row mb-3">';
-              html += '<div class="col-5 fw-bold">العمود الأيمن</div>';
-              html += '<div class="col-2 text-center"></div>';
-              html += '<div class="col-5 fw-bold">العمود الأيسر</div>';
-              html += '</div>';
-
-              // استخراج العناصر اليمنى واليسرى
-              const leftItems = question.matchingPairs.map(pair => ({ id: pair.id, text: pair.leftSide }));
-              const rightItems = question.matchingPairs.map(pair => ({ id: pair.id, text: pair.rightSide }));
-
-              // خلط العناصر اليمنى
-              const shuffledRightItems = [...rightItems].sort(() => Math.random() - 0.5);
-
-              html += '<div class="matching-pairs-container" data-question-id="' + question.id + '">';
-              leftItems.forEach((leftItem, index) => {
-                const matchedRightId = Object.keys(matchingPairs).find(key => matchingPairs[key] === leftItem.id);
-
-                html += `
-                                                                                              <div class="row mb-3 align-items-center matching-row">
-                                                                                                <div class="col-5">
-                                                                                                  <div class="p-2 border rounded">${shuffledRightItems[index].text}</div>
-                                                                                                  <input type="hidden" class="right-item-id" value="${shuffledRightItems[index].id}">
-                                                                                                </div>
-                                                                                                <div class="col-2 text-center">
-                                                                                                  <i class="bx bx-link-alt"></i>
-                                                                                                </div>
-                                                                                                <div class="col-5">
-                                                                                                  <select class="form-select matching-select" data-left-id="${leftItem.id}">
-                                                                                                    <option value="">اختر العنصر المطابق</option>
-                                                                                                    ${leftItems.map(item => `<option value="${item.id}" ${matchedRightId == item.id ? 'selected' : ''}>${item.text}</option>`).join('')}
-                                                                                                  </select>
-                                                                                                </div>
-                                                                                              </div>
-                                                                                            `;
-              });
-              html += '</div>';
-              html += '<button class="btn btn-sm btn-primary save-matching mt-3">حفظ المطابقة</button>';
-              html += '</div>';
-            }
-            break;
-
-          case 'ORDERING':
-            let orderedItems = [];
-            try {
-              if (answer) {
-                orderedItems = JSON.parse(answer);
-              }
-            } catch (e) {
-              console.error('خطأ في تحليل إجابة الترتيب المحفوظة:', e);
-              orderedItems = [];
-            }
-
-            // طباعة معلومات تشخيصية
-            console.log('معلومات سؤال الترتيب:', {
-              questionId: question.id,
-              type: question.questionType,
-              hasOrderingItems: question.orderingItems && question.orderingItems.length > 0,
-              orderingItemsLength: question.orderingItems ? question.orderingItems.length : 0,
-              orderingItems: question.orderingItems
-            });
-
-            if (question.orderingItems && question.orderingItems.length > 0) {
-              html += '<div class="ordering-container mt-4">';
-
-              if (question.instructionText) {
-                html += `<p class="text-muted mb-3">${question.instructionText}</p>`;
-              } else {
-                html += '<p class="text-muted mb-3">قم بترتيب العناصر التالية بالترتيب الصحيح عن طريق السحب والإفلات</p>';
-              }
-
-              // إذا لم تكن هناك إجابة محفوظة، استخدام ترتيب العرض الحالي
-              let displayItems = [];
-              try {
-                if (orderedItems && orderedItems.length > 0) {
-                  displayItems = orderedItems.map(text => {
-                    const found = question.orderingItems.find(item => item.text === text);
-                    return found || { text: text };
-                  });
-                } else {
-                  displayItems = [...question.orderingItems].sort((a, b) => {
-                    const displayOrderA = a.displayOrder !== undefined ? a.displayOrder : 0;
-                    const displayOrderB = b.displayOrder !== undefined ? b.displayOrder : 0;
-                    return displayOrderA - displayOrderB;
-                  });
-                }
-                console.log('عناصر الترتيب النهائية:', displayItems);
-              } catch (e) {
-                console.error('خطأ في إعداد عناصر الترتيب:', e);
-                // استخدام مصفوفة احتياطية في حالة حدوث خطأ
-                displayItems = question.orderingItems || [];
-              }
-
-              html += '<ul class="list-group ordering-list" data-question-id="' + question.id + '">';
-              if (!displayItems || displayItems.length === 0) {
-                html += '<li class="list-group-item list-group-item-danger">لا توجد عناصر للترتيب</li>';
-              } else {
-                displayItems.forEach((item, index) => {
-                  if (!item || !item.text) {
-                    console.error('عنصر ترتيب غير صالح:', item);
-                    return; // تخطي العناصر الفارغة
+                  // تحديث شكل زر السؤال في منطقة التنقل
+                  const btn = $(`.question-btn[data-question-id="${questionId}"]`);
+                  if (flagged) {
+                    btn.removeClass('btn-outline-secondary btn-success').addClass('btn-warning');
+                  } else {
+                    // إعادة اللون الأصلي
+                    const isAnswered = btn.hasClass('answered');
+                    btn.removeClass('btn-warning');
+                    if (isAnswered) {
+                      btn.addClass('btn-success');
+                    } else {
+                      btn.addClass('btn-outline-secondary');
+                    }
                   }
-                  html += `
-                                                              <li class="list-group-item list-group-item-action d-flex align-items-center ordering-item" data-text="${item.text}" data-item-id="${item.id || ''}">
-                                                                <i class="bx bx-menu-alt-left ms-2 handle"></i>
-                                                                <span class="order-number badge bg-secondary me-2">${index + 1}</span>
-                                                                ${item.text}
-                                                              </li>
-                                                            `;
-                });
-              }
-              html += '</ul>';
-              html += '<button class="btn btn-sm btn-primary save-ordering mt-3">حفظ الترتيب</button>';
-              html += '</div>';
-            } else {
-              html += '<div class="alert alert-warning">عذراً، لا توجد عناصر للترتيب في هذا السؤال.</div>';
-            }
-            break;
 
-          case 'FILLINTHEBLANK':
-          case 'SHORTANSWER':
-            html += `
-                                                                                          <div class="mt-4">
-                                                                                            <label class="form-label">أدخل إجابتك:</label>
-                                                                                            <input type="text" class="form-control text-answer" placeholder="اكتب إجابتك هنا..."
-                                                                                              data-question-id="${question.id}" value="${answer || ''}">
-                                                                                          </div>
-                                                                                        `;
-            break;
-
-          default: // OPEN or any other type
-            html += `
-                                                                                          <div class="mt-4">
-                                                                                            <label class="form-label">أدخل إجابتك:</label>
-                                                                                            <textarea class="form-control text-answer" rows="4"
-                                                                                              placeholder="اكتب إجابتك هنا..." data-question-id="${question.id}">${answer || ''}</textarea>
-                                                                                          </div>
-                                                                                        `;
-            break;
-        }
-
-        container.html(html);
-
-        // تسجيل حدث النقر على الخيارات الفردية
-        $('.answer-option').on('change', function () {
-          saveAnswer($(this).data('question-id'), $(this).val());
-        });
-
-        // تسجيل حدث التغيير على النص
-        $('.text-answer').on('blur', function () {
-          saveAnswer($(this).data('question-id'), $(this).val());
-        });
-
-        // معالجة الإجابات المتعددة
-        $('.save-multi-select').on('click', function () {
-          const questionId = $('.multi-select-option').first().data('question-id');
-          const selectedOptions = [];
-          $('.multi-select-option:checked').each(function () {
-            selectedOptions.push(parseInt($(this).val()));
-          });
-          saveAnswer(questionId, JSON.stringify(selectedOptions));
-        });
-
-        // معالجة المطابقة
-        $('.save-matching').on('click', function () {
-          const questionId = $('.matching-pairs-container').data('question-id');
-          const matchingPairs = {};
-          $('.matching-select').each(function () {
-            const leftId = $(this).data('left-id');
-            const selectedRightId = $(this).val();
-            if (selectedRightId) {
-              matchingPairs[leftId] = selectedRightId;
-            }
-          });
-          saveAnswer(questionId, JSON.stringify(matchingPairs));
-        });
-
-        // معالجة الترتيب
-        if ($('.ordering-list').length > 0) {
-          try {
-            console.log('تهيئة ميزة السحب والإفلات...', $('.ordering-list')[0]);
-
-            // تفعيل خاصية السحب والإفلات
-            let sortableList = new Sortable($('.ordering-list')[0], {
-              animation: 150,
-              handle: '.handle',
-              onEnd: function () {
-                // تحديث أرقام الترتيب
-                $('.ordering-item').each(function (index) {
-                  $(this).find('.order-number').text(index + 1);
-                });
-                console.log('تم تغيير الترتيب');
+                  // عرض رسالة نجاح
+                  $('#saved-indicator').text(response.message).show();
+                  setTimeout(function () {
+                    $('#saved-indicator').fadeOut();
+                  }, 2000);
+                }
+              },
+              error: function () {
+                alert('حدث خطأ أثناء تعليم السؤال');
               }
             });
+          }
 
-            console.log('تم تهيئة ميزة السحب والإفلات بنجاح');
+          // دالة عرض السؤال وخيارات الإجابة
+          function renderQuestion(question, answer) {
+            const container = $('#question-container');
+            let html = `<h5 class="mb-4">${question.questionText}</h5>`;
 
-            // حفظ الترتيب
-            $('.save-ordering').on('click', function () {
-              const questionId = $('.ordering-list').data('question-id');
-              const orderedItems = [];
-              const orderedItemIds = [];
+            // تحديث معلومات السؤال في زر العلامة
+            $('.flag-question-btn').data('question-id', question.id);
+            $('.flag-question-btn').data('question-type', question.questionType.toUpperCase());
+            $('.flag-question-btn').data('flagged', question.isFlagged);
+
+            // إنشاء عناصر الإجابة حسب نوع السؤال
+            switch (question.questionType.toUpperCase()) {
+              case 'MCQ':
+                html += '<div class="mt-3">';
+                question.options.forEach(option => {
+                  const checked = answer == option.id ? 'checked' : '';
+                  html += `
+                                                                                                                        <div class="form-check mb-3 p-2 border-bottom">
+                                                                                                                          <input class="form-check-input answer-option" type="radio" name="answer"
+                                                                                                                            id="option-${option.id}" value="${option.id}" ${checked}
+                                                                                                                            data-question-id="${question.id}">
+                                                                                                                          <label class="form-check-label" for="option-${option.id}">
+                                                                                                                            ${option.text}
+                                                                                                                          </label>
+                                                                                                                        </div>
+                                                                                                                      `;
+                });
+                html += '</div>';
+                break;
+
+              case 'TF':
+                html += `
+                                                                                                                      <div class="mt-4">
+                                                                                                                        <div class="form-check form-check-inline mb-3 me-4">
+                                                                                                                          <input class="form-check-input answer-option" type="radio" name="answer"
+                                                                                                                            id="option-true" value="true" ${answer === 'true' ? 'checked' : ''}
+                                                                                                                            data-question-id="${question.id}">
+                                                                                                                          <label class="form-check-label fw-bold" for="option-true">صحيح</label>
+                                                                                                                        </div>
+                                                                                                                        <div class="form-check form-check-inline mb-3">
+                                                                                                                          <input class="form-check-input answer-option" type="radio" name="answer"
+                                                                                                                            id="option-false" value="false" ${answer === 'false' ? 'checked' : ''}
+                                                                                                                            data-question-id="${question.id}">
+                                                                                                                          <label class="form-check-label fw-bold" for="option-false">خطأ</label>
+                                                                                                                        </div>
+                                                                                                                      </div>
+                                                                                                                    `;
+                break;
+
+              case 'MULTISELECT':
+                let selectedOptions = [];
+                try {
+                  if (answer) {
+                    selectedOptions = JSON.parse(answer);
+                  }
+                } catch (e) {
+                  selectedOptions = [];
+                }
+
+                html += '<div class="mt-3">';
+                html += '<p class="text-muted mb-3">يمكنك اختيار أكثر من إجابة صحيحة</p>';
+                question.options.forEach(option => {
+                  const checked = selectedOptions.includes(option.id) ? 'checked' : '';
+                  html += `
+                                                                                                                        <div class="form-check mb-3 p-2 border-bottom">
+                                                                                                                          <input class="form-check-input multi-select-option" type="checkbox" name="answer-${option.id}"
+                                                                                                                            id="option-${option.id}" value="${option.id}" ${checked}
+                                                                                                                            data-question-id="${question.id}">
+                                                                                                                          <label class="form-check-label" for="option-${option.id}">
+                                                                                                                            ${option.text}
+                                                                                                                          </label>
+                                                                                                                        </div>
+                                                                                                                      `;
+                });
+                html += '<button class="btn btn-sm btn-primary save-multi-select mt-2">حفظ الإجابات</button>';
+                html += '</div>';
+                break;
+
+              case 'MATCHING':
+                let matchingPairs = {};
+                try {
+                  if (answer) {
+                    matchingPairs = JSON.parse(answer);
+                  }
+                } catch (e) {
+                  matchingPairs = {};
+                }
+
+                if (question.matchingPairs && question.matchingPairs.length > 0) {
+                  html += '<div class="matching-container mt-4">';
+                  html += '<div class="row mb-3">';
+                  html += '<div class="col-5 fw-bold">العمود الأيمن</div>';
+                  html += '<div class="col-2 text-center"></div>';
+                  html += '<div class="col-5 fw-bold">العمود الأيسر</div>';
+                  html += '</div>';
+
+                  // استخراج العناصر اليمنى واليسرى
+                  const leftItems = question.matchingPairs.map(pair => ({ id: pair.id, text: pair.leftSide }));
+                  const rightItems = question.matchingPairs.map(pair => ({ id: pair.id, text: pair.rightSide }));
+
+                  // خلط العناصر اليمنى
+                  const shuffledRightItems = [...rightItems].sort(() => Math.random() - 0.5);
+
+                  html += '<div class="matching-pairs-container" data-question-id="' + question.id + '">';
+                  leftItems.forEach((leftItem, index) => {
+                    const matchedRightId = Object.keys(matchingPairs).find(key => matchingPairs[key] === leftItem.id);
+
+                    html += `
+                                                                                                                          <div class="row mb-3 align-items-center matching-row">
+                                                                                                                            <div class="col-5">
+                                                                                                                              <div class="p-2 border rounded">${shuffledRightItems[index].text}</div>
+                                                                                                                              <input type="hidden" class="right-item-id" value="${shuffledRightItems[index].id}">
+                                                                                                                            </div>
+                                                                                                                            <div class="col-2 text-center">
+                                                                                                                              <i class="bx bx-link-alt"></i>
+                                                                                                                            </div>
+                                                                                                                            <div class="col-5">
+                                                                                                                              <select class="form-select matching-select" data-left-id="${leftItem.id}">
+                                                                                                                                <option value="">اختر العنصر المطابق</option>
+                                                                                                                                ${leftItems.map(item => `<option value="${item.id}" ${matchedRightId == item.id ? 'selected' : ''}>${item.text}</option>`).join('')}
+                                                                                                                              </select>
+                                                                                                                            </div>
+                                                                                                                          </div>
+                                                                                                                        `;
+                  });
+                  html += '</div>';
+                  html += '<button class="btn btn-sm btn-primary save-matching mt-3">حفظ المطابقة</button>';
+                  html += '</div>';
+                }
+                break;
+
+              case 'ORDERING':
+                let orderedItems = [];
+                try {
+                  if (answer) {
+                    orderedItems = JSON.parse(answer);
+                  }
+                } catch (e) {
+                  console.error('خطأ في تحليل إجابة الترتيب المحفوظة:', e);
+                  orderedItems = [];
+                }
+
+                // طباعة معلومات تشخيصية
+                console.log('معلومات سؤال الترتيب:', {
+                  questionId: question.id,
+                  type: question.questionType,
+                  hasOrderingItems: question.orderingItems && question.orderingItems.length > 0,
+                  orderingItemsLength: question.orderingItems ? question.orderingItems.length : 0,
+                  orderingItems: question.orderingItems
+                });
+
+                if (question.orderingItems && question.orderingItems.length > 0) {
+                  html += '<div class="ordering-container mt-4">';
+
+                  if (question.instructionText) {
+                    html += `<p class="text-muted mb-3">${question.instructionText}</p>`;
+                  } else {
+                    html += '<p class="text-muted mb-3">قم بترتيب العناصر التالية بالترتيب الصحيح عن طريق السحب والإفلات</p>';
+                  }
+
+                  // إذا لم تكن هناك إجابة محفوظة، استخدام ترتيب العرض الحالي
+                  let displayItems = [];
+                  try {
+                    if (orderedItems && orderedItems.length > 0) {
+                      displayItems = orderedItems.map(text => {
+                        const found = question.orderingItems.find(item => item.text === text);
+                        return found || { text: text };
+                      });
+                    } else {
+                      displayItems = [...question.orderingItems].sort((a, b) => {
+                        const displayOrderA = a.displayOrder !== undefined ? a.displayOrder : 0;
+                        const displayOrderB = b.displayOrder !== undefined ? b.displayOrder : 0;
+                        return displayOrderA - displayOrderB;
+                      });
+                    }
+                    console.log('عناصر الترتيب النهائية:', displayItems);
+                  } catch (e) {
+                    console.error('خطأ في إعداد عناصر الترتيب:', e);
+                    // استخدام مصفوفة احتياطية في حالة حدوث خطأ
+                    displayItems = question.orderingItems || [];
+                  }
+
+                  html += '<ul class="list-group ordering-list" data-question-id="' + question.id + '">';
+                  if (!displayItems || displayItems.length === 0) {
+                    html += '<li class="list-group-item list-group-item-danger">لا توجد عناصر للترتيب</li>';
+                  } else {
+                    displayItems.forEach((item, index) => {
+                      if (!item || !item.text) {
+                        console.error('عنصر ترتيب غير صالح:', item);
+                        return; // تخطي العناصر الفارغة
+                      }
+                      html += `
+                                                                                          <li class="list-group-item list-group-item-action d-flex align-items-center ordering-item" data-text="${item.text}" data-item-id="${item.id || ''}">
+                                                                                            <i class="bx bx-menu-alt-left ms-2 handle"></i>
+                                                                                            <span class="order-number badge bg-secondary me-2">${index + 1}</span>
+                                                                                            ${item.text}
+                                                                                          </li>
+                                                                                        `;
+                    });
+                  }
+                  html += '</ul>';
+                  html += '<button class="btn btn-sm btn-primary save-ordering mt-3">حفظ الترتيب</button>';
+                  html += '</div>';
+                } else {
+                  html += '<div class="alert alert-warning">عذراً، لا توجد عناصر للترتيب في هذا السؤال.</div>';
+                }
+                break;
+
+              case 'FILLINTHEBLANK':
+              case 'SHORTANSWER':
+                html += `
+                                                                                                                      <div class="mt-4">
+                                                                                                                        <label class="form-label">أدخل إجابتك:</label>
+                                                                                                                        <input type="text" class="form-control text-answer" placeholder="اكتب إجابتك هنا..."
+                                                                                                                          data-question-id="${question.id}" value="${answer || ''}">
+                                                                                                                      </div>
+                                                                                                                    `;
+                break;
+
+              default: // OPEN or any other type
+                html += `
+                                                                                                                      <div class="mt-4">
+                                                                                                                        <label class="form-label">أدخل إجابتك:</label>
+                                                                                                                        <textarea class="form-control text-answer" rows="4"
+                                                                                                                          placeholder="اكتب إجابتك هنا..." data-question-id="${question.id}">${answer || ''}</textarea>
+                                                                                                                      </div>
+                                                                                                                    `;
+                break;
+            }
+
+            container.html(html);
+
+            // تسجيل حدث النقر على الخيارات الفردية
+            $('.answer-option').on('change', function () {
+              saveAnswer($(this).data('question-id'), $(this).val());
+            });
+
+            // تسجيل حدث التغيير على النص
+            $('.text-answer').on('blur', function () {
+              saveAnswer($(this).data('question-id'), $(this).val());
+            });
+
+            // معالجة الإجابات المتعددة
+            $('.save-multi-select').on('click', function () {
+              const questionId = $('.multi-select-option').first().data('question-id');
+              const selectedOptions = [];
+              $('.multi-select-option:checked').each(function () {
+                selectedOptions.push(parseInt($(this).val()));
+              });
+              saveAnswer(questionId, JSON.stringify(selectedOptions));
+            });
+
+            // معالجة المطابقة
+            $('.save-matching').on('click', function () {
+              const questionId = $('.matching-pairs-container').data('question-id');
+              const matchingPairs = {};
+              $('.matching-select').each(function () {
+                const leftId = $(this).data('left-id');
+                const selectedRightId = $(this).val();
+                if (selectedRightId) {
+                  matchingPairs[leftId] = selectedRightId;
+                }
+              });
+              saveAnswer(questionId, JSON.stringify(matchingPairs));
+            });
+
+            // معالجة الترتيب
+            if ($('.ordering-list').length > 0) {
+              try {
+                console.log('تهيئة ميزة السحب والإفلات...', $('.ordering-list')[0]);
+
+                // تفعيل خاصية السحب والإفلات
+                let sortableList = new Sortable($('.ordering-list')[0], {
+                  animation: 150,
+                  handle: '.handle',
+                  onEnd: function () {
+                    // تحديث أرقام الترتيب
+                    $('.ordering-item').each(function (index) {
+                      $(this).find('.order-number').text(index + 1);
+                    });
+                    console.log('تم تغيير الترتيب');
+                  }
+                });
+
+                console.log('تم تهيئة ميزة السحب والإفلات بنجاح');
+
+                // حفظ الترتيب
+                $('.save-ordering').on('click', function () {
+                  const questionId = $('.ordering-list').data('question-id');
+                  const orderedItems = [];
+                  const orderedItemIds = [];
+                  $('.ordering-item').each(function () {
+                    orderedItems.push($(this).data('text'));
+                    const itemId = $(this).data('item-id');
+                    if (itemId) {
+                      orderedItemIds.push(itemId);
+                    }
+                  });
+                  console.log('حفظ الترتيب:', orderedItems);
+
+                  // إذا كانت هناك معرفات عناصر متاحة، نستخدمها كقيمة للحفظ
+                  // وإلا نستخدم النصوص فقط
+                  const valueToSave = orderedItemIds.length > 0 ?
+                    JSON.stringify(orderedItemIds) :
+                    JSON.stringify(orderedItems);
+
+                  saveAnswer(questionId, valueToSave);
+                });
+              } catch (error) {
+                console.error('خطأ في تهيئة ميزة السحب والإفلات:', error);
+                // محاولة إصلاح السحب والإفلات إذا فشل
+                setTimeout(function () {
+                  try {
+                    if ($('.ordering-list').length > 0) {
+                      new Sortable($('.ordering-list')[0], {
+                        animation: 150,
+                        handle: '.handle'
+                      });
+                      console.log('تمت إعادة تهيئة ميزة السحب والإفلات');
+                    }
+                  } catch (e) {
+                    console.error('فشلت إعادة تهيئة ميزة السحب والإفلات:', e);
+                  }
+                }, 500);
+              }
+            }
+          }
+
+          // دالة حفظ الإجابة
+          function saveAnswer(questionId, answer) {
+            // عرض مؤشر جاري الحفظ
+            $('#saved-indicator').removeClass('text-success text-danger')
+              .addClass('text-info')
+              .html('<i class="bx bx-loader-alt bx-spin me-1"></i> جاري حفظ الإجابة...')
+              .show();
+
+            // الحصول على نوع السؤال الحالي
+            const questionType = $('.flag-question-btn').data('question-type') || '';
+
+            // تهيئة نموذج البيانات
+            const model = {
+              CandidateExamId: candidateExamId,
+              QuestionId: questionId,
+              QuestionType: questionType,
+              AnswerText: answer,
+              IsCompleted: true,
+              IsFlagged: $('.flag-question-btn').data('flagged') || false
+            };
+
+            // إضافة البيانات حسب نوع السؤال
+            if (questionType === "MULTISELECT") {
+              model.SelectedOptionsIds = [];
+              $('.multi-select-option:checked').each(function () {
+                model.SelectedOptionsIds.push(parseInt($(this).val()));
+              });
+            }
+            else if (questionType === "ORDERING") {
+              model.OrderingItemsIds = [];
               $('.ordering-item').each(function () {
-                orderedItems.push($(this).data('text'));
                 const itemId = $(this).data('item-id');
                 if (itemId) {
-                  orderedItemIds.push(itemId);
+                  model.OrderingItemsIds.push(itemId);
                 }
               });
-              console.log('حفظ الترتيب:', orderedItems);
-
-              // إذا كانت هناك معرفات عناصر متاحة، نستخدمها كقيمة للحفظ
-              // وإلا نستخدم النصوص فقط
-              const valueToSave = orderedItemIds.length > 0 ?
-                JSON.stringify(orderedItemIds) :
-                JSON.stringify(orderedItems);
-
-              saveAnswer(questionId, valueToSave);
-            });
-          } catch (error) {
-            console.error('خطأ في تهيئة ميزة السحب والإفلات:', error);
-            // محاولة إصلاح السحب والإفلات إذا فشل
-            setTimeout(function () {
-              try {
-                if ($('.ordering-list').length > 0) {
-                  new Sortable($('.ordering-list')[0], {
-                    animation: 150,
-                    handle: '.handle'
-                  });
-                  console.log('تمت إعادة تهيئة ميزة السحب والإفلات');
+            }
+            else if (questionType === "MATCHING") {
+              model.MatchingPairsIds = [];
+              $('.matching-select').each(function () {
+                const pairId = $(this).val();
+                if (pairId) {
+                  model.MatchingPairsIds.push(parseInt(pairId));
                 }
-              } catch (e) {
-                console.error('فشلت إعادة تهيئة ميزة السحب والإفلات:', e);
+              });
+            }
+
+            $.ajax({
+              url: '/CandidateExams/SaveAnswer',
+              type: 'POST',
+              data: model,
+              headers: {
+                "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+              },
+              success: function (response) {
+                if (response.success) {
+                  // تحديث زر السؤال في منطقة التنقل
+                  const btn = $(`.question-btn[data-question-id="${questionId}"]`);
+
+                  // التحقق من حالة العلامة قبل تغيير اللون
+                  if (!btn.hasClass('btn-warning')) {
+                    btn.removeClass('btn-outline-secondary').addClass('btn-success answered');
+                  }
+
+                  // إظهار مؤشر النجاح
+                  $('#saved-indicator').removeClass('text-info text-danger')
+                    .addClass('text-success')
+                    .html('<i class="bx bx-check-circle me-1"></i> تم حفظ إجابتك');
+
+                  setTimeout(function () {
+                    $('#saved-indicator').fadeOut();
+                  }, 2000);
+                } else {
+                  // إظهار رسالة الخطأ
+                  $('#saved-indicator').removeClass('text-info text-success')
+                    .addClass('text-danger')
+                    .html('<i class="bx bx-error-circle me-1"></i> ' + (response.message || 'حدث خطأ في حفظ الإجابة'));
+                }
+              },
+              error: function (xhr, status, error) {
+                // إظهار رسالة الخطأ بتفاصيل أكثر
+                console.error('خطأ في حفظ الإجابة:', error);
+                $('#saved-indicator').removeClass('text-info text-success')
+                  .addClass('text-danger')
+                  .html('<i class="bx bx-error-circle me-1"></i> حدث خطأ أثناء حفظ الإجابة');
+
+                // إذا كان هناك رسالة خطأ من السيرفر، نعرضها
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                  $('#saved-indicator').html('<i class="bx bx-error-circle me-1"></i> ' + xhr.responseJSON.message);
+                }
               }
-            }, 500);
+            });
           }
-        }
-      }
 
-      // دالة حفظ الإجابة
-      function saveAnswer(questionId, answer) {
-        // عرض مؤشر جاري الحفظ
-        $('#saved-indicator').removeClass('text-success text-danger')
-          .addClass('text-info')
-          .html('<i class="bx bx-loader-alt bx-spin me-1"></i> جاري حفظ الإجابة...')
-          .show();
+          // دالة لبدء العداد التنازلي
+          function startCountdown() {
+            // تحويل الوقت إلى ثواني وتحويله إلى عدد صحيح
+            let remainingSeconds = Math.floor(@(Model.RemainingTime?.TotalSeconds ?? 0));
 
-        // الحصول على نوع السؤال الحالي
-        const questionType = $('.flag-question-btn').data('question-type') || '';
-
-        // تهيئة نموذج البيانات
-        const model = {
-          CandidateExamId: candidateExamId,
-          QuestionId: questionId,
-          QuestionType: questionType,
-          AnswerText: answer,
-          IsCompleted: true,
-          IsFlagged: $('.flag-question-btn').data('flagged') || false
-        };
-
-        // إضافة البيانات حسب نوع السؤال
-        if (questionType === "MULTISELECT") {
-          model.SelectedOptionsIds = [];
-          $('.multi-select-option:checked').each(function () {
-            model.SelectedOptionsIds.push(parseInt($(this).val()));
-          });
-        }
-        else if (questionType === "ORDERING") {
-          model.OrderingItemsIds = [];
-          $('.ordering-item').each(function () {
-            const itemId = $(this).data('item-id');
-            if (itemId) {
-              model.OrderingItemsIds.push(itemId);
+            if (remainingSeconds <= 0) {
+              // تسليم الاختبار تلقائياً عند انتهاء الوقت
+              showTimeUpModal();
+              return;
             }
-          });
-        }
-        else if (questionType === "MATCHING") {
-          model.MatchingPairsIds = [];
-          $('.matching-select').each(function () {
-            const pairId = $(this).val();
-            if (pairId) {
-              model.MatchingPairsIds.push(parseInt(pairId));
-            }
-          });
-        }
 
-        $.ajax({
-          url: '/CandidateExams/SaveAnswer',
-          type: 'POST',
-          data: model,
-          headers: {
-            "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
-          },
-          success: function (response) {
-            if (response.success) {
-              // تحديث زر السؤال في منطقة التنقل
-              const btn = $(`.question-btn[data-question-id="${questionId}"]`);
+            const timerElement = $('#timer');
+            let warningShown = false;
+            let finalWarningShown = false;
 
-              // التحقق من حالة العلامة قبل تغيير اللون
-              if (!btn.hasClass('btn-warning')) {
-                btn.removeClass('btn-outline-secondary').addClass('btn-success answered');
+            // تحديث العداد كل ثانية
+            const interval = setInterval(function () {
+              remainingSeconds--;
+
+              if (remainingSeconds <= 0) {
+                clearInterval(interval);
+                // تسليم الاختبار تلقائياً
+                showTimeUpModal();
+                return;
               }
 
-              // إظهار مؤشر النجاح
-              $('#saved-indicator').removeClass('text-info text-danger')
-                .addClass('text-success')
-                .html('<i class="bx bx-check-circle me-1"></i> تم حفظ إجابتك');
+              // تحويل الثواني إلى تنسيق ساعة:دقيقة:ثانية (أعداد صحيحة فقط)
+              const hours = Math.floor(remainingSeconds / 3600);
+              const minutes = Math.floor((remainingSeconds % 3600) / 60);
+              const seconds = Math.floor(remainingSeconds % 60);
 
-              setTimeout(function () {
-                $('#saved-indicator').fadeOut();
-              }, 2000);
+              const formatted =
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+
+              timerElement.text(formatted);
+
+              // تحديث التسميات مع الأرقام (أعداد صحيحة فقط)
+              const timeUnits = $('.time-unit');
+              if (timeUnits.length >= 3) {
+                timeUnits.eq(0).text(`${hours} ساعة`);
+                timeUnits.eq(1).text(`${minutes} دقيقة`);
+                timeUnits.eq(2).text(`${seconds} ثانية`);
+              }
+
+              // إظهار التنبيه في آخر 10 دقائق
+              if (remainingSeconds <= 600 && !warningShown) {
+                warningShown = true;
+                showAlert('تحذير', 'تبقى 10 دقائق فقط على انتهاء وقت الاختبار', 'warning');
+              }
+
+              // إظهار التنبيه في آخر دقيقة واحدة
+              if (remainingSeconds <= 60 && !finalWarningShown) {
+                finalWarningShown = true;
+                showAlert('تنبيه عاجل', 'تبقت دقيقة واحدة فقط! سيتم تسليم الاختبار تلقائياً عند انتهاء الوقت', 'danger');
+              }
+
+              // إظهار التنبيه الأحمر في آخر 5 دقائق
+              if (remainingSeconds <= 300 && !$('#countdown').hasClass('alert-danger')) {
+                $('#countdown').removeClass('alert-warning').addClass('alert-danger');
+              }
+            }, 1000);
+          }
+
+          // دالة عرض تنبيه انتهاء الوقت
+          function showTimeUpModal() {
+            // إنشاء modal لإعلام المستخدم
+            const modalHtml = `
+                                      <div class="modal fade" id="timeUpModal" tabindex="-1" aria-labelledby="timeUpModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                          <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                              <h5 class="modal-title" id="timeUpModalLabel">
+                                                <i class="bx bx-time me-2"></i>انتهى وقت الاختبار
+                                              </h5>
+                                            </div>
+                                            <div class="modal-body text-center">
+                                              <div class="alert alert-danger">
+                                                <i class="bx bx-clock display-1 text-danger"></i>
+                                                <h4 class="mt-3">انتهى الوقت المخصص للاختبار</h4>
+                                                <p class="mb-0">سيتم تسليم إجاباتك تلقائياً خلال 5 ثوانٍ...</p>
+                                              </div>
+                                              <div id="countdown-final" class="fs-2 text-danger fw-bold">5</div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    `;
+
+            $('body').append(modalHtml);
+            $('#timeUpModal').modal('show');
+
+            // عداد تنازلي لمدة 5 ثوانٍ قبل التسليم
+            let countdown = 5;
+            const countdownInterval = setInterval(function () {
+              countdown--;
+              $('#countdown-final').text(countdown);
+
+              if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                $('form[asp-action="Submit"]').submit();
+              }
+            }, 1000);
+          }
+
+          // دالة عرض التنبيهات
+          function showAlert(title, message, type) {
+            const alertHtml = `
+                                      <div class="alert alert-${type} alert-dismissible fade show position-fixed"
+                                           style="top: 80px; right: 20px; z-index: 9999; min-width: 350px;">
+                                        <strong>${title}:</strong> ${message}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                      </div>
+                                    `;
+
+            $('body').append(alertHtml);
+
+            // إخفاء التنبيه تلقائياً بعد 10 ثوانٍ
+            setTimeout(function () {
+              $('.alert').fadeOut(function () {
+                $(this).remove();
+              });
+            }, 10000);
+          }
+
+          // دالة عرض الأسئلة المعلمة فقط
+          $('.show-flagged-btn').on('click', function () {
+            const btn = $(this);
+            const showingFlagged = btn.hasClass('showing-flagged');
+
+            if (showingFlagged) {
+              // إظهار كل الأسئلة
+              $('.question-btn').parent().show();
+              btn.removeClass('showing-flagged btn-primary').addClass('btn-outline-primary');
+              btn.text('عرض الأسئلة المعلمة فقط');
             } else {
-              // إظهار رسالة الخطأ
-              $('#saved-indicator').removeClass('text-info text-success')
-                .addClass('text-danger')
-                .html('<i class="bx bx-error-circle me-1"></i> ' + (response.message || 'حدث خطأ في حفظ الإجابة'));
+              // إظهار الأسئلة المعلمة فقط
+              $('.question-btn').parent().hide();
+              $('.question-btn.btn-warning').parent().show();
+              btn.removeClass('btn-outline-primary').addClass('btn-primary showing-flagged');
+              btn.text('عرض جميع الأسئلة');
             }
-          },
-          error: function (xhr, status, error) {
-            // إظهار رسالة الخطأ بتفاصيل أكثر
-            console.error('خطأ في حفظ الإجابة:', error);
-            $('#saved-indicator').removeClass('text-info text-success')
-              .addClass('text-danger')
-              .html('<i class="bx bx-error-circle me-1"></i> حدث خطأ أثناء حفظ الإجابة');
+          });
 
-            // إذا كان هناك رسالة خطأ من السيرفر، نعرضها
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-              $('#saved-indicator').html('<i class="bx bx-error-circle me-1"></i> ' + xhr.responseJSON.message);
+          // استبدال السؤال الحالي
+          $('.replace-question-btn').on('click', function () {
+            const questionId = $('.flag-question-btn').data('question-id');
+
+            if (!questionId) {
+              alert('يرجى تحديد سؤال لاستبداله');
+              return;
             }
-          }
-        });
-      }
 
-      // دالة لبدء العداد التنازلي
-      function startCountdown() {
-        // تحويل الوقت إلى ثواني
-        let remainingSeconds = @(Model.RemainingTime?.TotalSeconds ?? 0);
+            if (!confirm('هل أنت متأكد من استبدال هذا السؤال؟ يمكنك استخدام هذه الميزة مرة واحدة فقط خلال الاختبار.')) {
+              return;
+            }
 
-        if (remainingSeconds <= 0) {
-          // تسليم الاختبار تلقائياً عند انتهاء الوقت
-          $('form[asp-action="Submit"]').submit();
-          return;
-        }
+            $.ajax({
+              url: '/CandidateExams/ReplaceQuestion',
+              type: 'POST',
+              data: {
+                candidateExamId: candidateExamId,
+                questionId: questionId
+              },
+              success: function (response) {
+                if (response.success) {
+                  // تعطيل زر الاستبدال
+                  $('.replace-question-btn').prop('disabled', true)
+                    .removeClass('btn-outline-danger')
+                    .addClass('btn-secondary')
+                    .attr('title', 'تم استخدام هذه الميزة بالفعل');
 
-        const timerElement = $('#timer');
+                  // إذا تم توفير سؤال بديل، قم بتحميله
+                  if (response.replacementQuestionId) {
+                    // إعادة تحميل الصفحة أو تحميل السؤال الجديد
+                    alert('تم استبدال السؤال بنجاح! سيتم تحميل السؤال البديل.');
 
-        // تحديث العداد كل ثانية
-        const interval = setInterval(function () {
-          remainingSeconds--;
-
-          if (remainingSeconds <= 0) {
-            clearInterval(interval);
-            // تسليم الاختبار تلقائياً
-            $('form[asp-action="Submit"]').submit();
-            return;
-          }
-
-          // تحويل الثواني إلى تنسيق ساعة:دقيقة:ثانية
-          const hours = Math.floor(remainingSeconds / 3600);
-          const minutes = Math.floor((remainingSeconds % 3600) / 60);
-          const seconds = remainingSeconds % 60;
-
-          const formatted =
-            String(hours).padStart(2, '0') + ':' +
-            String(minutes).padStart(2, '0') + ':' +
-            String(seconds).padStart(2, '0');
-
-          timerElement.text(formatted);
-
-          // إظهار التنبيه في آخر 5 دقائق
-          if (remainingSeconds <= 300 && !$('#countdown').hasClass('alert-danger')) {
-            $('#countdown').removeClass('alert-warning').addClass('alert-danger');
-          }
-        }, 1000);
-      }
-
-      // دالة عرض الأسئلة المعلمة فقط
-      $('.show-flagged-btn').on('click', function () {
-        const btn = $(this);
-        const showingFlagged = btn.hasClass('showing-flagged');
-
-        if (showingFlagged) {
-          // إظهار كل الأسئلة
-          $('.question-btn').parent().show();
-          btn.removeClass('showing-flagged btn-primary').addClass('btn-outline-primary');
-          btn.text('عرض الأسئلة المعلمة فقط');
-        } else {
-          // إظهار الأسئلة المعلمة فقط
-          $('.question-btn').parent().hide();
-          $('.question-btn.btn-warning').parent().show();
-          btn.removeClass('btn-outline-primary').addClass('btn-primary showing-flagged');
-          btn.text('عرض جميع الأسئلة');
-        }
-      });
-
-      // استبدال السؤال الحالي
-      $('.replace-question-btn').on('click', function () {
-        const questionId = $('.flag-question-btn').data('question-id');
-
-        if (!questionId) {
-          alert('يرجى تحديد سؤال لاستبداله');
-          return;
-        }
-
-        if (!confirm('هل أنت متأكد من استبدال هذا السؤال؟ يمكنك استخدام هذه الميزة مرة واحدة فقط خلال الاختبار.')) {
-          return;
-        }
-
-        $.ajax({
-          url: '/CandidateExams/ReplaceQuestion',
-          type: 'POST',
-          data: {
-            candidateExamId: candidateExamId,
-            questionId: questionId
-          },
-          success: function (response) {
-            if (response.success) {
-              // تعطيل زر الاستبدال
-              $('.replace-question-btn').prop('disabled', true)
-                .removeClass('btn-outline-danger')
-                .addClass('btn-secondary')
-                .attr('title', 'تم استخدام هذه الميزة بالفعل');
-
-              // إذا تم توفير سؤال بديل، قم بتحميله
-              if (response.replacementQuestionId) {
-                // إعادة تحميل الصفحة أو تحميل السؤال الجديد
-                alert('تم استبدال السؤال بنجاح! سيتم تحميل السؤال البديل.');
-
-                // تحميل السؤال الجديد - يمكن تعديل هذا وفقًا لطريقة عرض الأسئلة
-                loadQuestion(currentQuestionIndex);
+                    // تحميل السؤال الجديد - يمكن تعديل هذا وفقًا لطريقة عرض الأسئلة
+                    loadQuestion(currentQuestionIndex);
+                  }
+                } else {
+                  alert(response.message || 'فشل استبدال السؤال.');
+                }
+              },
+              error: function () {
+                alert('حدث خطأ أثناء محاولة استبدال السؤال.');
               }
-            } else {
-              alert(response.message || 'فشل استبدال السؤال.');
-            }
-          },
-          error: function () {
-            alert('حدث خطأ أثناء محاولة استبدال السؤال.');
-          }
+            });
+          });
         });
-      });
-    });
-  </script>
-}
+      </script>
+    }

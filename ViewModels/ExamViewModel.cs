@@ -16,6 +16,6 @@ namespace TawtheefTest.ViewModels
     {
         public IEnumerable<ExamDTO> Exams { get; set; }
         public string JobName { get; set; }
-        public int? JobId { get; set; }
+        public long? JobId { get; set; }
     }
 }

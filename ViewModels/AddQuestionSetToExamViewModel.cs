@@ -6,7 +6,7 @@ namespace TawtheefTest.ViewModels
 {
   public class AddQuestionSetToExamViewModel
   {
-    public int QuestionSetId { get; set; }
+    public long QuestionSetId { get; set; }
 
     [Display(Name = "اسم المجموعة")]
     public string QuestionSetName { get; set; }
@@ -18,15 +18,15 @@ namespace TawtheefTest.ViewModels
     public QuestionSetLanguage Language { get; set; }
 
     [Display(Name = "عدد الأسئلة")]
-    public int QuestionCount { get; set; }
+    public long QuestionCount { get; set; }
 
     [Display(Name = "الاختبار")]
     [Required(ErrorMessage = "يرجى اختيار اختبار")]
-    public int ExamId { get; set; }
+    public long ExamId { get; set; }
 
     [Display(Name = "ترتيب العرض")]
     [Range(1, 100, ErrorMessage = "يجب أن يكون ترتيب العرض بين 1 و 100")]
-    public int DisplayOrder { get; set; } = 1;
+    public long DisplayOrder { get; set; } = 1;
 
     public List<ExamSummaryViewModel> AvailableExams { get; set; } = new List<ExamSummaryViewModel>();
 
@@ -35,7 +35,7 @@ namespace TawtheefTest.ViewModels
 
   public class ExamSummaryViewModel
   {
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     public string Name { get; set; }
 

@@ -10,14 +10,14 @@ namespace TawtheefTest.ViewModels
 
   public class QuestionExamViewModel
   {
-    public int Id { get; set; }
-    public int QuestionSetId { get; set; }
-    public int ExamId { get; set; }
-    public int Index { get; set; }
+    public long Id { get; set; }
+    public long QuestionSetId { get; set; }
+    public long ExamId { get; set; }
+    public long Index { get; set; }
     public string QuestionText { get; set; }
     public QuestionTypeEnum QuestionType { get; set; }
     public List<OptionViewModel> Options { get; set; }
-    public int? AnswerIndex { get; set; }
+    public long? AnswerIndex { get; set; }
     public string ExpectedAnswer { get; set; }
     public bool? TrueFalseAnswer { get; set; }
     public string CorrectAnswerExplanation { get; set; }
@@ -25,10 +25,10 @@ namespace TawtheefTest.ViewModels
 
   public class OptionViewModel
   {
-    public int Id { get; set; }
-    public int QuestionId { get; set; }
-    public int Index { get; set; }
+    public long Id { get; set; }
+    public long QuestionId { get; set; }
+    public long Index { get; set; }
     public string Text { get; set; }
-    public bool IsCorrect { get; set; }
+    public long IsCorrect { get; set; }
   }
 }

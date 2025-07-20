@@ -22,10 +22,10 @@ namespace TawtheefTest.ViewModels
 
     [Required(ErrorMessage = "عدد الأسئلة مطلوب")]
     [Range(1, 100, ErrorMessage = "يجب أن يكون عدد الأسئلة بين 1 و 100")]
-    public int QuestionCount { get; set; } = 10;
+    public long QuestionCount { get; set; } = 10;
 
     [Range(2, 10, ErrorMessage = "يجب أن يكون عدد الخيارات بين 2 و 10")]
-    public int? OptionsCount { get; set; } = 4;
+    public long? OptionsCount { get; set; } = 4;
 
     [Required(ErrorMessage = "موضوع الأسئلة مطلوب")]
     public string Topic { get; set; }
@@ -36,7 +36,7 @@ namespace TawtheefTest.ViewModels
   public class ShuffleOptionsViewModel
   {
     [Required(ErrorMessage = "مجموعة الأسئلة مطلوبة")]
-    public int QuestionSetId { get; set; }
+    public long QuestionSetId { get; set; }
 
     [Required(ErrorMessage = "نوع الخلط مطلوب")]
     public ShuffleType ShuffleType { get; set; } = ShuffleType.OptionsOnly;
@@ -61,7 +61,7 @@ namespace TawtheefTest.ViewModels
     public string MergedType { get; set; }
     public string MergedDifficulty { get; set; }
     public string MergedLanguage { get; set; }
-    public bool ShuffleQuestions { get; set; }
+    public long ShuffleQuestions { get; set; }
     public Dictionary<int, int> QuestionsCountPerSet { get; set; }
   }
 }

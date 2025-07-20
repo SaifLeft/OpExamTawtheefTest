@@ -7,10 +7,10 @@ namespace TawtheefTest.ViewModels
 {
     public class EditExamViewModel
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required(ErrorMessage = "الوظيفة مطلوبة")]
-        public int JobId { get; set; }
+        public long JobId { get; set; }
 
         [Required(ErrorMessage = "اسم الاختبار مطلوب")]
         public string Name { get; set; }
@@ -19,18 +19,18 @@ namespace TawtheefTest.ViewModels
 
         [Required(ErrorMessage = "مدة الاختبار مطلوبة")]
         [Range(10, 180, ErrorMessage = "مدة الاختبار يجب أن تكون بين 10 و 180 دقيقة")]
-        public int Duration { get; set; }
+        public long Duration { get; set; }
 
         [Required(ErrorMessage = "عدد الأسئلة مطلوب")]
         [Range(10, 100, ErrorMessage = "عدد الأسئلة يجب أن يكون بين 10 و 100 سؤال")]
-        public int QuestionCount { get; set; }
+        public long QuestionCount { get; set; }
 
         [Required(ErrorMessage = "مستوى الصعوبة مطلوب")]
         public string Difficulty { get; set; }
 
         [Required(ErrorMessage = "عدد الخيارات مطلوب")]
         [Range(2, 6, ErrorMessage = "عدد الخيارات يجب أن يكون بين 2 و 6 خيارات")]
-        public int OptionsCount { get; set; }
+        public long OptionsCount { get; set; }
 
         [Required(ErrorMessage = "نوع الأسئلة مطلوب")]
         public string QuestionType { get; set; }

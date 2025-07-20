@@ -6,10 +6,10 @@ namespace TawtheefTest.DTOs
 {
     public class ExamResultDetailDto
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Display(Name = "الاختبار")]
-        public int ExamId { get; set; }
+        public long ExamId { get; set; }
 
         [Display(Name = "اسم الاختبار")]
         public string ExamName { get; set; }
@@ -30,13 +30,13 @@ namespace TawtheefTest.DTOs
         public double Score { get; set; }
 
         [Display(Name = "إجمالي الأسئلة")]
-        public int TotalQuestions { get; set; }
+        public long TotalQuestions { get; set; }
 
         [Display(Name = "الإجابات الصحيحة")]
-        public int CorrectAnswers { get; set; }
+        public long CorrectAnswers { get; set; }
 
         [Display(Name = "الإجابات الخاطئة")]
-        public int IncorrectAnswers { get; set; }
+        public long IncorrectAnswers { get; set; }
 
         [Display(Name = "تفاصيل الإجابات")]
         public List<AnswerDetailDto> Answers { get; set; }
@@ -44,12 +44,12 @@ namespace TawtheefTest.DTOs
 
     public class AnswerDetailDto
     {
-        public int Id { get; set; }
-        public int QuestionId { get; set; }
+        public long Id { get; set; }
+        public long QuestionId { get; set; }
         public string QuestionText { get; set; }
         public string UserAnswer { get; set; }
         public string CorrectAnswer { get; set; }
-        public bool IsCorrect { get; set; }
+        public long IsCorrect { get; set; }
         public string Explanation { get; set; }
     }
 }

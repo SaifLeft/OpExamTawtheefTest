@@ -26,19 +26,19 @@ namespace TawtheefTest.ViewModels
     [Required(ErrorMessage = "عدد الأسئلة مطلوب")]
     [Range(1, 100, ErrorMessage = "يجب أن يكون عدد الأسئلة بين 1 و 100")]
     [Display(Name = "عدد الأسئلة")]
-    public int QuestionCount { get; set; } = 10;
+    public long QuestionCount { get; set; } = 10;
 
     [Range(2, 10, ErrorMessage = "يجب أن يكون عدد الخيارات بين 2 و 10")]
     [Display(Name = "عدد الخيارات")]
-    public int? OptionsCount { get; set; }
+    public long? OptionsCount { get; set; }
 
     [Range(1, 5, ErrorMessage = "يجب أن يكون عدد الإجابات الصحيحة بين 1 و 5")]
     [Display(Name = "عدد الإجابات الصحيحة")]
-    public int? NumberOfCorrectOptions { get; set; }
+    public long? NumberOfCorrectOptions { get; set; }
 
     [Range(2, 10, ErrorMessage = "يجب أن يكون عدد العناصر بين 2 و 10")]
     [Display(Name = "عدد العناصر في التطابق/الترتيب")]
-    public int? NumberOfRows { get; set; }
+    public long? NumberOfRows { get; set; }
 
     [Required(ErrorMessage = "نوع مصدر المحتوى مطلوب")]
     [Display(Name = "نوع مصدر المحتوى")]

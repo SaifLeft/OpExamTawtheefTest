@@ -13,7 +13,6 @@ using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
 using TawtheefTest.DTOs.OpExam;
 using TawtheefTest.Enums;
-using TawtheefTest.Models;
 
 namespace TawtheefTest.Services
 {
@@ -136,8 +135,8 @@ namespace TawtheefTest.Services
 
     private async Task UpdateQuestionSetStatusAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, QuestionSetStatus status)
     {
-      questionSet.Status = status;
-      questionSet.UpdatedAt  = DateTime.UtcNow;
+      questionSet.Status = status.GetHashCode();
+      questionSet.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
       await _dbContext.SaveChangesAsync();
     }
 
@@ -209,8 +208,8 @@ namespace TawtheefTest.Services
 
     private async Task UpdateQuestionSetToCompletedAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, int questionCount)
     {
-      questionSet.Status = QuestionSetStatus.Completed;
-      questionSet.ProcessedAt = DateTime.UtcNow;
+      questionSet.Status = QuestionSetStatus.Completed.GetHashCode();
+      questionSet.ProcessedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
       questionSet.QuestionCount = questionCount;
       await _dbContext.SaveChangesAsync();
     }
@@ -221,7 +220,7 @@ namespace TawtheefTest.Services
 
       try
       {
-        questionSet.Status = QuestionSetStatus.Failed;
+        questionSet.Status = QuestionSetStatus.Failed.GetHashCode();
         questionSet.ErrorMessage = $"خطأ: {ex.Message}";
 
         if (ex.InnerException != null)
@@ -241,7 +240,7 @@ namespace TawtheefTest.Services
       public OpExamQuestionGenerationResponse? StandardResponse { get; set; }
       public OpExamTFQuestionResponse? TFResponse { get; set; }
       public OpExamMultiSelectQuestionResponse? MultiSelectResponse { get; set; }
-      public int QuestionCount { get; set; }
+      public long QuestionCount { get; set; }
     }
 
     private async Task SaveGeneratedQuestionsAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, QuestionGenerationResult questionsData)
@@ -282,7 +281,7 @@ namespace TawtheefTest.Services
           QuestionText = tfQuestion.QuestionText,
           Index = tfQuestion.Index,
           QuestionType = questionSet.QuestionType,
-          CreatedAt = DateTime.UtcNow,
+          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
           DifficultyLevel = questionSet.Difficulty,
           TrueFalseAnswer = tfQuestion.Answer,
           ExternalId = tfQuestion.Id,
@@ -313,7 +312,7 @@ namespace TawtheefTest.Services
           Options = CreateOptions(multiSelectQuestion.Options, null, multiSelectQuestion.AnswerIndexs),
           Answer = multiSelectQuestion.AnswerIndexs != null ? string.Join(",", multiSelectQuestion.AnswerIndexs) : null,
           AnswerIndex = 0,
-          CreatedAt = DateTime.UtcNow,
+          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
         };
 
         questions.Add(question);
@@ -338,7 +337,7 @@ namespace TawtheefTest.Services
       return questions;
     }
 
-    private Question CreateBaseQuestion(TawtheefTest.Data.Structure.QuestionSet questionSet, dynamic opExamQuestion)
+    private Question CreateBaseQuestion(QuestionSet questionSet, OpExamQuestion opExamQuestion)
     {
       return new Question
       {
@@ -346,9 +345,9 @@ namespace TawtheefTest.Services
         QuestionText = opExamQuestion.QuestionText,
         Index = opExamQuestion.Index,
         QuestionType = questionSet.QuestionType,
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
         ExternalId = opExamQuestion.Id,
-        DifficultyLevel = questionSet.Difficulty
+        DifficultyLevel = questionSet.DifficultySet
       };
     }
 
@@ -450,11 +449,11 @@ namespace TawtheefTest.Services
       return result;
     }
 
-    private List<QuestionOption> CreateOptions(List<string> options, int? answerIndex = null, List<int>? answerIndexs = null)
+    private List<Option> CreateOptions(List<string> options, int? answerIndex = null, List<long>? answerIndexs = null)
     {
-      if (options == null) return new List<QuestionOption>();
+      if (options == null) return new List<Option>();
 
-      var result = new List<QuestionOption>();
+      var result = new List<Option>();
       for (int i = 0; i < options.Count; i++)
       {
         bool isCorrect = false;
@@ -470,11 +469,11 @@ namespace TawtheefTest.Services
           isCorrect = answerIndexs.Contains(i);
         }
 
-        result.Add(new QuestionOption
+        result.Add(new Option
         {
           Text = options[i],
           Index = i + 1,
-          IsCorrect = isCorrect
+          IsCorrect = isCorrect.GetHashCode(),
         });
       }
 
@@ -531,7 +530,7 @@ namespace TawtheefTest.Services
               .ThenInclude(q => q.OrderingItems)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
-      if (questionSet == null || questionSet.Status != QuestionSetStatus.Completed)
+      if (questionSet == null || questionSet.Status != nameof(QuestionSetStatus.Completed))
       {
         return false;
       }
@@ -543,22 +542,22 @@ namespace TawtheefTest.Services
       }
 
       // التحقق من وجود علاقة بين مجموعة الأسئلة والامتحان
-      var examQuestionSet = await _dbContext.ExamQuestionSets
+      var examQuestionSet = await _dbContext.ExamQuestionSetManppings
           .FirstOrDefaultAsync(eqs => eqs.ExamId == examId && eqs.QuestionSetId == questionSetId);
 
       if (examQuestionSet == null)
       {
         // إنشاء علاقة جديدة
-        examQuestionSet = new TawtheefTest.Data.Structure.ExamQuestionSet
+        examQuestionSet = new ExamQuestionSetManpping
         {
           ExamId = examId,
           QuestionSetId = questionSetId,
-          DisplayOrder = await _dbContext.ExamQuestionSets
+          DisplayOrder = await _dbContext.ExamQuestionSetManppings
               .Where(eqs => eqs.ExamId == examId)
               .CountAsync() + 1
         };
 
-        _dbContext.ExamQuestionSets.Add(examQuestionSet);
+        _dbContext.ExamQuestionSetManppings.Add(examQuestionSet);
         await _dbContext.SaveChangesAsync();
       }
 

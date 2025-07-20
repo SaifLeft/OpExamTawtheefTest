@@ -14,6 +14,6 @@ namespace TawtheefTest.ViewModels
     public string Description { get; set; }
 
     [Display(Name = "فعّال")]
-    public bool IsActive { get; set; } = true;
+    public long IsActive { get; set; } = true;
   }
 }

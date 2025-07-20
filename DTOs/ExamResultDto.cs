@@ -5,10 +5,10 @@ namespace TawtheefTest.DTOs
 {
     public class ExamResultDto
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Display(Name = "الاختبار")]
-        public int ExamId { get; set; }
+        public long ExamId { get; set; }
 
         [Display(Name = "اسم المتقدم")]
         public string ApplicantName { get; set; }
@@ -23,7 +23,7 @@ namespace TawtheefTest.DTOs
         public DateTime? EndTime { get; set; }
 
         [Display(Name = "النتيجة")]
-        public double? Score { get; set; }
+        public string? Score { get; set; }
 
         [Display(Name = "الحالة")]
         public string Status { get; set; }

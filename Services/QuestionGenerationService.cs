@@ -38,7 +38,7 @@ namespace TawtheefTest.Services
       _file = file;
     }
 
-    public async Task<int> CreateQuestionSetAsync(CreateQuestionSetDto model)
+    public async Task<long> CreateQuestionSetAsync(CreateQuestionSetDto model)
     {
       // إنشاء كيان مجموعة الأسئلة
       var questionSet = new QuestionSet
@@ -52,8 +52,8 @@ namespace TawtheefTest.Services
         OptionsCount = model.OptionsCount, // "optionsCount": number // available for multiple choice and true/false
         NumberOfRows = model.NumberOfRows, // "numberOfRows": number // available for matching and ordering
         NumberOfCorrectOptions = model.NumberOfCorrectOptions,
-        Status = QuestionSetStatus.Pending,
-        CreatedAt = DateTime.UtcNow,
+        Status = QuestionSetStatus.Pending.GetHashCode(),
+        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
         ContentSourceType = model.ContentSourceType,
         FileName = model.FileName,
         Content = model.TextContent ?? model.Topic,
@@ -77,7 +77,7 @@ namespace TawtheefTest.Services
           DisplayOrder = await GetNextDisplayOrderAsync(model.ExamId)
         };
 
-        _context.ExamQuestionSets.Add(examQuestionSet);
+        _context.ExamQuestionSetManppings.Add(examQuestionSet);
         await _context.SaveChangesAsync();
       }
 
@@ -102,7 +102,7 @@ namespace TawtheefTest.Services
     {
       var questionSet = await _context.QuestionSets
           .Include(qs => qs.Questions)
-              .ThenInclude(q => q.Options)
+              .ThenInclude(q => q.QuestionOptions)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.MatchingPairs)
           .Include(qs => qs.Questions)
@@ -141,7 +141,7 @@ namespace TawtheefTest.Services
       }
 
       // إعادة تعيين الحالة إلى "في الانتظار"
-      questionSet.Status = QuestionSetStatus.Pending;
+      questionSet.Status = QuestionSetStatus.Pending.GetHashCode();
       questionSet.ErrorMessage = null;
       questionSet.ProcessedAt = null;
       await _context.SaveChangesAsync();
@@ -153,7 +153,7 @@ namespace TawtheefTest.Services
     {
       var questionSet = await _context.QuestionSets
           .Include(qs => qs.Questions)
-              .ThenInclude(q => q.Options)
+              .ThenInclude(q => q.QuestionOptions)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.MatchingPairs)
           .Include(qs => qs.Questions)
@@ -170,9 +170,9 @@ namespace TawtheefTest.Services
       await _context.SaveChangesAsync();
 
       // تحديث حالة مجموعة الأسئلة
-      questionSet.Status = QuestionSetStatus.Pending;
+      questionSet.Status = QuestionSetStatus.Pending.GetHashCode();
       questionSet.ProcessedAt = null;
-      questionSet.UpdatedAt = DateTime.UtcNow;
+      questionSet.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
       await _context.SaveChangesAsync();
 
 
@@ -185,7 +185,7 @@ namespace TawtheefTest.Services
           .Include(qs => qs.Questions)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
 
-      if (questionSet == null || questionSet.Status != QuestionSetStatus.Completed)
+      if (questionSet == null || questionSet.Status.GetHashCode() != QuestionSetStatus.Completed.GetHashCode())
       {
         return false;
       }
@@ -197,7 +197,7 @@ namespace TawtheefTest.Services
       }
 
       // التحقق مما إذا كانت مجموعة الأسئلة مرتبطة بالفعل بالاختبار
-      var examQuestionSet = await _context.ExamQuestionSets
+      var examQuestionSet = await _context.ExamQuestionSetManppings
           .FirstOrDefaultAsync(eqs => eqs.ExamId == examId && eqs.QuestionSetId == questionSetId);
 
       if (examQuestionSet == null)
@@ -210,7 +210,7 @@ namespace TawtheefTest.Services
           DisplayOrder = await GetNextDisplayOrderAsync(examId)
         };
 
-        _context.ExamQuestionSets.Add(examQuestionSet);
+        _context.ExamQuestionSetManppings.Add(examQuestionSet);
       }
 
 
@@ -218,9 +218,9 @@ namespace TawtheefTest.Services
       return true;
     }
 
-    private async Task<int> GetNextDisplayOrderAsync(int examId)
+    private async Task<long> GetNextDisplayOrderAsync(int examId)
     {
-      var maxOrder = await _context.ExamQuestionSets
+      var maxOrder = await _context.ExamQuestionSetManppings
           .Where(eqs => eqs.ExamId == examId)
           .Select(eqs => (int?)eqs.DisplayOrder)
           .MaxAsync() ?? 0;

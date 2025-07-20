@@ -1,0 +1,98 @@
+﻿{
+   "CodeGenerationMode": 3,
+   "ContextClassName": "ApplicationDbContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Data.Structure",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "TawtheefTest",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "Assignment",
+         "ObjectType": 0
+      },
+      {
+         "Name": "Candidate",
+         "ObjectType": 0
+      },
+      {
+         "Name": "CandidateAnswers",
+         "ObjectType": 0
+      },
+      {
+         "Name": "Exam",
+         "ObjectType": 0
+      },
+      {
+         "Name": "ExamQuestionSetManpping",
+         "ObjectType": 0
+      },
+      {
+         "Name": "Job",
+         "ObjectType": 0
+      },
+      {
+         "Name": "MatchingPair",
+         "ObjectType": 0
+      },
+      {
+         "Name": "Notification",
+         "ObjectType": 0
+      },
+      {
+         "Name": "Option",
+         "ObjectType": 0
+      },
+      {
+         "Name": "OptionChoice",
+         "ObjectType": 0
+      },
+      {
+         "Name": "OrderingItem",
+         "ObjectType": 0
+      },
+      {
+         "Name": "OtpVerification",
+         "ObjectType": 0
+      },
+      {
+         "Name": "Question",
+         "ObjectType": 0
+      },
+      {
+         "Name": "QuestionSet",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": true,
+   "UseInflector": true,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": true,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": true,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": true,
+   "UseT4": false
+}

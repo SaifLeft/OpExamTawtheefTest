@@ -103,7 +103,7 @@ namespace TawtheefTest.Controllers
             {
                 var evaluationResult = await _evaluationService.CalculateEnhancedScoreAsync(candidateExamId);
 
-                var candidateExam = await _context.CandidateExams
+                var candidateExam = await _context.Assignments
                     .Include(ce => ce.Candidate)
                     .Include(ce => ce.Exam)
                         .ThenInclude(e => e.Job)
@@ -143,7 +143,7 @@ namespace TawtheefTest.Controllers
         {
             try
             {
-                var candidateExams = await _context.CandidateExams
+                var candidateExams = await _context.Assignments
                     .Where(ce => ce.ExamId == examId && ce.Status == "Completed")
                     .ToListAsync();
 
@@ -191,7 +191,7 @@ namespace TawtheefTest.Controllers
                 foreach (var candidateExamId in candidateExamIds)
                 {
                     var result = await _evaluationService.CalculateEnhancedScoreAsync(candidateExamId);
-                    var candidateExam = await _context.CandidateExams
+                    var candidateExam = await _context.Assignments
                         .Include(ce => ce.Candidate)
                         .FirstOrDefaultAsync(ce => ce.Id == candidateExamId);
 

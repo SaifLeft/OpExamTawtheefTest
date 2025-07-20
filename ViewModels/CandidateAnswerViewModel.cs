@@ -5,9 +5,9 @@ namespace TawtheefTest.ViewModels
 {
   public class CandidateAnswerViewModel
   {
-    public int Id { get; set; }
-    public int CandidateExamId { get; set; }
-    public int QuestionId { get; set; }
+    public long Id { get; set; }
+    public long CandidateExamId { get; set; }
+    public long QuestionId { get; set; }
     public string QuestionText { get; set; }
     public string QuestionType { get; set; }
     public string AnswerText { get; set; }
@@ -15,7 +15,7 @@ namespace TawtheefTest.ViewModels
     public string CorrectAnswerText { get; set; }
     public string CorrectAnswer { get; set; }
     public DateTime? SubmittedAt { get; set; }
-    public bool IsFlagged { get; set; } = false;
+    public long IsFlagged { get; set; } = false;
 
     // الخصائص المضافة لإصلاح الأخطاء
     public string Answer { get; set; }

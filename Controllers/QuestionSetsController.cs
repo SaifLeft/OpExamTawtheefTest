@@ -214,7 +214,7 @@ namespace TawtheefTest.Controllers
       }
 
       var questionSet = await _context.QuestionSets
-          .Include(q => q.ExamQuestionSets)
+          .Include(q => q.ExamQuestionSetManppings)
           .FirstOrDefaultAsync(q => q.Id == id);
 
       if (questionSet == null)
@@ -222,7 +222,7 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      if (questionSet.ExamQuestionSets.Any())
+      if (questionSet.ExamQuestionSetManppings.Any())
       {
         TempData["ErrorMessage"] = "لا يمكن حذف المجموعة لأنها مستخدمة في اختبارات";
         return RedirectToAction(nameof(Details), new { id });
@@ -239,7 +239,7 @@ namespace TawtheefTest.Controllers
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
       var questionSet = await _context.QuestionSets
-          .Include(q => q.ExamQuestionSets)
+          .Include(q => q.ExamQuestionSetManppings)
           .FirstOrDefaultAsync(q => q.Id == id);
 
       if (questionSet == null)
@@ -247,7 +247,7 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      if (questionSet.ExamQuestionSets.Any())
+      if (questionSet.ExamQuestionSetManppings.Any())
       {
         TempData["ErrorMessage"] = "لا يمكن حذف المجموعة لأنها مستخدمة في اختبارات";
         return RedirectToAction(nameof(Index));
@@ -343,7 +343,7 @@ namespace TawtheefTest.Controllers
     public async Task<IActionResult> AddToExam(int id)
     {
       var questionSet = await _context.QuestionSets
-          .Include(q => q.ExamQuestionSets)
+          .Include(q => q.ExamQuestionSetManppings)
           .ThenInclude(e => e.Exam)
           .ThenInclude(e => e.Job)
           .FirstOrDefaultAsync(q => q.Id == id);
@@ -364,7 +364,7 @@ namespace TawtheefTest.Controllers
       };
 
       // الاختبارات المرتبطة حالياً
-      viewModel.AssignedExams = questionSet.ExamQuestionSets
+      viewModel.AssignedExams = questionSet.ExamQuestionSetManppings
           .Select(e => new ExamSummaryViewModel
           {
             Id = e.Exam.Id,
@@ -421,13 +421,13 @@ namespace TawtheefTest.Controllers
 
       // إعادة تجهيز النموذج في حالة الخطأ
       var questionSet = await _context.QuestionSets
-          .Include(q => q.ExamQuestionSets)
+          .Include(q => q.ExamQuestionSetManppings)
           .ThenInclude(e => e.Exam)
           .ThenInclude(e => e.Job)
           .FirstOrDefaultAsync(q => q.Id == DTO.QuestionSetId);
 
       // الاختبارات المرتبطة حالياً
-      model.AssignedExams = questionSet.ExamQuestionSets
+      model.AssignedExams = questionSet.ExamQuestionSetManppings
           .Select(e => new ExamSummaryViewModel
           {
             Id = e.Exam.Id,

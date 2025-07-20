@@ -29,7 +29,7 @@ namespace TawtheefTest.Controllers
       ViewData["CandidatesCount"] = await _context.Candidates.CountAsync();
       ViewData["ExamsCount"] = await _context.Exams.CountAsync();
       ViewData["QuestionSetsCount"] = await _context.QuestionSets.CountAsync();
-      ViewData["CompletedExamsCount"] = await _context.CandidateExams.Where(ce => ce.Status == "Completed").CountAsync();
+      ViewData["CompletedExamsCount"] = await _context.Assignments.Where(ce => ce.Status == "Completed").CountAsync();
 
       // الحصول على آخر 5 اختبارات
       var recentExams = await _context.Exams
@@ -59,7 +59,7 @@ namespace TawtheefTest.Controllers
         CandidatesCount = await _context.Candidates.CountAsync(),
         ExamsCount = await _context.Exams.CountAsync(),
         QuestionSetsCount = await _context.QuestionSets.CountAsync(),
-        CompletedExamsCount = await _context.CandidateExams.Where(ce => ce.Status == "Completed").CountAsync(),
+        CompletedExamsCount = await _context.Assignments.Where(ce => ce.Status == "Completed").CountAsync(),
 
         // أحدث الوظائف
         RecentJobs = await _context.Jobs
