@@ -7,19 +7,19 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class Candidate
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public string Name { get; set; }
 
-    public long Phone { get; set; }
+    public int Phone { get; set; }
 
-    public long JobId { get; set; }
+    public int JobId { get; set; }
 
-    public long IsActive { get; set; }
+    public bool IsActive { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public string UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 

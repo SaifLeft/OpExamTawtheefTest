@@ -4,8 +4,8 @@ namespace TawtheefTest.DTOs
 {
   public class QuestionFlagDTO
   {
-    public long CandidateExamId { get; set; }
-    public long QuestionId { get; set; }
-    public long IsFlagged { get; set; }
+    public int AssignmentId { get; set; }
+    public int QuestionId { get; set; }
+    public bool IsFlagged { get; set; }
   }
 }

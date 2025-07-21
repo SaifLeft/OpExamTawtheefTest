@@ -15,7 +15,7 @@ namespace TawtheefTest.DTOs.OpExamModels
     public class OpExamsQuestion
     {
         [JsonPropertyName("index")]
-        public long index { get; set; }
+        public int index { get; set; }
 
         [JsonPropertyName("question")]
         public string question { get; set; }
@@ -24,7 +24,7 @@ namespace TawtheefTest.DTOs.OpExamModels
         public List<string> Options { get; set; }
 
         [JsonPropertyName("answerIndex")]
-        public long answerIndex { get; set; }
+        public int answerIndex { get; set; }
 
         [JsonPropertyName("Answer")]
         public string Answer { get; set; }

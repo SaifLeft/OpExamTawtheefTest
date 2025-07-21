@@ -4,7 +4,7 @@ namespace TawtheefTest.DTOs
 {
   public class EditExamDTO
   {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     [Required(ErrorMessage = "اسم الاختبار مطلوب")]
     [Display(Name = "اسم الاختبار")]
@@ -12,15 +12,12 @@ namespace TawtheefTest.DTOs
 
     [Required(ErrorMessage = "الوظيفة مطلوبة")]
     [Display(Name = "الوظيفة")]
-    public long JobId { get; set; }
-
-    [Display(Name = "وصف الاختبار")]
-    public string Description { get; set; }
+    public int JobId { get; set; }
 
     [Required(ErrorMessage = "مدة الاختبار مطلوبة")]
     [Range(1, 240, ErrorMessage = "مدة الاختبار يجب أن تكون بين 1 و 240 دقيقة")]
     [Display(Name = "مدة الاختبار (دقيقة)")]
-    public long Duration { get; set; }
+    public int Duration { get; set; }
 
     [Required(ErrorMessage = "تاريخ بداية الاختبار مطلوب")]
     [Display(Name = "تاريخ بداية الاختبار")]
@@ -31,9 +28,9 @@ namespace TawtheefTest.DTOs
     public DateTime EndDate { get; set; }
 
     [Display(Name = "إظهار النتائج للمتقدم مباشرة")]
-    public long ShowResultsImmediately { get; set; }
+    public bool ShowResultsImmediately { get; set; }
 
     [Display(Name = "إرسال روابط الاختبار للمتقدمين")]
-    public long SendExamLinkToApplicants { get; set; }
+    public bool SendExamLinkToApplicants { get; set; }
   }
 }

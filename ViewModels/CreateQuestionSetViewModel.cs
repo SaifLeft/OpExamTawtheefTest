@@ -26,7 +26,7 @@ namespace TawtheefTest.ViewModels
     [Required(ErrorMessage = "عدد الأسئلة مطلوب")]
     [Range(1, 100, ErrorMessage = "يجب أن يكون عدد الأسئلة بين 1 و 100")]
     [Display(Name = "عدد الأسئلة")]
-    public long QuestionCount { get; set; } = 10;
+    public int QuestionCount { get; set; } = 10;
 
     [Range(2, 10, ErrorMessage = "يجب أن يكون عدد الخيارات بين 2 و 10")]
     [Display(Name = "عدد الخيارات")]

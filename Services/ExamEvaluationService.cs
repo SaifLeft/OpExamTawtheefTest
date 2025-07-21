@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
 using TawtheefTest.Enums;
-using TawtheefTest.Models;
 
 namespace TawtheefTest.Services
 {
@@ -24,13 +23,13 @@ namespace TawtheefTest.Services
     {
       var questions = await _context.Questions
           .Include(q => q.QuestionSet)
-          .Where(q => q.QuestionSet.ExamQuestionSetManppings.Any(eqs => eqs.ExamId == examId))
+          .Where(q => q.QuestionSet.ExamQuestionSetMappings.Any(eqs => eqs.ExamId == examId))
           .ToListAsync();
 
       foreach (var question in questions)
       {
         question.DifficultyLevel = question.DifficultyLevel;
-        question.Points = (long)Enum.Parse<QuestionDifficultyEnum>(question.DifficultyLevel);
+        question.Points = (int)Enum.Parse<QuestionDifficultyEnum>(question.DifficultyLevel);
       }
 
       await _context.SaveChangesAsync();
@@ -47,7 +46,7 @@ namespace TawtheefTest.Services
           .Include(ce => ce.CandidateAnswers)
               .ThenInclude(ca => ca.Question)
           .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
+              .ThenInclude(e => e.ExamQuestionSetMappings)
                   .ThenInclude(eqs => eqs.QuestionSet)
                       .ThenInclude(qs => qs.Questions)
           .FirstOrDefaultAsync(ce => ce.Id == candidateExamId);
@@ -61,18 +60,18 @@ namespace TawtheefTest.Services
       await UpdateQuestionPointsAsync(candidateExam.ExamId);
 
       // جمع جميع الأسئلة من الاختبار
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
+      var allQuestions = candidateExam.Exam.ExamQuestionSetMappings
           .SelectMany(eqs => eqs.QuestionSet.Questions)
           .ToList();
 
       // حساب أقصى نقاط ممكنة
-      long maxPossiblePoints = allQuestions.Sum(q => q.Points);
+      int maxPossiblePoints = allQuestions.Sum(q => q.Points);
 
       // حساب النقاط المحققة
-      long totalPointsEarned = 0;
-      long easyCorrect = 0, mediumCorrect = 0, hardCorrect = 0;
+      int totalPointsEarned = 0;
+      int easyCorrect = 0, mediumCorrect = 0, hardCorrect = 0;
 
-      foreach (var answer in candidateExam.CandidateAnswers.Where(ca => ca.IsCorrect == true.GetHashCode()))
+      foreach (var answer in candidateExam.CandidateAnswers.Where(ca => ca.IsCorrect))
       {
         var question = allQuestions.FirstOrDefault(q => q.Id == answer.QuestionId);
         if (question != null)
@@ -112,8 +111,8 @@ namespace TawtheefTest.Services
       candidateExam.EasyQuestionsCorrect = easyCorrect;
       candidateExam.MediumQuestionsCorrect = mediumCorrect;
       candidateExam.HardQuestionsCorrect = hardCorrect;
-      candidateExam.CompletionDuration = completionDuration?.ToString("c\\:hh\\:mm\\:ss");
-      candidateExam.Score = scorePercentage.ToString();
+      candidateExam.CompletionDuration = completionDuration?.ToString(@"hh\:mm\:ss");
+      candidateExam.Score = scorePercentage;
 
       await _context.SaveChangesAsync();
 
@@ -127,8 +126,8 @@ namespace TawtheefTest.Services
         MediumQuestionsCorrect = mediumCorrect,
         HardQuestionsCorrect = hardCorrect,
         CompletionDuration = completionDuration,
-        TotalAnsweredQuestions = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect.HasValue),
-        TotalCorrectAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect == true.GetHashCode())
+        TotalAnsweredQuestions = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect),
+        TotalCorrectAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect)
       };
     }
 
@@ -149,7 +148,7 @@ namespace TawtheefTest.Services
       // 2. مدة الإكمال (تصاعدي)
       var rankedCandidates = candidateExams
           .OrderByDescending(ce => ce.TotalPoints)
-          .ThenBy(ce => ce.CompletionDuration?.TotalMinutes ?? double.MaxValue)
+          .ThenBy(ce => !string.IsNullOrEmpty(ce.CompletionDuration) ? TimeSpan.Parse(ce.CompletionDuration).TotalMinutes : double.MaxValue)
           .Select((ce, index) => new CandidateRankingDTO
           {
             Rank = index + 1,
@@ -158,7 +157,7 @@ namespace TawtheefTest.Services
             TotalPoints = ce.TotalPoints,
             MaxPossiblePoints = ce.MaxPossiblePoints,
             ScorePercentage = ce.Score ?? 0,
-            CompletionTimeMinutes = ce.CompletionDuration?.TotalMinutes ?? 0,
+            CompletionTimeMinutes = !string.IsNullOrEmpty(ce.CompletionDuration) ? TimeSpan.Parse(ce.CompletionDuration).TotalMinutes : 0,
             EasyCorrect = ce.EasyQuestionsCorrect,
             MediumCorrect = ce.MediumQuestionsCorrect,
             HardCorrect = ce.HardQuestionsCorrect
@@ -185,7 +184,7 @@ namespace TawtheefTest.Services
     public async Task<ExamStatisticsDTO> GetExamStatisticsAsync(int examId)
     {
       var candidateExams = await _context.Assignments
-          .Where(ce => ce.ExamId == examId && ce.Status == nameof(CandidateExamStatus.Completed))
+          .Where(ce => ce.ExamId == examId && ce.Status == nameof(AssignmentStatus.Completed))
           .ToListAsync();
 
       if (!candidateExams.Any())
@@ -200,8 +199,8 @@ namespace TawtheefTest.Services
       var totalCandidates = candidateExams.Count;
       var averageScore = candidateExams.Average(ce => ce.Score ?? 0);
       var averageCompletionTime = candidateExams
-          .Where(ce => ce.CompletionDuration.HasValue)
-          .Average(ce => ce.CompletionDuration.Value.TotalMinutes);
+          .Where(ce => !string.IsNullOrEmpty(ce.CompletionDuration))
+          .Average(ce => !string.IsNullOrEmpty(ce.CompletionDuration) ? TimeSpan.Parse(ce.CompletionDuration).TotalMinutes : double.MaxValue);
 
       var difficultyBreakdown = new
       {

@@ -7,33 +7,33 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class Exam
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long JobId { get; set; }
+    public int JobId { get; set; }
 
     public string Name { get; set; }
 
     public string Status { get; set; }
 
-    public long Duration { get; set; }
+    public int Duration { get; set; }
 
-    public long TotalQuestionsPerCandidate { get; set; }
+    public int TotalQuestionsPerCandidate { get; set; }
 
-    public string StartDate { get; set; }
+    public DateTime StartDate { get; set; }
 
-    public string EndDate { get; set; }
+    public DateTime EndDate { get; set; }
 
-    public long ShowResultsImmediately { get; set; }
+    public bool ShowResultsImmediately { get; set; }
 
-    public long SendExamLinkToApplicants { get; set; }
+    public bool SendExamLinkToApplicants { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public string UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 
-    public virtual ICollection<ExamQuestionSetManpping> ExamQuestionSetManppings { get; set; } = new List<ExamQuestionSetManpping>();
+    public virtual ICollection<ExamQuestionSetMapping> ExamQuestionSetMappings { get; set; } = new List<ExamQuestionSetMapping>();
 
     public virtual Job Job { get; set; }
 }

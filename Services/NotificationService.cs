@@ -41,7 +41,7 @@ namespace TawtheefTest.Services
         Message = message,
         Type = type,
         IsRead = false,
-        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+        CreatedAt = DateTime.UtcNow
       };
 
       _context.Notifications.Add(notification);

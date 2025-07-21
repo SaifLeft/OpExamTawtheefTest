@@ -15,59 +15,59 @@
    "T4TemplatePath": null,
    "Tables": [
       {
-         "Name": "Assignment",
+         "Name": "public.assignment",
          "ObjectType": 0
       },
       {
-         "Name": "Candidate",
+         "Name": "public.candidate",
          "ObjectType": 0
       },
       {
-         "Name": "CandidateAnswers",
+         "Name": "public.candidate_answers",
          "ObjectType": 0
       },
       {
-         "Name": "Exam",
+         "Name": "public.exam",
          "ObjectType": 0
       },
       {
-         "Name": "ExamQuestionSetManpping",
+         "Name": "public.exam_question_set_mapping",
          "ObjectType": 0
       },
       {
-         "Name": "Job",
+         "Name": "public.job",
          "ObjectType": 0
       },
       {
-         "Name": "MatchingPair",
+         "Name": "public.matching_pair",
          "ObjectType": 0
       },
       {
-         "Name": "Notification",
+         "Name": "public.notification",
          "ObjectType": 0
       },
       {
-         "Name": "Option",
+         "Name": "public.Option",
          "ObjectType": 0
       },
       {
-         "Name": "OptionChoice",
+         "Name": "public.option_choice",
          "ObjectType": 0
       },
       {
-         "Name": "OrderingItem",
+         "Name": "public.ordering_item",
          "ObjectType": 0
       },
       {
-         "Name": "OtpVerification",
+         "Name": "public.otp_verification",
          "ObjectType": 0
       },
       {
-         "Name": "Question",
+         "Name": "public.question",
          "ObjectType": 0
       },
       {
-         "Name": "QuestionSet",
+         "Name": "public.question_set",
          "ObjectType": 0
       }
    ],
@@ -76,23 +76,25 @@
    "UseAsyncStoredProcedureCalls": true,
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": false,
-   "UseDateOnlyTimeOnly": true,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": false,
    "UseDbContextSplitting": false,
    "UseDecimalDataAnnotationForSprocResult": true,
    "UseFluentApiOnly": true,
    "UseHandleBars": false,
-   "UseHierarchyId": true,
+   "UseHierarchyId": false,
    "UseInflector": true,
    "UseLegacyPluralizer": false,
    "UseManyToManyEntity": true,
    "UseNoDefaultConstructor": false,
    "UseNoNavigations": false,
    "UseNoObjectFilter": false,
-   "UseNodaTime": true,
+   "UseNodaTime": false,
    "UseNullableReferences": false,
    "UsePrefixNavigationNaming": false,
    "UseSchemaFolders": false,
    "UseSchemaNamespaces": false,
-   "UseSpatial": true,
-   "UseT4": false
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false
 }

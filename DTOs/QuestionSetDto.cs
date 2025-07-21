@@ -9,22 +9,22 @@ namespace TawtheefTest.DTOs
 {
   public class QuestionSetDto
   {
-    public long Id { get; set; }
+    public int Id { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public string QuestionType { get; set; }
     public QuestionSetLanguage Language { get; set; }
     public string Difficulty { get; set; }
-    public long QuestionCount { get; set; }
-    public long? OptionsCount { get; set; }
+    public int QuestionCount { get; set; }
+    public int? OptionsCount { get; set; }
     public QuestionSetStatus Status { get; set; }
     public string StatusDescription { get; set; }
     public string ErrorMessage { get; set; }
-    public string CreatedAt { get; set; }
-    public string? ProcessedAt { get; set; }
-    public string? UpdatedAt { get; set; }
-    public long QuestionsGenerated { get; set; }
-    public long UsageCount { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? ProcessedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public bool QuestionsGenerated { get; set; }
+    public int UsageCount { get; set; }
     public List<string> UsedInExams { get; set; }
     [JsonIgnore]
     public string StatusClass => GetStatusClass();
@@ -67,8 +67,8 @@ namespace TawtheefTest.DTOs
 
   public class QuestionDto
   {
-    public long Id { get; set; }
-    public long Index { get; set; }
+    public int Id { get; set; }
+    public int Index { get; set; }
     public string QuestionText { get; set; }
     public string QuestionType { get; set; }
     public IEnumerable<QuestionOptionViewModel> Options { get; set; }

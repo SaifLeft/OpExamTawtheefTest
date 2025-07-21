@@ -241,16 +241,6 @@
               </div>
 
               <div class="card-body p-4">
-                <!-- وصف الامتحان -->
-                @if (!string.IsNullOrEmpty(Model.ExamDescription))
-                {
-                  <div class="alert alert-info border-0 mb-4">
-                    <h6 class="alert-heading">
-                      <i class="bi bi-info-circle me-2"></i>وصف الامتحان
-                    </h6>
-                    <p class="mb-0">@Model.ExamDescription</p>
-                  </div>
-                }
 
                 <!-- معلومات الامتحان -->
                 <div class="exam-info-grid">
@@ -270,13 +260,6 @@
                     <div class="info-value">@Model.TotalQuestions سؤال</div>
                   </div>
 
-                  <div class="info-item">
-                    <div class="info-icon">
-                      <i class="bi bi-trophy"></i>
-                    </div>
-                    <div class="info-label">درجة النجاح</div>
-                    <div class="info-value">@(Model.PassPercentage ?? 60)%</div>
-                  </div>
 
                   <div class="info-item">
                     <div class="info-icon">

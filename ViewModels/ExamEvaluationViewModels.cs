@@ -7,7 +7,7 @@ namespace TawtheefTest.ViewModels
     /// </summary>
     public class ExamRankingsViewModel
     {
-        public long ExamId { get; set; }
+        public int ExamId { get; set; }
         public string ExamName { get; set; } = string.Empty;
         public string JobName { get; set; } = string.Empty;
         public List<CandidateRankingDTO> Rankings { get; set; } = new List<CandidateRankingDTO>();
@@ -19,12 +19,12 @@ namespace TawtheefTest.ViewModels
     /// </summary>
     public class CandidateEvaluationViewModel
     {
-        public long CandidateExamId { get; set; }
+        public int CandidateExamId { get; set; }
         public string CandidateName { get; set; } = string.Empty;
         public string ExamName { get; set; } = string.Empty;
         public string JobName { get; set; } = string.Empty;
         public ExamEvaluationResultDTO EvaluationResult { get; set; } = new ExamEvaluationResultDTO();
-        public long RankPosition { get; set; }
+        public int RankPosition { get; set; }
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ namespace TawtheefTest.ViewModels
     /// </summary>
     public class DetailedStatisticsViewModel
     {
-        public long ExamId { get; set; }
+        public int ExamId { get; set; }
         public string ExamName { get; set; } = string.Empty;
         public string JobName { get; set; } = string.Empty;
         public ExamStatisticsDTO Statistics { get; set; } = new ExamStatisticsDTO();

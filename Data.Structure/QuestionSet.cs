@@ -7,7 +7,7 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class QuestionSet
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public string Name { get; set; }
 
@@ -19,13 +19,13 @@ public partial class QuestionSet
 
     public string DifficultySet { get; set; }
 
-    public long QuestionCount { get; set; }
+    public int QuestionCount { get; set; }
 
-    public long? OptionsCount { get; set; }
+    public int? OptionsCount { get; set; }
 
-    public long? NumberOfRows { get; set; }
+    public int? NumberOfRows { get; set; }
 
-    public long? NumberOfCorrectOptions { get; set; }
+    public int? NumberOfCorrectOptions { get; set; }
 
     public string ContentSourceType { get; set; }
 
@@ -41,15 +41,15 @@ public partial class QuestionSet
 
     public string ErrorMessage { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public string ProcessedAt { get; set; }
+    public DateTime? ProcessedAt { get; set; }
 
-    public string UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
-    public long? RetryCount { get; set; }
+    public int? RetryCount { get; set; }
 
-    public virtual ICollection<ExamQuestionSetManpping> ExamQuestionSetManppings { get; set; } = new List<ExamQuestionSetManpping>();
+    public virtual ICollection<ExamQuestionSetMapping> ExamQuestionSetMappings { get; set; } = new List<ExamQuestionSetMapping>();
 
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
 }

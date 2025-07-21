@@ -30,7 +30,6 @@ namespace TawtheefTest.Services
           {
             Id = j.Id,
             Name = j.Title,
-            Code = j.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
             CreatedDate = j.CreatedAt,
             CandidateCount = j.Candidates.Count,
             ExamCount = j.Exams.Count
@@ -52,7 +51,6 @@ namespace TawtheefTest.Services
       {
         Id = job.Id,
         Name = job.Title,
-        Code = job.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
         CreatedDate = job.CreatedAt
       };
 
@@ -75,7 +73,6 @@ namespace TawtheefTest.Services
       {
         Id = job.Id,
         Name = job.Title,
-        Code = job.IsActive ? Guid.NewGuid().ToString("N").Substring(0, 8) : "",
         CreatedDate = job.CreatedAt,
         CandidateCount = job.Candidates.Count,
         ExamCount = job.Exams.Count
@@ -91,9 +88,8 @@ namespace TawtheefTest.Services
         var job = new Job
         {
           Title = jobDTO.Name,
-          Description = string.Empty,
-          IsActive = true,
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+          CreatedAt = DateTime.UtcNow,
+          
         };
 
         _context.Add(job);
@@ -117,7 +113,6 @@ namespace TawtheefTest.Services
         }
 
         job.Title = jobDTO.Name;
-        job.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
         _context.Update(job);
         await _context.SaveChangesAsync();

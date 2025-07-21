@@ -14,7 +14,7 @@
                 <div class="card-body">
                     @if (ViewData["CandidateExams"] != null)
                     {
-                        var candidateExams = ViewData["CandidateExams"] as List<CandidateExam>;
+                        var candidateExams = ViewData["Assignments"] as List<AssignmentViewModel>;
                         if (candidateExams != null && candidateExams.Any())
                         {
                             <div class="table-responsive">
@@ -33,7 +33,7 @@
                                         @foreach (var exam in candidateExams)
                                         {
                                             <tr>
-                                                <td>@exam.Exam?.Name</td>
+                                                <td>@exam.ExamName</td>
                                                 <td>@exam.StartTime?.ToString("yyyy/MM/dd HH:mm")</td>
                                                 <td>@exam.EndTime?.ToString("yyyy/MM/dd HH:mm")</td>
                                                 <td>

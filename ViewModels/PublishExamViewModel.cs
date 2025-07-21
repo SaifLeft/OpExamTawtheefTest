@@ -5,7 +5,7 @@ namespace TawtheefTest.ViewModels
 {
   public class PublishExamViewModel
   {
-    public long ExamId { get; set; }
+    public int ExamId { get; set; }
 
     [Display(Name = "اسم الاختبار")]
     public string ExamName { get; set; }
@@ -25,7 +25,7 @@ namespace TawtheefTest.ViewModels
     public bool SendSmsNotification { get; set; }
 
     [Display(Name = "عدد المتقدمين المؤهلين")]
-    public long ApplicantsCount { get; set; }
+    public int ApplicantsCount { get; set; }
 
     [Display(Name = "نص رسالة الإشعار")]
     public string NotificationText { get; set; }

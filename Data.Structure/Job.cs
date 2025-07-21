@@ -7,11 +7,11 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class Job
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public string Title { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public virtual ICollection<Candidate> Candidates { get; set; } = new List<Candidate>();
 

@@ -5,15 +5,15 @@ using System.Collections.Generic;
 
 namespace TawtheefTest.Data.Structure;
 
-public partial class ExamQuestionSetManpping
+public partial class ExamQuestionSetMapping
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long ExamId { get; set; }
+    public int ExamId { get; set; }
 
-    public long QuestionSetId { get; set; }
+    public int QuestionSetId { get; set; }
 
-    public long DisplayOrder { get; set; }
+    public int DisplayOrder { get; set; }
 
     public virtual Exam Exam { get; set; }
 

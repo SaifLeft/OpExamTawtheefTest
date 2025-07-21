@@ -7,9 +7,9 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class Notification
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long CandidateId { get; set; }
+    public int CandidateId { get; set; }
 
     public string Title { get; set; }
 
@@ -17,11 +17,11 @@ public partial class Notification
 
     public string Type { get; set; }
 
-    public long IsRead { get; set; }
+    public bool IsRead { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public string ReadAt { get; set; }
+    public DateTime? ReadAt { get; set; }
 
     public virtual Candidate Candidate { get; set; }
 }

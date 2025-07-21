@@ -7,15 +7,17 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class CandidateAnswer
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long AssignmentId { get; set; }
+    public int AssignmentId { get; set; }
+
+    public int QuestionId { get; set; }
 
     public string AnswerText { get; set; }
 
-    public long? TrueFalseAnswer { get; set; }
+    public int? TrueFalseAnswer { get; set; }
 
-    public long? SelectedOptionId { get; set; }
+    public int? SelectedOptionid { get; set; }
 
     public string SelectedOptionsJson { get; set; }
 
@@ -23,15 +25,13 @@ public partial class CandidateAnswer
 
     public string OrderingJson { get; set; }
 
-    public long? IsCorrect { get; set; }
+    public bool IsCorrect { get; set; }
 
-    public long IsFlagged { get; set; }
+    public bool IsFlagged { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public string UpdatedAt { get; set; }
-
-    public long QuestionId { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Assignment Assignment { get; set; }
 

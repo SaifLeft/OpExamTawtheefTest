@@ -13,6 +13,7 @@ using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
 using TawtheefTest.DTOs.OpExam;
 using TawtheefTest.Enums;
+using NodaTime;
 
 namespace TawtheefTest.Services
 {
@@ -101,7 +102,7 @@ namespace TawtheefTest.Services
         await SaveGeneratedQuestionsAsync(questionSet, questionsData);
 
         // تحديث حالة مجموعة الأسئلة إلى مكتملة
-        await UpdateQuestionSetToCompletedAsync(questionSet, questionsData.QuestionCount);
+        await UpdateQuestionSetToCompletedAsync(questionSet, (int)questionsData.QuestionCount);
 
         return _mapper.Map<QuestionSetDto>(questionSet);
       }
@@ -135,8 +136,8 @@ namespace TawtheefTest.Services
 
     private async Task UpdateQuestionSetStatusAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, QuestionSetStatus status)
     {
-      questionSet.Status = status.GetHashCode();
-      questionSet.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+      questionSet.Status = nameof(status);
+      questionSet.UpdatedAt = DateTime.UtcNow;
       await _dbContext.SaveChangesAsync();
     }
 
@@ -208,8 +209,8 @@ namespace TawtheefTest.Services
 
     private async Task UpdateQuestionSetToCompletedAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, int questionCount)
     {
-      questionSet.Status = QuestionSetStatus.Completed.GetHashCode();
-      questionSet.ProcessedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+      questionSet.Status = nameof(QuestionSetStatus.Completed);
+      questionSet.ProcessedAt = DateTime.UtcNow;
       questionSet.QuestionCount = questionCount;
       await _dbContext.SaveChangesAsync();
     }
@@ -220,7 +221,7 @@ namespace TawtheefTest.Services
 
       try
       {
-        questionSet.Status = QuestionSetStatus.Failed.GetHashCode();
+        questionSet.Status = nameof(QuestionSetStatus.Failed);
         questionSet.ErrorMessage = $"خطأ: {ex.Message}";
 
         if (ex.InnerException != null)
@@ -240,7 +241,7 @@ namespace TawtheefTest.Services
       public OpExamQuestionGenerationResponse? StandardResponse { get; set; }
       public OpExamTFQuestionResponse? TFResponse { get; set; }
       public OpExamMultiSelectQuestionResponse? MultiSelectResponse { get; set; }
-      public long QuestionCount { get; set; }
+      public int QuestionCount { get; set; }
     }
 
     private async Task SaveGeneratedQuestionsAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, QuestionGenerationResult questionsData)
@@ -281,9 +282,9 @@ namespace TawtheefTest.Services
           QuestionText = tfQuestion.QuestionText,
           Index = tfQuestion.Index,
           QuestionType = questionSet.QuestionType,
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
-          DifficultyLevel = questionSet.Difficulty,
-          TrueFalseAnswer = tfQuestion.Answer,
+          CreatedAt = DateTime.UtcNow,
+          DifficultyLevel = questionSet.DifficultySet,
+          TrueFalseAnswer = tfQuestion.Answer == 1,
           ExternalId = tfQuestion.Id,
         };
 
@@ -308,11 +309,11 @@ namespace TawtheefTest.Services
           QuestionText = multiSelectQuestion.QuestionText,
           Index = multiSelectQuestion.Index,
           QuestionType = questionSet.QuestionType,
-          DifficultyLevel = questionSet.Difficulty,
-          Options = CreateOptions(multiSelectQuestion.Options, null, multiSelectQuestion.AnswerIndexs),
+          DifficultyLevel = questionSet.DifficultySet,
+          Options = CreateOptions(multiSelectQuestion.Options, null, multiSelectQuestion.AnswerIndexs?.Select(x => (long)x).ToList()),
           Answer = multiSelectQuestion.AnswerIndexs != null ? string.Join(",", multiSelectQuestion.AnswerIndexs) : null,
-          AnswerIndex = 0,
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+          AnswerIndex = null,
+          CreatedAt = DateTime.UtcNow,
         };
 
         questions.Add(question);
@@ -345,7 +346,7 @@ namespace TawtheefTest.Services
         QuestionText = opExamQuestion.QuestionText,
         Index = opExamQuestion.Index,
         QuestionType = questionSet.QuestionType,
-        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+        CreatedAt = DateTime.UtcNow,
         ExternalId = opExamQuestion.Id,
         DifficultyLevel = questionSet.DifficultySet
       };
@@ -473,7 +474,7 @@ namespace TawtheefTest.Services
         {
           Text = options[i],
           Index = i + 1,
-          IsCorrect = isCorrect.GetHashCode(),
+          IsCorrect = isCorrect,
         });
       }
 
@@ -542,22 +543,22 @@ namespace TawtheefTest.Services
       }
 
       // التحقق من وجود علاقة بين مجموعة الأسئلة والامتحان
-      var examQuestionSet = await _dbContext.ExamQuestionSetManppings
+      var examQuestionSet = await _dbContext.ExamQuestionSetMappings
           .FirstOrDefaultAsync(eqs => eqs.ExamId == examId && eqs.QuestionSetId == questionSetId);
 
       if (examQuestionSet == null)
       {
         // إنشاء علاقة جديدة
-        examQuestionSet = new ExamQuestionSetManpping
+        examQuestionSet = new ExamQuestionSetMapping
         {
           ExamId = examId,
           QuestionSetId = questionSetId,
-          DisplayOrder = await _dbContext.ExamQuestionSetManppings
+          DisplayOrder = await _dbContext.ExamQuestionSetMappings
               .Where(eqs => eqs.ExamId == examId)
               .CountAsync() + 1
         };
 
-        _dbContext.ExamQuestionSetManppings.Add(examQuestionSet);
+        _dbContext.ExamQuestionSetMappings.Add(examQuestionSet);
         await _dbContext.SaveChangesAsync();
       }
 

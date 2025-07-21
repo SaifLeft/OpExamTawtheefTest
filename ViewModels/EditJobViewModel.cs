@@ -5,7 +5,7 @@ namespace TawtheefTest.ViewModels
 {
     public class EditJobViewModel
     {
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         [Required(ErrorMessage = "اسم الوظيفة مطلوب")]
         public string Name { get; set; }

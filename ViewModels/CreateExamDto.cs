@@ -16,7 +16,7 @@ namespace TawtheefTest.ViewModels
 
     [Required]
     [Display(Name = "الوظيفة")]
-    public long JobId { get; set; }
+    public int JobId { get; set; }
 
     [Display(Name = "مدة الاختبار (بالدقائق)")]
     [Range(1, 180)]

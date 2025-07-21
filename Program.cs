@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.Infrastructure;
 using TawtheefTest.Services;
+using TawtheefTest.Services.Exams;
 using TawtheefTest.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +17,7 @@ builder.Services.AddSingleton<IStartupFilter, LayoutDataInitializer>();
 
 // Database configuration - using SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(
+    options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register services
@@ -29,6 +30,31 @@ builder.Services.AddScoped<IQuestionGenerationService, QuestionGenerationService
 builder.Services.AddScoped<IJobService, JobService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ExamEvaluationService>();
+
+
+builder.Services.AddScoped<ICandidateSessionService, CandidateSessionService>();
+builder.Services.AddScoped<IAssignmentService, AssignmentService>();
+builder.Services.AddScoped<IAnswerService, AnswerService>();
+builder.Services.AddScoped<IExamCalculationService, ExamCalculationService>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
+
+
+//Exam
+builder.Services.AddScoped<IExamService, ExamService>();
+builder.Services.AddScoped<IQuestionSetService, QuestionSetService>();
+builder.Services.AddScoped<IQuestionManagementService, QuestionManagementService>();
+builder.Services.AddScoped<IExamPublishingService, ExamPublishingService>();
+builder.Services.AddScoped<IExamValidationService, ExamValidationService>();
+builder.Services.AddScoped<IExamUtilityService, ExamUtilityService>();
+
+
+//QuestionSet
+builder.Services.AddScoped<IQuestionSetService, QuestionSetService>();
+builder.Services.AddScoped<IViewBagPreparationService, ViewBagPreparationService>();
+
+
+builder.Services.AddScoped<ICandidateSessionService, CandidateSessionService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 // Register background service
 builder.Services.AddHostedService<QuestionGenerationBackgroundService>();

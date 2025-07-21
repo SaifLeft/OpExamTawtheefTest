@@ -7,15 +7,15 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class OrderingItem
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long QuestionId { get; set; }
+    public int QuestionId { get; set; }
 
     public string Text { get; set; }
 
-    public long CorrectOrder { get; set; }
+    public int CorrectOrder { get; set; }
 
-    public long DisplayOrder { get; set; }
+    public int DisplayOrder { get; set; }
 
     public virtual Question Question { get; set; }
 }

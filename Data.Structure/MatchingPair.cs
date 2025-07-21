@@ -7,17 +7,17 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class MatchingPair
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long QuestionId { get; set; }
+    public int QuestionId { get; set; }
 
     public string LeftItem { get; set; }
 
     public string RightItem { get; set; }
 
-    public long DisplayOrder { get; set; }
+    public int DisplayOrder { get; set; }
 
-    public long CorrectOrder { get; set; }
+    public int CorrectOrder { get; set; }
 
     public virtual Question Question { get; set; }
 }

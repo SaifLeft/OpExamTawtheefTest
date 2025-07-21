@@ -687,10 +687,10 @@
                                             <td>
                                                 @switch (applicant.Status)
                                                 {
-                                                    case CandidateExamStatus.Completed:
+                                                    case AssignmentStatus.Completed:
                                                         <span class="badge bg-success rounded-pill">أكمل الامتحان</span>
                                                         break;
-                                                    case CandidateExamStatus.InProgress:
+                                                    case AssignmentStatus.InProgress:
                                                         <span class="badge bg-info rounded-pill">قيد التقديم</span>
                                                         break;
                                                     default:
@@ -699,7 +699,7 @@
                                                 }
                                             </td>
                                             <td>
-                                                @if (applicant.Status == CandidateExamStatus.Completed)
+                                                @if (applicant.Status == AssignmentStatus.Completed)
                                                 {
                                                     @if (applicant.HasPassed)
                                                     {

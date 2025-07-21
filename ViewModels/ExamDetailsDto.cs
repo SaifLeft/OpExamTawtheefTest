@@ -5,10 +5,10 @@ namespace TawtheefTest.ViewModels
 {
   public class ExamDetailsDto
   {
-    public long Id { get; set; }
+    public int Id { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
-    public long JobId { get; set; }
+    public int JobId { get; set; }
     public string JobName { get; set; }
     public long? Duration { get; set; }
     public ExamStatus Status { get; set; }

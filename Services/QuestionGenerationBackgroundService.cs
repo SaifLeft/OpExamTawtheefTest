@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs.OpExam;
 using TawtheefTest.Enums;
+using NodaTime;
 
 namespace TawtheefTest.Services
 {
@@ -56,7 +57,7 @@ namespace TawtheefTest.Services
 
       // البحث عن مجموعات الأسئلة التي بحالة "في الانتظار"
       var pendingQuestionSet = await context.QuestionSets
-          .Where(qs => qs.Status == QuestionSetStatus.Pending)
+          .Where(qs => qs.Status == nameof(QuestionSetStatus.Pending))
           .OrderBy(qs => qs.CreatedAt)
           .FirstOrDefaultAsync();
 
@@ -68,8 +69,8 @@ namespace TawtheefTest.Services
       _logger.LogInformation("بدء معالجة مجموعة الأسئلة: {QuestionSetId}", pendingQuestionSet.Id);
 
       // تحديث الحالة إلى "قيد المعالجة"
-      pendingQuestionSet.Status = QuestionSetStatus.Processing;
-      pendingQuestionSet.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+      pendingQuestionSet.Status = nameof(QuestionSetStatus.Processing);
+      pendingQuestionSet.UpdatedAt = DateTime.UtcNow;
       pendingQuestionSet.RetryCount = pendingQuestionSet.RetryCount + 1;
       await context.SaveChangesAsync();
 
@@ -81,7 +82,7 @@ namespace TawtheefTest.Services
         request.Language = pendingQuestionSet.Language;
         request.NumberOfOptions = pendingQuestionSet.OptionsCount ?? 4;
         request.NumberOfQuestions = pendingQuestionSet.QuestionCount;
-        request.Difficulty = pendingQuestionSet.Difficulty;
+        request.Difficulty = pendingQuestionSet.DifficultySet;
         request.NumberOfRows = pendingQuestionSet.NumberOfRows;
         request.NumberOfCorrectOptions = pendingQuestionSet.NumberOfCorrectOptions?.ToString();
 
@@ -132,10 +133,10 @@ namespace TawtheefTest.Services
         _logger.LogError(ex, "حدث خطأ أثناء توليد الأسئلة لمجموعة الأسئلة: {QuestionSetId}", pendingQuestionSet.Id);
 
         // تحديث الحالة إلى "فشل"
-        pendingQuestionSet.Status = QuestionSetStatus.Failed;
+        pendingQuestionSet.Status = nameof(QuestionSetStatus.Failed);
         pendingQuestionSet.RetryCount = pendingQuestionSet.RetryCount + 1;
         pendingQuestionSet.ErrorMessage = $"حدث خطأ غير متوقع: {ex.Message}";
-        pendingQuestionSet.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+        pendingQuestionSet.UpdatedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
       }
     }
@@ -173,13 +174,13 @@ namespace TawtheefTest.Services
       var opExamsService = scope.ServiceProvider.GetRequiredService<IOpExamQuestionGenerationService>();
 
       var questionSets = await context.QuestionSets
-          .Where(qs => (qs.Status == QuestionSetStatus.Processing || qs.Status == QuestionSetStatus.Failed) && qs.UpdatedAt != null && qs.UpdatedAt < DateTime.UtcNow.AddMinutes(-3))
+          .Where(qs => (qs.Status == nameof(QuestionSetStatus.Processing) || qs.Status == nameof(QuestionSetStatus.Failed)) && qs.UpdatedAt != null && qs.UpdatedAt < DateTime.UtcNow.AddMinutes(-3))
           .ToListAsync();
 
       foreach (var questionSet in questionSets)
       {
-        questionSet.Status = QuestionSetStatus.Pending.GetHashCode();
-        questionSet.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+        questionSet.Status = nameof(QuestionSetStatus.Pending);
+        questionSet.UpdatedAt = DateTime.UtcNow;
       }
 
       await context.SaveChangesAsync();

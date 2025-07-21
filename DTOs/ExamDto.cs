@@ -7,7 +7,7 @@ namespace TawtheefTest.DTOs
 {
   public class ExamDto
   {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     [Required(ErrorMessage = "اسم الاختبار مطلوب")]
     [Display(Name = "اسم الاختبار")]
@@ -15,7 +15,7 @@ namespace TawtheefTest.DTOs
 
     [Required(ErrorMessage = "الوظيفة مطلوبة")]
     [Display(Name = "الوظيفة")]
-    public long JobId { get; set; }
+    public int JobId { get; set; }
 
     [Display(Name = "اسم الوظيفة")]
     public string JobName { get; set; }
@@ -26,7 +26,7 @@ namespace TawtheefTest.DTOs
     [Required(ErrorMessage = "مدة الاختبار مطلوبة")]
     [Range(1, 240, ErrorMessage = "مدة الاختبار يجب أن تكون بين 1 و 240 دقيقة")]
     [Display(Name = "مدة الاختبار (دقيقة)")]
-    public long Duration { get; set; }
+    public int Duration { get; set; }
 
     [Required(ErrorMessage = "تاريخ بداية الاختبار مطلوب")]
     [Display(Name = "تاريخ بداية الاختبار")]
@@ -37,10 +37,10 @@ namespace TawtheefTest.DTOs
     public DateTime EndDate { get; set; }
 
     [Display(Name = "إظهار النتائج للمتقدم مباشرة")]
-    public long ShowResultImmediately { get; set; }
+    public int ShowResultImmediately { get; set; }
 
     [Display(Name = "إرسال روابط الاختبار للمتقدمين")]
-    public long SendExamLinks { get; set; }
+    public int SendExamLinks { get; set; }
 
     [Display(Name = "تاريخ الإنشاء")]
     public DateTime CreatedDate { get; set; }
@@ -57,17 +57,17 @@ namespace TawtheefTest.DTOs
   /// </summary>
   public class ExamInstructionsDto
   {
-    public long ExamId { get; set; }
+    public int ExamId { get; set; }
     public string ExamName { get; set; }
     public string ExamDescription { get; set; }
     public string JobName { get; set; }
-    public long Duration { get; set; } // مدة الامتحان بالدقائق
-    public long TotalQuestions { get; set; } // إجمالي عدد الأسئلة
+    public int Duration { get; set; } // مدة الامتحان بالدقائق
+    public int TotalQuestions { get; set; } // إجمالي عدد الأسئلة
     public decimal? PassPercentage { get; set; } // نسبة النجاح المطلوبة
     public string CandidateName { get; set; }
     public List<string> ExamRules { get; set; } = new List<string>(); // قواعد الامتحان
     public List<string> TechnicalInstructions { get; set; } = new List<string>(); // التعليمات التقنية
-    public long HasExistingAttempt { get; set; } // هل يوجد محاولة سابقة
+    public int HasExistingAttempt { get; set; } // هل يوجد محاولة سابقة
     public long? ExistingAttemptId { get; set; } // معرف المحاولة السابقة إن وجدت
   }
 }

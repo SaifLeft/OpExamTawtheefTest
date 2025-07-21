@@ -82,8 +82,8 @@ namespace TawtheefTest.Controllers
           Name = model.Name,
           Phone = model.Phone,
           JobId = model.JobId,
-          IsActive = 1,
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss").ToString("yyyy-MM-dd HH:mm:ss")
+          IsActive = true,
+          CreatedAt = DateTime.UtcNow
         };
 
         _context.Add(candidate);
@@ -146,7 +146,7 @@ namespace TawtheefTest.Controllers
           candidate.Name = model.Name;
           candidate.Phone = int.Parse(model.PhoneNumber);
           candidate.JobId = model.JobId;
-          candidate.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+          candidate.UpdatedAt = DateTime.UtcNow;
 
           _context.Update(candidate);
           await _context.SaveChangesAsync();
@@ -199,12 +199,12 @@ namespace TawtheefTest.Controllers
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
       var candidate = await _context.Candidates
-          .Include(c => c.CandidateExams)
+          .Include(c => c.Assignments)
           .FirstOrDefaultAsync(c => c.Id == id);
 
       if (candidate != null)
       {
-        if (candidate.CandidateExams.Any())
+        if (candidate.Assignments.Any())
         {
           TempData["ErrorMessage"] = "لا يمكن حذف المرشح لوجود اختبارات مرتبطة به";
           return RedirectToAction(nameof(Index));

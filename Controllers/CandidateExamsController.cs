@@ -9,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
 using TawtheefTest.Services;
 
 namespace TawtheefTest.Controllers
@@ -20,106 +18,92 @@ namespace TawtheefTest.Controllers
     private readonly ApplicationDbContext _context;
     private readonly IMapper _mapper;
     private readonly INotificationService _notificationService;
+    private readonly ICandidateSessionService _sessionService;
+    private readonly IAssignmentService _assignmentService;
+    private readonly IAnswerService _answerService;
+    private readonly IExamCalculationService _calculationService;
+    private readonly IQuestionService _questionService;
 
-    public CandidateExamsController(ApplicationDbContext context, IMapper mapper, INotificationService notificationService)
+    public CandidateExamsController(
+        ApplicationDbContext context,
+        IMapper mapper,
+        INotificationService notificationService,
+        ICandidateSessionService sessionService,
+        IAssignmentService assignmentService,
+        IAnswerService answerService,
+        IExamCalculationService calculationService,
+        IQuestionService questionService)
     {
       _context = context;
       _mapper = mapper;
       _notificationService = notificationService;
+      _sessionService = sessionService;
+      _assignmentService = assignmentService;
+      _answerService = answerService;
+      _calculationService = calculationService;
+      _questionService = questionService;
     }
 
-    // التحقق من تسجيل دخول المرشح
-    private bool IsCandidateLoggedIn()
-    {
-      return HttpContext.Session.GetInt32("CandidateId") != null;
-    }
-
-    // الحصول على معرف المرشح الحالي
-    private int? GetCurrentCandidateId()
-    {
-      return HttpContext.Session.GetInt32("CandidateId");
-    }
-
-    // GET: CandidateExams
+    // GET: Assignments
     public async Task<IActionResult> Index()
     {
-      if (!IsCandidateLoggedIn())
+      if (!_sessionService.IsCandidateLoggedIn())
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      var candidateId = GetCurrentCandidateId().Value;
-
-      var candidate = await _context.Candidates
-          .Include(c => c.Job)
-          .FirstOrDefaultAsync(c => c.Id == candidateId);
-
+      var candidate = await _sessionService.GetCurrentCandidateAsync();
       if (candidate == null)
       {
-        HttpContext.Session.Clear();
+        _sessionService.ClearSession();
         TempData["ErrorMessage"] = "لم يتم العثور على بيانات المرشح.";
         return RedirectToAction("Login", "Auth");
       }
 
       var candidateViewModel = _mapper.Map<CandidateViewModel>(candidate);
 
-      // الحصول على اختبارات المرشح
-      var candidateExams = await _context.Assignments
-          .Include(ce => ce.Exam)
-          .ThenInclude(e => e.Job)
-          .Where(ce => ce.CandidateId == candidateId)
-          .OrderByDescending(ce => ce.StartTime)
-          .ToListAsync();
+      // Get candidate assignments
+      var assignments = await _assignmentService.GetCandidateAssignmentsAsync(candidate.Id);
+      var assignmentViewModels = _mapper.Map<List<AssignmentViewModel>>(assignments);
 
-      //validate if the candidate has an exam that is not completed
-
-      var candidateExamViewModels = _mapper.Map<List<CandidateExamViewModel>>(candidateExams);
-
-      // الحصول على الاختبارات المتاحة لوظيفة المرشح
+      // Get available exams for candidate's job
       var exams = await _context.Exams
           .Include(e => e.Job)
-          .Where(e => e.JobId == candidate.JobId && e.Status == ExamStatus.Published)
+          .Where(e => e.JobId == candidate.JobId && e.Status == nameof(ExamStatus.Published))
           .ToListAsync();
 
       var examViewModels = _mapper.Map<List<ExamForCandidateViewModel>>(exams);
 
       ViewData["Candidate"] = candidateViewModel;
-      ViewData["CandidateExams"] = candidateExamViewModels;
+      ViewData["Assignments"] = assignmentViewModels;
 
       return View(examViewModels);
     }
 
-
     public async Task<IActionResult> ByCandidateId(int id)
     {
-      var candidateExams = await _context.Assignments
-          .Include(ce => ce.Exam)
-          .ThenInclude(e => e.Job)
-          .Where(ce => ce.CandidateId == id)
-          .OrderByDescending(ce => ce.StartTime)
-          .ToListAsync();
-      var candidateExamViewModels = _mapper.Map<List<CandidateExamViewModel>>(candidateExams);
-      ViewData["CandidateExams"] = candidateExamViewModels;
+      var assignments = await _assignmentService.GetCandidateAssignmentsAsync(id);
+      var assignmentViewModels = _mapper.Map<List<AssignmentViewModel>>(assignments);
+      ViewData["Assignments"] = assignmentViewModels;
       return View();
     }
 
-    // GET: CandidateExams/Start/5 - عرض صفحة التعليمات قبل بدء الامتحان
+    // GET: Assignments/Start/5 - Show instructions page before starting exam
     [HttpGet]
     public async Task<IActionResult> Start(int id)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      // الحصول على الامتحان
+      // Get exam details
       var exam = await _context.Exams
           .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSetManppings)
+          .Include(e => e.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
           .FirstOrDefaultAsync(e => e.Id == id);
@@ -130,60 +114,47 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Index");
       }
 
-      // الحصول على بيانات المرشح
-      var candidate = await _context.Candidates
-          .Include(c => c.Job)
-          .FirstOrDefaultAsync(c => c.Id == candidateId.Value);
-
+      var candidate = await _sessionService.GetCurrentCandidateAsync();
       if (candidate == null)
       {
-        HttpContext.Session.Clear();
+        _sessionService.ClearSession();
         TempData["ErrorMessage"] = "لم يتم العثور على بيانات المرشح.";
         return RedirectToAction("Login", "Auth");
       }
 
-      // التحقق من أن الامتحان مخصص لوظيفة المرشح
+      // Validate exam is for candidate's job
       if (exam.JobId != candidate.JobId)
       {
         TempData["ErrorMessage"] = "هذا الامتحان غير متاح لوظيفتك.";
         return RedirectToAction("Index");
       }
 
-      // التحقق مما إذا كان المرشح قد أكمل هذا الاختبار بالفعل
-      var completedExam = await _context.Assignments
-          .FirstOrDefaultAsync(ce => ce.CandidateId == candidateId &&
-                                   ce.ExamId == id &&
-                                   ce.Status == CandidateExamStatus.Completed.ToString());
-
+      // Check if candidate has completed this exam
+      var completedExam = await _assignmentService.GetCompletedAssignmentAsync(candidateId.Value, id);
       if (completedExam != null)
       {
         TempData["ErrorMessage"] = "لقد أكملت هذا الاختبار بالفعل.";
         return RedirectToAction(nameof(Results), new { id = completedExam.Id });
       }
 
-      // التحقق من وجود محاولة قيد التقدم
-      var existingAttempt = await _context.Assignments
-          .FirstOrDefaultAsync(ce => ce.CandidateId == candidateId &&
-                                   ce.ExamId == id &&
-                                   ce.Status == CandidateExamStatus.InProgress.ToString());
+      // Check for existing attempt
+      var existingAttempt = await _assignmentService.GetExistingAttemptAsync(candidateId.Value, id);
 
-      // حساب عدد الأسئلة الإجمالي
-      var allQuestions = exam.ExamQuestionSetManppings
+      // Calculate total questions
+      var allQuestions = exam.ExamQuestionSetMappings
           .SelectMany(eqs => eqs.QuestionSet.Questions)
           .ToList();
 
       var totalQuestions = exam.TotalQuestionsPerCandidate > 0 ? exam.TotalQuestionsPerCandidate : allQuestions.Count;
 
-      // إنشاء نموذج العرض
+      // Create view model
       var viewModel = new ExamInstructionsViewModel
       {
         ExamId = exam.Id,
         ExamName = exam.Name,
-        ExamDescription = exam.Description ?? "لا يوجد وصف للامتحان",
         JobName = exam.Job.Title,
         Duration = exam.Duration,
         TotalQuestions = totalQuestions,
-        PassPercentage = exam.PassPercentage,
         CandidateName = candidate.Name,
         HasExistingAttempt = existingAttempt != null,
         ExistingAttemptId = existingAttempt?.Id,
@@ -194,23 +165,22 @@ namespace TawtheefTest.Controllers
       return View(viewModel);
     }
 
-    // POST: CandidateExams/StartExam/5 - بدء الامتحان فعلياً
+    // POST: Assignments/StartExam/5 - Actually start the exam
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> StartExam(int id)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      // الحصول على الامتحان
+      // Get exam details
       var exam = await _context.Exams
           .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSetManppings)
+          .Include(e => e.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
           .FirstOrDefaultAsync(e => e.Id == id);
@@ -221,8 +191,8 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Index");
       }
 
-      // التحقق من وجود الأسئلة في الامتحان
-      var allQuestions = exam.ExamQuestionSetManppings
+      // Check if exam has questions
+      var allQuestions = exam.ExamQuestionSetMappings
           .SelectMany(eqs => eqs.QuestionSet.Questions)
           .ToList();
 
@@ -232,757 +202,321 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Index");
       }
 
-      // تعيين عدد الأسئلة الإجمالي
-      int totalQuestions = exam.TotalQuestionsPerCandidate > 0 ? exam.TotalQuestionsPerCandidate : allQuestions.Count;
-
-      // التحقق مما إذا كان المرشح قد أكمل هذا الاختبار بالفعل
-      var completedExam = await _context.Assignments
-          .FirstOrDefaultAsync(ce => ce.CandidateId == candidateId &&
-                                   ce.ExamId == id &&
-                                   ce.Status == CandidateExamStatus.Completed.ToString());
-
+      // Check if candidate has completed this exam
+      var completedExam = await _assignmentService.GetCompletedAssignmentAsync(candidateId.Value, id);
       if (completedExam != null)
       {
         TempData["ErrorMessage"] = "لقد أكملت هذا الاختبار بالفعل.";
         return RedirectToAction(nameof(Results), new { id = completedExam.Id });
       }
 
-      // التحقق مما إذا كان المرشح لديه محاولة اختبار غير مكتملة
-      var existingAttempt = await _context.Assignments
-          .FirstOrDefaultAsync(ce => ce.CandidateId == candidateId &&
-                                   ce.ExamId == id &&
-                                   ce.Status == CandidateExamStatus.InProgress.ToString());
-
+      // Check for existing attempt
+      var existingAttempt = await _assignmentService.GetExistingAttemptAsync(candidateId.Value, id);
       if (existingAttempt != null)
       {
-        // متابعة المحاولة الحالية
         TempData["InfoMessage"] = "أنت تقوم بمتابعة محاولة اختبار سابقة.";
         return RedirectToAction(nameof(Take), new { id = existingAttempt.Id });
       }
 
-      // إنشاء محاولة اختبار جديدة
-      var candidateExamNew = new CandidateExam
+      // Create new assignment
+      var newAssignment = await _assignmentService.CreateAssignmentAsync(candidateId.Value, id);
+      if (newAssignment == null)
       {
-        CandidateId = candidateId.Value,
-        ExamId = id,
-        StartTime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
-        Status = CandidateExamStatus.InProgress.ToString(),
-        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
-        TotalQuestions = totalQuestions,
-        CompletedQuestions = 0
-      };
-
-      _context.CandidateExams.Add(candidateExamNew);
-      await _context.SaveChangesAsync();
-
-      // إنشاء إشعار ببدء الاختبار
-      await _notificationService.CreateNotificationAsync(
-          candidateId.Value,
-          "تم بدء اختبار جديد",
-          $"لقد بدأت اختبار {exam.Name} بنجاح. عدد الأسئلة: {totalQuestions}، مدة الاختبار: {exam.Duration} دقيقة.",
-          "info"
-      );
+        TempData["ErrorMessage"] = "حدث خطأ في إنشاء الاختبار.";
+        return RedirectToAction("Index");
+      }
 
       TempData["SuccessMessage"] = "تم بدء الاختبار بنجاح.";
-      return RedirectToAction(nameof(Take), new { id = candidateExamNew.Id });
+      return RedirectToAction(nameof(Take), new { id = newAssignment.Id });
     }
 
-    // GET: CandidateExams/Take/5
+    // GET: Assignments/Take/5
     public async Task<IActionResult> Take(int id)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      // الحصول على اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-        .Include(ce => ce.CandidateAnswers)
-        .Include(ce => ce.Candidate)
-        .ThenInclude(c => c.Job)
-        .Include(ce => ce.Exam)
-        .Include(ce => ce.Exam.Job)
-        .Include(ce => ce.Exam.ExamQuestionSetManppings)
-
-        .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
-
-      if (candidateExam == null)
+      var assignment = await _assignmentService.GetAssignmentWithDetailsAsync(id, candidateId.Value);
+      if (assignment == null)
       {
         TempData["ErrorMessage"] = "الاختبار غير موجود.";
-        return RedirectToAction("MyExams");
+        return RedirectToAction("Index");
       }
 
-      // التحقق من حالة الاختبار
-      if (candidateExam.Status != CandidateExamStatus.InProgress.ToString())
+      // Check assignment status
+      if (assignment.Status != AssignmentStatus.InProgress.ToString())
       {
-        if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
+        if (assignment.Status == AssignmentStatus.Completed.ToString())
         {
-          return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
+          return RedirectToAction(nameof(Results), new { id = assignment.Id });
         }
         else
         {
-          return RedirectToAction(nameof(Start), new { id = candidateExam.Id });
+          return RedirectToAction(nameof(Start), new { id = assignment.ExamId });
         }
       }
 
-      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
+      // Get all questions for the exam
+      var allQuestions = await _questionService.GetQuestionsForAssignmentAsync(id);
 
-      // التحقق من وجود الأسئلة في الامتحان
-      var totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions : allQuestions.Count;
-      var completedQuestions = candidateExam.CompletedQuestions > 0 ? candidateExam.CompletedQuestions : 0;
+      // Get candidate answers
+      var candidateAnswers = assignment.CandidateAnswers.ToList();
 
-      // الحصول على إجابات المرشح
-      var candidateAnswers = await _context.CandidateAnswers
-          .Include(ca => ca.Question)
-          .Where(ca => ca.CandidateExamId == id)
-          .ToListAsync();
+      // Calculate totals
+      var totalQuestions = assignment.TotalQuestions > 0 ? assignment.TotalQuestions : allQuestions.Count;
+      var completedQuestions = assignment.CompletedQuestions > 0 ? assignment.CompletedQuestions : 0;
 
-      //var candidateExamViewModel = _mapper.Map<CandidateExamViewModel>(candidateExam);
-      var candidateExamViewModel = new CandidateExamViewModel()
+      // Create assignment view model
+      var assignmentViewModel = new AssignmentViewModel()
       {
-        Id = candidateExam.Id,
-        ExamId = candidateExam.ExamId,
-        JobTitle = candidateExam.Exam.Job.Title,
-        CandidateName = candidateExam.Candidate.Name,
-        CandidateId = candidateExam.CandidateId,
-        StartTime = candidateExam.StartTime.ToString("yyyy-MM-dd HH:mm:ss"),
-        EndTime = candidateExam.EndTime.ToString("yyyy-MM-dd HH:mm:ss"),
-        Duration = candidateExam.Exam.Duration ?? 30,
+        Id = assignment.Id,
+        ExamId = assignment.ExamId,
+        JobTitle = assignment.Exam.Job.Title,
+        CandidateName = assignment.Candidate.Name,
+        CandidateId = assignment.CandidateId,
+        StartTime = assignment.StartTime,
+        EndTime = assignment.EndTime,
+        Duration = assignment.Exam.Duration,
         TotalQuestions = totalQuestions,
         CompletedQuestions = completedQuestions,
-        Score = candidateExam.Score,
-        Status = candidateExam.Status,
-        FlaggedQuestions = candidateAnswers.Where(ca => ca.IsFlagged).Select(ca => ca.QuestionId).ToList()
+        Score = assignment.Score,
+        Status = assignment.Status,
+        FlaggedQuestions = candidateAnswers.Where(ca => ca.IsFlagged).Select(ca => ca.QuestionId).ToList(),
+        RemainingTime = _calculationService.CalculateRemainingTime(assignment)
       };
 
-      // تحميل الأسئلة في نموذج العرض
-      candidateExamViewModel.Questions = _mapper.Map<List<CandidateQuestionViewModel>>(allQuestions);
-
-
-      // إعداد بيانات إضافية للعرض
-      var remainingTime = CalculateRemainingTime(candidateExam);
-      candidateExamViewModel.RemainingTime = remainingTime;
+      // Load questions
+      assignmentViewModel.Questions = _mapper.Map<List<CandidateQuestionViewModel>>(allQuestions);
 
       ViewData["CandidateAnswers"] = candidateAnswers;
-      ViewData["ProgressPercentage"] = CalculateProgressPercentage(candidateExam, candidateAnswers);
+      ViewData["ProgressPercentage"] = _calculationService.CalculateProgressPercentage(assignment, candidateAnswers);
 
-      return View(candidateExamViewModel);
+      return View(assignmentViewModel);
     }
 
-    // حساب النسبة المئوية للتقدم في الاختبار
-    private long CalculateProgressPercentage(Assignment candidateExam, List<CandidateAnswer> candidateAnswers)
-    {
-      if (candidateExam.Exam == null || candidateExam.Exam.ExamQuestionSetManppings == null || !candidateExam.Exam.ExamQuestionSetManppings.Any() ||
-          !candidateExam.Exam.ExamQuestionSetManppings.Any(eqs => eqs.QuestionSet.Questions != null && eqs.QuestionSet.Questions.Any()))
-      {
-        return 0;
-      }
-
-      long totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions :
-          candidateExam.Exam.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count();
-      long answeredQuestions = candidateAnswers.Select(ca => ca.QuestionId).Distinct().Count();
-
-      return (long)Math.Round((double)answeredQuestions / totalQuestions * 100);
-    }
-
-    // حساب الوقت المتبقي للاختبار
-    private TimeSpan? CalculateRemainingTime(Assignment candidateExam)
-    {
-      if (!candidateExam.StartTime.HasValue || candidateExam.Exam == null)
-      {
-        return null;
-      }
-
-      DateTime endTime = candidateExam.StartTime.AddMinutes(candidateExam.Exam.Duration);
-      TimeSpan remaining = endTime - DateTime.UtcNow;
-
-      return remaining.TotalSeconds > 0 ? remaining : TimeSpan.Zero;
-    }
-
-    // POST: CandidateExams/SaveAnswer
+    // POST: Assignments/SaveAnswer
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveAnswer(SaveAnswerDTO model)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
-
-      // الحصول على اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-        .FirstOrDefaultAsync(ce => ce.Id == model.CandidateExamId && ce.CandidateId == candidateId);
-
-      if (candidateExam == null || candidateExam.Status == CandidateExamStatus.Completed.ToString())
+      var result = await _answerService.SaveAnswerAsync(model, candidateId.Value);
+      if (result == null)
       {
-        return BadRequest(new { success = false, message = "الاختبار غير متاح." });
+        return BadRequest(new { success = false, message = "خطأ في حفظ الإجابة." });
       }
-
-      // الحصول على السؤال
-      var question = await _context.Questions
-          .Include(q => q.Options)
-          .Include(q => q.MatchingPairs)
-          .Include(q => q.OrderingItems)
-          .FirstOrDefaultAsync(q => q.Id == model.QuestionId);
-
-      if (question == null)
-      {
-        return BadRequest(new { success = false, message = "السؤال غير موجود." });
-      }
-
-      // التحقق مما إذا كانت الإجابة موجودة بالفعل
-      var existingAnswer = await _context.CandidateAnswers
-          .FirstOrDefaultAsync(ca => ca.CandidateExamId == model.CandidateExamId && ca.QuestionId == model.QuestionId);
-
-      bool? isCorrect = null;
-
-      // التحقق مما إذا كانت الإجابة صحيحة
-      switch (question.QuestionType)
-      {
-        case "MCQ":
-          var selectedOption = question.Options.FirstOrDefault(o => o.Id.ToString() == model.AnswerText);
-          isCorrect = selectedOption?.IsCorrect;
-          break;
-
-        case "TF":
-          if (bool.TryParse(model.AnswerText, out bool boolAnswer))
-          {
-            isCorrect = boolAnswer == question.TrueFalseAnswer;
-          }
-          break;
-
-        case "ShortAnswer":
-          // أسئلة الإجابة القصيرة - مقارنة نصية
-          isCorrect = string.Equals(question.Answer, model.AnswerText, StringComparison.OrdinalIgnoreCase);
-          break;
-
-        case "FillInTheBlank":
-          // أسئلة ملء الفراغات - قد تحتوي على خيارات أو إجابة نصية
-          if (question.Options != null && question.Options.Any() && !string.IsNullOrEmpty(model.AnswerText))
-          {
-            // إذا كان هناك خيارات، تحقق من الخيار المحدد
-            var fillBlankSelectedOption = question.Options.FirstOrDefault(o => o.Id.ToString() == model.AnswerText);
-            isCorrect = fillBlankSelectedOption?.IsCorrect ?? false;
-          }
-          else
-          {
-            // إذا لم تكن هناك خيارات، قارن النص مباشرة
-            isCorrect = string.Equals(question.Answer, model.AnswerText, StringComparison.OrdinalIgnoreCase);
-          }
-          break;
-
-        case "MultiSelect":
-          try
-          {
-            var selectedOptions = model.SelectedOptionsIds;
-            var correctOptions = question.Options.Where(o => o.IsCorrect).Select(o => o.Id).ToList();
-            isCorrect = selectedOptions != null && selectedOptions.OrderBy(x => x).SequenceEqual(correctOptions.OrderBy(x => x));
-          }
-          catch
-          {
-            isCorrect = false;
-          }
-          break;
-
-        case "Matching":
-          try
-          {
-            var pairs = model.MatchingPairsIds;
-            var correctPairs = question.MatchingPairs.Select(p => p.Id).ToList();
-            isCorrect = pairs != null && pairs.OrderBy(x => x).SequenceEqual(correctPairs.OrderBy(x => x));
-          }
-          catch
-          {
-            isCorrect = false;
-          }
-          break;
-
-        case "Ordering":
-          try
-          {
-            var orderItems = model.OrderingItemsIds;
-            if (orderItems != null && orderItems.Count > 0)
-            {
-              // الحصول على الترتيب الصحيح للعناصر
-              var correctOrder = question.OrderingItems
-                  .OrderBy(o => o.CorrectOrder)
-                  .Select(o => o.Id)
-                  .ToList();
-
-              // مقارنة ترتيب المرشح مع الترتيب الصحيح
-              isCorrect = orderItems.SequenceEqual(correctOrder);
-            }
-            else
-            {
-              isCorrect = false;
-            }
-          }
-          catch
-          {
-            isCorrect = false;
-          }
-          break;
-      }
-
-      if (existingAnswer != null)
-      {
-        // تحديث الإجابة الموجودة
-        existingAnswer.AnswerText = model.AnswerText;
-        existingAnswer.IsCorrect = isCorrect;
-        existingAnswer.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-        _context.Update(existingAnswer);
-      }
-      else
-      {
-        // إنشاء إجابة جديدة
-        var candidateAnswer = new CandidateAnswer
-        {
-          CandidateExamId = model.CandidateExamId,
-          QuestionId = model.QuestionId,
-          AnswerText = model.AnswerText,
-          IsCorrect = isCorrect,
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
-        };
-
-        _context.CandidateAnswers.Add(candidateAnswer);
-
-        // تحديث عدد الأسئلة المجابة
-        candidateExam.CompletedQuestions = await _context.CandidateAnswers
-            .Where(ca => ca.CandidateExamId == model.CandidateExamId)
-            .Select(ca => ca.QuestionId)
-            .Distinct()
-            .CountAsync() + 1; // نضيف 1 للإجابة الحالية
-
-        _context.Update(candidateExam);
-      }
-
-      await _context.SaveChangesAsync();
 
       return Ok(new { success = true, message = "تم حفظ الإجابة بنجاح." });
     }
 
-    // POST: CandidateExams/Submit
+    // POST: Assignments/Submit
     [HttpPost]
     public async Task<IActionResult> Submit(int id)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      // الحصول على اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-          .Include(ce => ce.CandidateAnswers)
-          .Include(ce => ce.Candidate)
-          .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
-
-      if (candidateExam == null)
+      var assignment = await _assignmentService.CompleteAssignmentAsync(id, candidateId.Value);
+      if (assignment == null)
       {
         return NotFound();
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
+      if (assignment.Status == AssignmentStatus.Completed.ToString())
       {
-        return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
+        TempData["SuccessMessage"] = "تم تسليم الاختبار بنجاح";
+        return RedirectToAction(nameof(Results), new { id = assignment.Id });
       }
 
-      // حساب الدرجة
-      var totalQuestions = candidateExam.TotalQuestions > 0 ? candidateExam.TotalQuestions :
-          candidateExam.Exam.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count();
-      var answeredQuestions = candidateExam.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count();
-      var correctAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect == true);
-      var score = totalQuestions > 0 ? (decimal)correctAnswers / totalQuestions * 100 : 0;
-
-      // تحديث اختبار المرشح
-      candidateExam.EndTime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-      candidateExam.Score = Math.Round(score, 2);
-      candidateExam.Status = CandidateExamStatus.Completed.ToString();
-      candidateExam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-      candidateExam.CompletedQuestions = answeredQuestions;
-      candidateExam.TotalQuestions = totalQuestions;
-
-      _context.Update(candidateExam);
-      await _context.SaveChangesAsync();
-
-      // إنشاء إشعار بنتيجة الاختبار
-      var passPercentage = candidateExam.Exam.PassPercentage ?? 60;
-      var hasPassed = candidateExam.Score >= passPercentage;
-
-      await _notificationService.CreateNotificationAsync(
-          candidateId.Value,
-          "نتيجة الاختبار",
-          $"لقد أنهيت اختبار {candidateExam.Exam.Name} بنجاح. الدرجة: {candidateExam.Score}%. " + (hasPassed ? "مبروك! لقد اجتزت الاختبار." : "للأسف، لم تحقق درجة النجاح."),
-          hasPassed ? "success" : "warning"
-      );
-
-      TempData["SuccessMessage"] = "تم تسليم الاختبار بنجاح";
-      return RedirectToAction(nameof(Results), new { id = candidateExam.Id });
+      TempData["ErrorMessage"] = "حدث خطأ في تسليم الاختبار.";
+      return RedirectToAction(nameof(Take), new { id });
     }
 
-    // GET: CandidateExams/Results/5
+    // GET: Assignments/Results/5
     public async Task<IActionResult> Results(int id)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      // الحصول على تفاصيل اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-                          .ThenInclude(q => q.Options)
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-                          .ThenInclude(q => q.MatchingPairs)
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-                          .ThenInclude(q => q.OrderingItems)
-          .Include(ce => ce.CandidateAnswers)
-              .ThenInclude(ca => ca.Question)
-          .Include(ce => ce.Candidate)
-          .FirstOrDefaultAsync(ce => ce.Id == id && ce.CandidateId == candidateId);
-
-      if (candidateExam == null)
+      var assignment = await _assignmentService.GetAssignmentWithDetailsAsync(id, candidateId.Value);
+      if (assignment == null)
       {
         return NotFound();
       }
 
-      var candidateExamResult = _mapper.Map<CandidateExamResultViewModel>(candidateExam);
+      var assignmentResult = _mapper.Map<AssignmentResultViewModel>(assignment);
 
-      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
+      // Get all questions from exam
+      var allQuestions = assignment.Exam.ExamQuestionSetMappings
           .SelectMany(eqs => eqs.QuestionSet.Questions)
           .ToList();
 
-      // ترتيب الإجابات حسب أرقام الأسئلة
-      candidateExamResult.Answers = _mapper.Map<List<CandidateAnswerViewModel>>(
-          candidateExam.CandidateAnswers.OrderBy(ca => ca.Question.DisplayOrder));
+      // Order answers by question display order
+      assignmentResult.Answers = _mapper.Map<List<CandidateAnswerViewModel>>(
+          assignment.CandidateAnswers.OrderBy(ca => ca.Question.DisplayOrder));
 
-      ViewData["CandidateAnswers"] = candidateExamResult.Answers;
-      ViewData["PassPercentage"] = candidateExam.Exam?.PassPercentage ?? 60;
-      ViewData["HasPassed"] = candidateExam.Score >= (candidateExam.Exam?.PassPercentage ?? 60);
+      ViewData["CandidateAnswers"] = assignmentResult.Answers;
 
-      return View(candidateExamResult);
+      return View(assignmentResult);
     }
 
-    // GET: CandidateExams/MyExams
+    // GET: Assignments/MyExams
     public async Task<IActionResult> MyExams()
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      var candidateExams = await _context.Assignments
-          .Where(ce => ce.CandidateId == candidateId)
-          .Include(ce => ce.Exam)
-          .OrderByDescending(ce => ce.StartTime)
-          .ToListAsync();
+      var assignments = await _assignmentService.GetCandidateAssignmentsAsync(candidateId.Value);
+      var assignmentViewModels = _mapper.Map<List<AssignmentViewModel>>(assignments);
 
-      var candidateExamViewModels = _mapper.Map<List<CandidateExamViewModel>>(candidateExams);
-
-      var candidate = await _context.Candidates
-          .Include(c => c.Job)
-          .FirstOrDefaultAsync(c => c.Id == candidateId);
-
+      var candidate = await _sessionService.GetCurrentCandidateAsync();
       ViewData["Candidate"] = _mapper.Map<CandidateViewModel>(candidate);
-      ViewData["CandidateExams"] = candidateExamViewModels;
+      ViewData["Assignments"] = assignmentViewModels;
 
       return View();
     }
 
-    // POST: CandidateExams/ReplaceQuestion
+    // POST: Assignments/ReplaceQuestion
     [HttpPost]
-    public async Task<IActionResult> ReplaceQuestion(int candidateExamId, int questionId)
+    public async Task<IActionResult> ReplaceQuestion(int AssignmentId, int questionId)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
-      // الحصول على اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-        .Include(ce => ce.CandidateAnswers)
-        .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
-
-      if (candidateExam == null || candidateExam.Status == CandidateExamStatus.Completed.ToString())
+      // Get assignment and validate access
+      var assignment = await _assignmentService.GetAssignmentWithDetailsAsync(AssignmentId, candidateId.Value);
+      if (assignment == null || assignment.Status == AssignmentStatus.Completed.ToString())
       {
         return BadRequest(new { success = false, message = "الاختبار غير متاح." });
       }
 
-      // التحقق مما إذا كان قد تم استبدال سؤال بالفعل
-      if (candidateExam.QuestionReplaced)
+      // Check if question was already replaced
+      if (assignment.QuestionReplaced)
       {
         return BadRequest(new { success = false, message = "لا يمكنك استبدال أكثر من سؤال واحد." });
       }
 
-      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
-
-      // إذا كان هناك فقط سؤال واحد متبقي، فلا يمكن استبدال السؤال
+      // Get all questions for the assignment
+      var allQuestions = await _questionService.GetQuestionsForAssignmentAsync(AssignmentId);
       if (allQuestions.Count <= 1)
       {
         return BadRequest(new { success = false, message = "لا يمكنك استبدال السؤال إذا كان هناك سؤال واحد فقط." });
       }
 
-      // الحصول على السؤال المراد استبداله
-      var questionToReplace = await _context.Questions
-          .Include(q => q.QuestionSet)
-              .ThenInclude(qs => qs.ExamQuestionSetManppings)
-          .FirstOrDefaultAsync(q => q.Id == questionId);
-
-      if (questionToReplace == null || !questionToReplace.QuestionSet.ExamQuestionSetManppings.Any(eqs => eqs.ExamId == candidateExam.ExamId))
-      {
-        return Json(new { success = false, message = "السؤال غير موجود" });
-      }
-
-      // البحث عن سؤال بديل من نفس النوع والصعوبة
-      // أولاً نحصل على مجموعات الأسئلة المرتبطة بهذا الامتحان
-      var questionSetIds = await _context.ExamQuestionSetManppings
-          .Where(eqs => eqs.ExamId == candidateExam.ExamId)
-          .Select(eqs => eqs.QuestionSetId)
-          .ToListAsync();
-
-      var replacementQuestion = await _context.Questions
-          .Where(q => questionSetIds.Contains(q.QuestionSetId) &&
-                     q.QuestionType == questionToReplace.QuestionType &&
-                     q.Id != questionId &&
-                     !_context.CandidateAnswers.Any(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == q.Id))
-          .OrderBy(q => Guid.NewGuid()) // اختيار عشوائي
-          .FirstOrDefaultAsync();
-
+      // Find replacement question
+      var replacementQuestion = await _questionService.FindReplacementQuestionAsync(AssignmentId, questionId);
       if (replacementQuestion == null)
       {
         return Json(new { success = false, message = "لا يوجد سؤال بديل متاح" });
       }
 
-      // حذف الإجابة الموجودة إن وجدت
-      var existingAnswer = await _context.CandidateAnswers
-          .FirstOrDefaultAsync(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == questionId);
-
+      // Remove existing answer if exists
+      var existingAnswer = await _answerService.GetCandidateAnswerAsync(AssignmentId, questionId);
       if (existingAnswer != null)
       {
         _context.CandidateAnswers.Remove(existingAnswer);
       }
 
-      // تحديث حالة استبدال السؤال في الاختبار
-      candidateExam.QuestionReplaced = true;
-      candidateExam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-      _context.Update(candidateExam);
+      // Update assignment to mark question as replaced
+      assignment.QuestionReplaced = true;
+      assignment.UpdatedAt = DateTime.UtcNow;
+      _context.Update(assignment);
 
       await _context.SaveChangesAsync();
 
-      // إضافة إشعار باستبدال السؤال
+      // Create notification
       await _notificationService.CreateNotificationAsync(
           candidateId.Value,
           "تم استبدال سؤال",
-          $"تم استبدال السؤال بنجاح في الاختبار {candidateExam.Exam.Name}.",
+          $"تم استبدال السؤال بنجاح في الاختبار {assignment.Exam.Name}.",
           "info"
       );
 
       return Json(new { success = true, replacementQuestionId = replacementQuestion.Id });
     }
 
-    // POST: CandidateExams/FlagQuestion
+    // POST: Assignments/FlagQuestion
     [HttpPost]
     public async Task<IActionResult> FlagQuestion(QuestionFlagDTO model)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
-      // الحصول على اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .FirstOrDefaultAsync(ce => ce.Id == model.CandidateExamId && ce.CandidateId == candidateId);
-
-      if (candidateExam == null)
+      var result = await _answerService.FlagQuestionAsync(model, candidateId.Value);
+      if (result == null)
       {
-        return NotFound(new { success = false, message = "لم يتم العثور على الاختبار." });
+        return NotFound(new { success = false, message = "لم يتم العثور على الاختبار أو السؤال." });
       }
 
-      // الحصول على السؤال
-      var question = await _context.Questions
-          .FirstOrDefaultAsync(q => q.Id == model.QuestionId);
-
-      if (question == null)
+      return Ok(new
       {
-        return NotFound(new { success = false, message = "لم يتم العثور على السؤال." });
-      }
-
-      // البحث عن الإجابة الموجودة لإضافة علامة عليها
-      var candidateAnswer = await _context.CandidateAnswers
-          .FirstOrDefaultAsync(ca => ca.CandidateExamId == model.CandidateExamId && ca.QuestionId == model.QuestionId);
-
-      // إذا لم توجد إجابة، قم بإنشاء واحدة مؤقتة فقط لتخزين حالة العلامة
-      if (candidateAnswer == null)
-      {
-        candidateAnswer = new CandidateAnswer
-        {
-          CandidateExamId = model.CandidateExamId,
-          QuestionId = model.QuestionId,
-          IsFlagged = model.IsFlagged,
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-        };
-        _context.CandidateAnswers.Add(candidateAnswer);
-      }
-      else
-      {
-        // تحديث حالة العلامة في الإجابة الموجودة
-        candidateAnswer.IsFlagged = model.IsFlagged;
-        candidateAnswer.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-        _context.Update(candidateAnswer);
-      }
-
-      await _context.SaveChangesAsync();
-
-      return Ok(new { success = true, message = model.IsFlagged ? "تم تعليم السؤال للمراجعة لاحقاً." : "تم إلغاء تعليم السؤال." });
+        success = true,
+        message = model.IsFlagged ? "تم تعليم السؤال للمراجعة لاحقاً." : "تم إلغاء تعليم السؤال."
+      });
     }
 
-    // البحث عن السؤال التالي غير المُجاب عليه (إذا كان هناك أي)
-    private async Task<Question> GetNextUnansweredQuestion(int candidateExamId)
-    {
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-      .Include(ce => ce.CandidateAnswers)
-      .FirstOrDefaultAsync(ce => ce.Id == candidateExamId);
-
-      if (candidateExam == null)
-      {
-        return null;
-      }
-
-      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
-
-      // الحصول على معرّفات الأسئلة التي تمت الإجابة عليها بالفعل
-      var answeredQuestionIds = candidateExam.CandidateAnswers
-          .Select(ca => ca.QuestionId)
-          .ToHashSet();
-
-      // تصفية الأسئلة غير المُجاب عليها
-      var unansweredQuestions = allQuestions
-          .Where(q => !answeredQuestionIds.Contains(q.Id))
-          .ToList();
-
-      // إذا كانت جميع الأسئلة قد تمت الإجابة عليها، فارجع null
-      if (unansweredQuestions.Count == 0)
-      {
-        return null;
-      }
-
-      // اختيار السؤال التالي
-      return unansweredQuestions.FirstOrDefault();
-    }
-
-    // الحصول على السؤال الحالي استنادًا إلى رقم المؤشر
+    // GET: Get question by index
     [HttpGet]
-    public async Task<IActionResult> GetQuestion(int candidateExamId, int questionIndex)
+    public async Task<IActionResult> GetQuestion(int AssignmentId, int questionIndex)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
-      // الحصول على اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-                          .ThenInclude(q => q.Options)
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-                          .ThenInclude(q => q.MatchingPairs)
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-                          .ThenInclude(q => q.OrderingItems)
-          .Include(ce => ce.CandidateAnswers)
-          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
-
-      if (candidateExam == null)
+      // Validate assignment access
+      if (!await _assignmentService.ValidateAssignmentAccessAsync(AssignmentId, candidateId.Value))
       {
         return NotFound(new { success = false, message = "الاختبار غير موجود." });
       }
 
-      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
+      // Get all questions for assignment
+      var allQuestions = await _questionService.GetQuestionsForAssignmentAsync(AssignmentId);
 
-      // التحقق من صحة المؤشر
+      // Validate question index
       if (questionIndex < 0 || questionIndex >= allQuestions.Count)
       {
         return BadRequest(new { success = false, message = "رقم السؤال غير صالح." });
       }
 
-      // الحصول على السؤال
       var question = allQuestions[questionIndex];
 
-      // الحصول على إجابة المرشح (إن وجدت)
-      var candidateAnswer = await _context.CandidateAnswers
-          .FirstOrDefaultAsync(ca => ca.CandidateExamId == candidateExamId && ca.QuestionId == question.Id);
+      // Get candidate answer
+      var candidateAnswer = await _answerService.GetCandidateAnswerAsync(AssignmentId, question.Id);
 
       var questionViewModel = _mapper.Map<CandidateQuestionViewModel>(question);
       questionViewModel.IsAnswered = candidateAnswer != null && !string.IsNullOrEmpty(candidateAnswer.AnswerText);
       questionViewModel.IsFlagged = candidateAnswer != null && candidateAnswer.IsFlagged;
 
+      // Set question type specific properties
       if (question.QuestionType == nameof(QuestionTypeEnum.Matching))
       {
         questionViewModel.MatchingPairs = _mapper.Map<List<MatchingPairViewModel>>(question.MatchingPairs);
@@ -1008,21 +542,20 @@ namespace TawtheefTest.Controllers
       });
     }
 
-    // POST: CandidateExams/Create
+    // POST: Assignments/Create
     [HttpPost]
     public async Task<IActionResult> Create(int examId)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      // التحقق من وجود الامتحان
+      // Check if exam exists
       var exam = await _context.Exams
-          .Include(e => e.ExamQuestionSetManppings)
+          .Include(e => e.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.QuestionSet)
                   .ThenInclude(qs => qs.Questions)
           .FirstOrDefaultAsync(e => e.Id == examId);
@@ -1033,120 +566,70 @@ namespace TawtheefTest.Controllers
         return RedirectToAction("Index", "Home");
       }
 
-      // إضافة كود لإنشاء محاولة اختبار جديدة
       return RedirectToAction("Start", new { id = examId });
     }
 
-    // إحضار سؤال لامتحان مرشح
-    private async Task<List<Question>> GetQuestionsForCandidateExam(int candidateExamId)
-    {
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId);
-
-      if (candidateExam == null)
-      {
-        return new List<Question>();
-      }
-
-      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
-
-      return allQuestions;
-    }
-
-    // POST: CandidateExams/Complete
+    // POST: Assignments/Complete
     [HttpPost]
-    public async Task<IActionResult> Complete(int candidateExamId)
+    public async Task<IActionResult> Complete(int AssignmentId)
     {
-      // التحقق من تسجيل دخول المرشح
-      var candidateId = GetCurrentCandidateId();
+      var candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
-      // الحصول على اختبار المرشح
-      var candidateExam = await _context.Assignments
-          .Include(ce => ce.Exam)
-              .ThenInclude(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-          .Include(ce => ce.CandidateAnswers)
-              .ThenInclude(ca => ca.Question)
-          .FirstOrDefaultAsync(ce => ce.Id == candidateExamId && ce.CandidateId == candidateId);
-
-      if (candidateExam == null)
+      var assignment = await _assignmentService.CompleteAssignmentAsync(AssignmentId, candidateId.Value);
+      if (assignment == null)
       {
         return BadRequest(new { success = false, message = "الاختبار غير موجود." });
       }
 
-      if (candidateExam.Status == CandidateExamStatus.Completed.ToString())
+      if (assignment.Status != AssignmentStatus.Completed.ToString())
       {
-        return BadRequest(new { success = false, message = "الاختبار مكتمل بالفعل." });
+        return BadRequest(new { success = false, message = "حدث خطأ في إكمال الاختبار." });
       }
-
-      // جمع جميع الأسئلة من جميع مجموعات الأسئلة في الامتحان
-      var allQuestions = candidateExam.Exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
-
-      // حساب عدد الإجابات الصحيحة
-      int correctAnswers = candidateExam.CandidateAnswers.Count(ca => ca.IsCorrect.HasValue && ca.IsCorrect.Value);
-
-      // حساب النتيجة النهائية
-      decimal totalQuestions = allQuestions.Count;
-      decimal score = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
-
-      // تحديث حالة الاختبار ونتيجته
-      candidateExam.Score = score;
-      candidateExam.EndTime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-      candidateExam.Status = CandidateExamStatus.Completed.ToString();
-      candidateExam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-
-      await _context.SaveChangesAsync();
 
       return Ok(new
       {
         success = true,
-        score = score,
-        redirectUrl = Url.Action("Results", new { id = candidateExamId })
+        score = assignment.Score,
+        redirectUrl = Url.Action("Results", new { id = AssignmentId })
       });
     }
+
+    #region Private Helper Methods
 
     private List<string> GetExamRules()
     {
       return new List<string>
-      {
-        "يجب الإجابة على جميع الأسئلة قبل إنهاء الامتحان",
-        "لا يسمح بالخروج من الصفحة أثناء الامتحان",
-        "لا يسمح بفتح نوافذ أو تطبيقات أخرى أثناء الامتحان",
-        "يجب إنهاء الامتحان خلال المدة المحددة",
-        "لا يسمح بالعودة لتعديل الإجابات بعد الانتقال للسؤال التالي",
-        "يتم حفظ إجاباتك تلقائياً أثناء التنقل بين الأسئلة",
-        "في حالة انقطاع الاتصال، يمكنك متابعة الامتحان من حيث توقفت",
-        "التأكد من استقرار الاتصال بالإنترنت قبل البدء"
-      };
+            {
+                "يجب الإجابة على جميع الأسئلة قبل إنهاء الامتحان",
+                "لا يسمح بالخروج من الصفحة أثناء الامتحان",
+                "لا يسمح بفتح نوافذ أو تطبيقات أخرى أثناء الامتحان",
+                "يجب إنهاء الامتحان خلال المدة المحددة",
+                "لا يسمح بالعودة لتعديل الإجابات بعد الانتقال للسؤال التالي",
+                "يتم حفظ إجاباتك تلقائياً أثناء التنقل بين الأسئلة",
+                "في حالة انقطاع الاتصال، يمكنك متابعة الامتحان من حيث توقفت",
+                "التأكد من استقرار الاتصال بالإنترنت قبل البدء"
+            };
     }
 
     private List<string> GetTechnicalInstructions()
     {
       return new List<string>
-      {
-        "تأكد من استخدام متصفح حديث (Chrome، Firefox، Safari، Edge)",
-        "تأكد من تفعيل JavaScript في متصفحك",
-        "أغلق جميع التطبيقات غير الضرورية لضمان الأداء الأمثل",
-        "تأكد من شحن جهازك أو توصيله بمصدر طاقة",
-        "تأكد من استقرار اتصال الإنترنت",
-        "استخدم شاشة كبيرة إن أمكن لتجربة أفضل",
-        "تأكد من وضوح الصوت إذا كان الامتحان يتضمن محتوى صوتي",
-        "تجنب استخدام الجهاز لأغراض أخرى أثناء الامتحان"
-      };
+            {
+                "تأكد من استخدام متصفح حديث (Chrome، Firefox، Safari، Edge)",
+                "تأكد من تفعيل JavaScript في متصفحك",
+                "أغلق جميع التطبيقات غير الضرورية لضمان الأداء الأمثل",
+                "تأكد من شحن جهازك أو توصيله بمصدر طاقة",
+                "تأكد من استقرار اتصال الإنترنت",
+                "استخدم شاشة كبيرة إن أمكن لتجربة أفضل",
+                "تأكد من وضوح الصوت إذا كان الامتحان يتضمن محتوى صوتي",
+                "تجنب استخدام الجهاز لأغراض أخرى أثناء الامتحان"
+            };
     }
+
+    #endregion
   }
 }

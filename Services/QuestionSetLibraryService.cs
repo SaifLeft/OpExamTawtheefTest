@@ -8,6 +8,7 @@ using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs;
 using TawtheefTest.Enums;
 using TawtheefTest.ViewModels;
+using NodaTime;
 
 namespace TawtheefTest.Services
 {
@@ -89,7 +90,7 @@ namespace TawtheefTest.Services
     public async Task<List<QuestionSetDto>> GetAllQuestionSetsAsync()
     {
       var questionSets = await _context.QuestionSets
-          .Include(qs => qs.ExamQuestionSetManppings)
+          .Include(qs => qs.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.Exam)
           .OrderByDescending(qs => qs.CreatedAt)
           .ToListAsync();
@@ -101,8 +102,8 @@ namespace TawtheefTest.Services
     {
       var questionSet = await _context.QuestionSets
           .Include(qs => qs.Questions)
-              .ThenInclude(q => q.QuestionOptions)
-          .Include(qs => qs.ExamQuestionSetManppings)
+              .ThenInclude(q => q.Options)
+          .Include(qs => qs.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.Exam)
           .FirstOrDefaultAsync(qs => qs.Id == id);
 
@@ -115,17 +116,17 @@ namespace TawtheefTest.Services
       dto.Questions = _mapper.Map<List<QuestionDto>>(questionSet.Questions.OrderBy(q => q.Index).ToList());
 
       // حساب عدد الاختبارات التي تستخدم هذه المجموعة
-      dto.UsageCount = questionSet.ExamQuestionSetManppings.Count;
+      dto.UsageCount = questionSet.ExamQuestionSetMappings.Count;
 
       // إضافة أسماء الاختبارات التي تستخدم هذه المجموعة
-      dto.UsedInExams = questionSet.ExamQuestionSetManppings
+      dto.UsedInExams = questionSet.ExamQuestionSetMappings
           .Select(eqs => eqs.Exam.Name)
           .ToList();
 
       return dto;
     }
 
-    public async Task<long> CreateQuestionSetAsync(QuestionSetCreateViewModel model)
+    public async Task<int> CreateQuestionSetAsync(QuestionSetCreateViewModel model)
     {
       // إنشاء مجموعة أسئلة جديدة
       var questionSet = new QuestionSet
@@ -134,11 +135,11 @@ namespace TawtheefTest.Services
         Description = model.Description,
         QuestionType = model.QuestionType,
         Language = "Arabic", // يمكن تغييرها لتصبح قابلة للتخصيص
-        Difficulty = model.Difficulty,
-        QuestionCount = model.QuestionCount,
-        OptionsCount = model.OptionsCount,
-        Status = QuestionSetStatus.Pending.GetHashCode(),
-        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+        DifficultySet = model.Difficulty,
+        QuestionCount = (int)model.QuestionCount,
+        OptionsCount = (int?)model.OptionsCount,
+        Status = nameof(QuestionSetStatus.Pending),
+        CreatedAt = DateTime.UtcNow,
         ContentSourceType = model.ContentSourceType,
         Content = model.Topic,
       };
@@ -162,25 +163,25 @@ namespace TawtheefTest.Services
       }
 
       // تحقق مما إذا كانت مجموعة الأسئلة مضافة بالفعل للاختبار
-      var existingLink = await _context.ExamQuestionSetManppings
+      var existingLink = await _context.ExamQuestionSetMappings
           .FirstOrDefaultAsync(eqs => eqs.ExamId == DTO.ExamId && eqs.QuestionSetId == DTO.QuestionSetId);
 
       if (existingLink != null)
       {
         // تحديث ترتيب العرض فقط إذا كانت مجموعة الأسئلة مضافة بالفعل
-        existingLink.DisplayOrder = DTO.DisplayOrder;
+        existingLink.DisplayOrder = (int)DTO.DisplayOrder;
       }
       else
       {
         // إنشاء ارتباط جديد بين الاختبار ومجموعة الأسئلة
-        var examQuestionSet = new ExamQuestionSet
+        var examQuestionSet = new ExamQuestionSetMapping
         {
-          ExamId = DTO.ExamId,
-          QuestionSetId = DTO.QuestionSetId,
-          DisplayOrder = DTO.DisplayOrder
+          ExamId = (int)DTO.ExamId,
+          QuestionSetId = (int)DTO.QuestionSetId,
+          DisplayOrder = (int)DTO.DisplayOrder
         };
 
-        _context.ExamQuestionSetManppings.Add(examQuestionSet);
+        _context.ExamQuestionSetMappings.Add(examQuestionSet);
       }
 
       await _context.SaveChangesAsync();
@@ -190,7 +191,7 @@ namespace TawtheefTest.Services
     {
       var originalQuestionSet = await _context.QuestionSets
           .Include(qs => qs.Questions)
-              .ThenInclude(q => q.QuestionOptions)
+              .ThenInclude(q => q.Options)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.MatchingPairs)
           .Include(qs => qs.Questions)
@@ -209,13 +210,13 @@ namespace TawtheefTest.Services
         Description = originalQuestionSet.Description,
         QuestionType = originalQuestionSet.QuestionType,
         Language = originalQuestionSet.Language,
-        Difficulty = originalQuestionSet.Difficulty,
+        DifficultySet = originalQuestionSet.DifficultySet,
         QuestionCount = originalQuestionSet.QuestionCount,
         OptionsCount = originalQuestionSet.OptionsCount,
         NumberOfRows = originalQuestionSet.NumberOfRows,
         NumberOfCorrectOptions = originalQuestionSet.NumberOfCorrectOptions,
-        Status = QuestionSetStatus.Completed.GetHashCode(), // تعيين الحالة كمكتملة لأن الأسئلة ستكون جاهزة
-        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+        Status = nameof(QuestionSetStatus.Completed), // تعيين الحالة كمكتملة لأن الأسئلة ستكون جاهزة
+        CreatedAt = DateTime.UtcNow
       };
 
       _context.QuestionSets.Add(newQuestionSet);
@@ -239,18 +240,18 @@ namespace TawtheefTest.Services
           QuestionType = question.QuestionType,
           QuestionSetId = newQuestionSet.Id,
           Index = question.Index,
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+          CreatedAt = DateTime.UtcNow
         };
 
         _context.Questions.Add(newQuestion);
         await _context.SaveChangesAsync();
 
         // نسخ الخيارات إذا كانت موجودة
-        if (question.QuestionOptions != null && question.QuestionOptions.Any())
+        if (question.Options != null && question.Options.Any())
         {
-          foreach (var option in question.QuestionOptions)
+          foreach (var option in question.Options)
           {
-            var newOption = new QuestionOption
+            var newOption = new Option
             {
               Text = option.Text,
               IsCorrect = option.IsCorrect,
@@ -305,7 +306,7 @@ namespace TawtheefTest.Services
     {
       var questionSet = await _context.QuestionSets
           .Include(qs => qs.Questions)
-              .ThenInclude(q => q.QuestionOptions)
+              .ThenInclude(q => q.Options)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.OrderingItems)
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
@@ -342,9 +343,9 @@ namespace TawtheefTest.Services
         foreach (var question in questionSet.Questions)
         {
           // خلط خيارات أسئلة الاختيار من متعدد
-          if (question.QuestionOptions != null && question.QuestionOptions.Any())
+          if (question.Options != null && question.Options.Any())
           {
-            var options = question.QuestionOptions.ToList();
+            var options = question.Options.ToList();
             for (int i = 0; i < options.Count; i++)
             {
               options[i].Index = i + 1;
@@ -394,7 +395,7 @@ namespace TawtheefTest.Services
     {
       // الحصول على مجموعات الأسئلة المكتملة فقط
       var questionSets = await _context.QuestionSets
-          .Where(qs => qs.Status == QuestionSetStatus.Completed)
+          .Where(qs => qs.Status == nameof(QuestionSetStatus.Completed))
           .Include(qs => qs.Questions)
           .OrderByDescending(qs => qs.CreatedAt)
           .ToListAsync();
@@ -414,7 +415,7 @@ namespace TawtheefTest.Services
     {
       // جلب المجموعات المختارة والتأكد من أنها مكتملة
       var sets = await _context.QuestionSets
-          .Where(q => model.SelectedIds.Contains(q.Id) && q.Status == QuestionSetStatus.Completed)
+          .Where(q => model.SelectedIds.Contains(q.Id) && q.Status == nameof(QuestionSetStatus.Completed))
           .Include(q => q.Questions)
               .ThenInclude(q => q.Options)
           .Include(q => q.Questions)
@@ -444,7 +445,7 @@ namespace TawtheefTest.Services
       }
 
       // خلط الأسئلة إذا لزم الأمر
-      if (model.ShuffleQuestions)
+      if (model.ShuffleQuestions > 0)
         mergedQuestions = mergedQuestions.OrderBy(q => Guid.NewGuid()).ToList();
 
       // إنشاء وصف للمجموعة الجديدة
@@ -456,10 +457,10 @@ namespace TawtheefTest.Services
         Name = model.MergedName,
         Description = mergedDescription,
         QuestionType = model.MergedType,
-        Difficulty = model.MergedDifficulty,
+        DifficultySet = model.MergedDifficulty,
         Language = model.MergedLanguage,
-        Status = QuestionSetStatus.Completed.GetHashCode(),
-        CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+        Status = nameof(QuestionSetStatus.Completed),
+        CreatedAt = DateTime.UtcNow,
         QuestionCount = mergedQuestions.Count,
         OptionsCount = sets.First().OptionsCount,
         NumberOfRows = sets.First().NumberOfRows,
@@ -479,7 +480,7 @@ namespace TawtheefTest.Services
           QuestionText = question.QuestionText,
           QuestionType = question.QuestionType,
           Index = ++questionIndex, // ترتيب متسلسل جديد
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+          CreatedAt = DateTime.UtcNow
         };
 
         _context.Questions.Add(newQuestion);
@@ -490,7 +491,7 @@ namespace TawtheefTest.Services
         {
           foreach (var option in question.Options)
           {
-            var newOption = new QuestionOption
+            var newOption = new Option
             {
               Text = option.Text,
               IsCorrect = option.IsCorrect,
@@ -498,7 +499,7 @@ namespace TawtheefTest.Services
               Index = option.Index
             };
 
-            _context.QuestionOptions.Add(newOption);
+            _context.Options.Add(newOption);
           }
         }
 
@@ -546,7 +547,7 @@ namespace TawtheefTest.Services
     {
       // بناء استعلام قاعدة البيانات
       var query = _context.QuestionSets
-          .Include(qs => qs.ExamQuestionSetManppings)
+          .Include(qs => qs.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.Exam)
           .Include(qs => qs.Questions)
           .AsQueryable();
@@ -566,7 +567,7 @@ namespace TawtheefTest.Services
 
       if (!string.IsNullOrEmpty(difficulty))
       {
-        query = query.Where(qs => qs.Difficulty == difficulty);
+        query = query.Where(qs => qs.DifficultySet == difficulty);
       }
 
       if (!string.IsNullOrEmpty(language))
@@ -586,10 +587,10 @@ namespace TawtheefTest.Services
       for (int i = 0; i < questionSets.Count; i++)
       {
         // حساب عدد الأسئلة المولدة
-        dtos[i].QuestionsGenerated = questionSets[i].Questions.Count;
+        dtos[i].QuestionsGenerated = questionSets[i].Questions.Count > 0;
 
         // إضافة أسماء الاختبارات المستخدمة فيها
-        dtos[i].UsedInExams = questionSets[i].ExamQuestionSetManppings
+        dtos[i].UsedInExams = questionSets[i].ExamQuestionSetMappings
             .Select(eqs => eqs.Exam.Name)
             .ToList();
 
@@ -610,7 +611,7 @@ namespace TawtheefTest.Services
               .ThenInclude(q => q.MatchingPairs)
           .Include(qs => qs.Questions)
               .ThenInclude(q => q.OrderingItems)
-          .Include(qs => qs.ExamQuestionSetManppings)
+          .Include(qs => qs.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.Exam)
           .FirstOrDefaultAsync(qs => qs.Id == id);
 
@@ -626,8 +627,8 @@ namespace TawtheefTest.Services
       dto.Questions = _mapper.Map<List<QuestionDto>>(questionSet.Questions.OrderBy(q => q.Index).ToList());
 
       // إضافة معلومات إضافية للـ DTO
-      dto.UsageCount = questionSet.ExamQuestionSetManppings.Count;
-      dto.UsedInExams = questionSet.ExamQuestionSetManppings
+      dto.UsageCount = questionSet.ExamQuestionSetMappings.Count;
+      dto.UsedInExams = questionSet.ExamQuestionSetMappings
           .Select(eqs => eqs.Exam.Name)
           .ToList();
 
@@ -644,7 +645,7 @@ namespace TawtheefTest.Services
     {
       // البحث عن مجموعة الأسئلة المراد حذفها
       var questionSet = await _context.QuestionSets
-          .Include(qs => qs.ExamQuestionSetManppings)
+          .Include(qs => qs.ExamQuestionSetMappings)
           .FirstOrDefaultAsync(qs => qs.Id == id);
 
       if (questionSet == null)
@@ -653,7 +654,7 @@ namespace TawtheefTest.Services
       }
 
       // التحقق من أن مجموعة الأسئلة غير مستخدمة في أي اختبار
-      if (questionSet.ExamQuestionSetManppings.Any())
+      if (questionSet.ExamQuestionSetMappings.Any())
       {
         throw new InvalidOperationException("لا يمكن حذف مجموعة الأسئلة لأنها مستخدمة في اختبارات. قم بإزالتها من الاختبارات أولاً.");
       }

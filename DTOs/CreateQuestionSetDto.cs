@@ -10,7 +10,7 @@ namespace TawtheefTest.DTOs
 
     [Required(ErrorMessage = "الاختبار مطلوب")]
     [Display(Name = "الاختبار")]
-    public long ExamId { get; set; }
+    public int ExamId { get; set; }
 
     [Display(Name = "وصف المجموعة")]
     public string Description { get; set; }
@@ -26,12 +26,12 @@ namespace TawtheefTest.DTOs
     [Required(ErrorMessage = "عدد الأسئلة مطلوب")]
     [Range(1, 50, ErrorMessage = "عدد الأسئلة يجب أن يكون بين 1 و 50")]
     [Display(Name = "عدد الأسئلة")]
-    public long QuestionCount { get; set; }
+    public int QuestionCount { get; set; }
 
     [Required(ErrorMessage = "عدد الخيارات مطلوب")]
     [Range(2, 10, ErrorMessage = "عدد الخيارات يجب أن يكون بين 2 و 10")]
     [Display(Name = "عدد الخيارات")]
-    public long OptionsCount { get; set; }
+    public int OptionsCount { get; set; }
 
     [Required(ErrorMessage = "مستوى الصعوبة مطلوب")]
     [Display(Name = "مستوى الصعوبة")]
@@ -58,11 +58,11 @@ namespace TawtheefTest.DTOs
     public string FileName { get; set; }
 
     [Display(Name = "معرف الملف المرفوع")]
-    public long? UploadedFileId { get; set; }
+    public int? UploadedFileId { get; set; }
 
     [Display(Name = "عدد العناصر")]
     [Range(2, 10, ErrorMessage = "عدد العناصر يجب أن يكون بين 2 و 10")]
-    public long? NumberOfRows { get; set; }
+    public int? NumberOfRows { get; set; }
 
     [Display(Name = "عدد الإجابات الصحيحة")]
     [Range(1, 5, ErrorMessage = "عدد الإجابات الصحيحة يجب أن يكون بين 1 و 5")]

@@ -7,15 +7,15 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class OtpVerification
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long PhoneNumber { get; set; }
+    public int PhoneNumber { get; set; }
 
-    public string Otpcode { get; set; }
+    public string OtpCode { get; set; }
 
-    public long IsVerified { get; set; }
+    public bool IsVerified { get; set; }
 
-    public string ExpiresAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

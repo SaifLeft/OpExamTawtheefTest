@@ -41,7 +41,7 @@ namespace TawtheefTest.Enums
     Archived
   }
 
-  public enum CandidateExamStatus
+  public enum AssignmentStatus
   {
     [Description("لم يبدأ")]
     NotStarted,

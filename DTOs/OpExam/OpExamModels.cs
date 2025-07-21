@@ -18,16 +18,16 @@ namespace TawtheefTest.DTOs.OpExam
     public string Language { get; set; } = "Arabic";
 
     [JsonPropertyName("numberOfOptions")]
-    public long NumberOfOptions { get; set; } = 4;
+    public int NumberOfOptions { get; set; } = 4;
 
     [JsonPropertyName("numberOfQuestions")]
-    public long NumberOfQuestions { get; set; } = 10;
+    public int NumberOfQuestions { get; set; } = 10;
 
     [JsonPropertyName("difficulty")]
     public string Difficulty { get; set; } = "auto";
 
     [JsonPropertyName("numberOfRows")]
-    public long? NumberOfRows { get; set; }
+    public int? NumberOfRows { get; set; }
 
     [JsonPropertyName("numberOfCorrectOptions")]
     public string? NumberOfCorrectOptions { get; set; } = "auto";
@@ -82,7 +82,7 @@ namespace TawtheefTest.DTOs.OpExam
   public class OpExamQuestion
   {
     [JsonPropertyName("index")]
-    public long Index { get; set; }
+    public int Index { get; set; }
 
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -94,7 +94,7 @@ namespace TawtheefTest.DTOs.OpExam
     public List<string> Options { get; set; }
 
     [JsonPropertyName("answerIndex")]
-    public long? AnswerIndex { get; set; }
+    public int? AnswerIndex { get; set; }
 
     [JsonPropertyName("answer")]
     public string Answer { get; set; }
@@ -121,11 +121,11 @@ namespace TawtheefTest.DTOs.OpExam
 
   public class TFQuestion
   {
-    public long Index { get; set; }
+    public int Index { get; set; }
     [JsonPropertyName("question")]
     public string QuestionText { get; set; }
     [JsonPropertyName("answer")]
-    public long Answer { get; set; }
+    public int Answer { get; set; }
     public string Id { get; set; }
   }
 
@@ -141,7 +141,7 @@ namespace TawtheefTest.DTOs.OpExam
   public class MultiSelectQuestion
   {
     [JsonPropertyName("index")]
-    public long Index { get; set; }
+    public int Index { get; set; }
 
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -151,7 +151,7 @@ namespace TawtheefTest.DTOs.OpExam
 
     [JsonPropertyName("options")]
     public List<string> Options { get; set; }
-    public List<long> AnswerIndexs { get; set; }
+    public List<int> AnswerIndexs { get; set; }
     public List<string> Answer { get; set; }
   }
 

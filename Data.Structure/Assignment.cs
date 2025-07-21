@@ -7,43 +7,43 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class Assignment
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long ExamId { get; set; }
+    public int ExamId { get; set; }
 
-    public long CandidateId { get; set; }
+    public int CandidateId { get; set; }
 
     public string Status { get; set; }
 
-    public string StartTime { get; set; }
+    public DateTime? StartTime { get; set; }
 
-    public string EndTime { get; set; }
+    public DateTime? EndTime { get; set; }
 
-    public string Score { get; set; }
+    public decimal? Score { get; set; }
 
-    public long TotalPoints { get; set; }
+    public int TotalPoints { get; set; }
 
-    public long MaxPossiblePoints { get; set; }
+    public int MaxPossiblePoints { get; set; }
 
-    public long EasyQuestionsCorrect { get; set; }
+    public int EasyQuestionsCorrect { get; set; }
 
-    public long MediumQuestionsCorrect { get; set; }
+    public int MediumQuestionsCorrect { get; set; }
 
-    public long HardQuestionsCorrect { get; set; }
+    public int HardQuestionsCorrect { get; set; }
 
     public string CompletionDuration { get; set; }
 
-    public long RankPosition { get; set; }
+    public int RankPosition { get; set; }
 
-    public long TotalQuestions { get; set; }
+    public int TotalQuestions { get; set; }
 
-    public long CompletedQuestions { get; set; }
+    public int CompletedQuestions { get; set; }
 
-    public long QuestionReplaced { get; set; }
+    public bool QuestionReplaced { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public string UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Candidate Candidate { get; set; }
 

@@ -7,12 +7,12 @@ namespace TawtheefTest.ViewModels
         [Required(ErrorMessage = "رقم الهاتف مطلوب")]
         [RegularExpression(@"^\d+$", ErrorMessage = "يجب أن يكون رقم الهاتف أرقامًا فقط")]
         [Display(Name = "رقم الهاتف")]
-        public long PhoneNumber { get; set; }
+        public int PhoneNumber { get; set; }
     }
 
     public class OTPVerificationViewModel
     {
-        public long PhoneNumber { get; set; }
+        public int PhoneNumber { get; set; }
 
         [Required(ErrorMessage = "رمز التحقق مطلوب")]
         [StringLength(6, MinimumLength = 6, ErrorMessage = "يجب أن يتكون رمز التحقق من 6 أرقام")]

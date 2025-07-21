@@ -21,7 +21,7 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<Exam> Exams { get; set; }
 
-    public virtual DbSet<ExamQuestionSetManpping> ExamQuestionSetManppings { get; set; }
+    public virtual DbSet<ExamQuestionSetMapping> ExamQuestionSetMappings { get; set; }
 
     public virtual DbSet<Job> Jobs { get; set; }
 
@@ -45,246 +45,399 @@ public partial class ApplicationDbContext : DbContext
     {
         modelBuilder.Entity<Assignment>(entity =>
         {
-            entity.ToTable("Assignment");
+            entity.HasKey(e => e.Id).HasName("assignment_pkey");
 
-            entity.Property(e => e.CandidateId).HasColumnType("integer(10)");
-            entity.Property(e => e.CompletedQuestions).HasColumnType("integer(10)");
+            entity.ToTable("assignment");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CandidateId).HasColumnName("candidate_id");
+            entity.Property(e => e.CompletedQuestions).HasColumnName("completed_questions");
+            entity.Property(e => e.CompletionDuration).HasColumnName("completion_duration");
             entity.Property(e => e.CreatedAt)
-                .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.EasyQuestionsCorrect).HasColumnType("integer(10)");
-            entity.Property(e => e.ExamId).HasColumnType("integer(10)");
-            entity.Property(e => e.HardQuestionsCorrect).HasColumnType("integer(10)");
-            entity.Property(e => e.MaxPossiblePoints).HasColumnType("integer(10)");
-            entity.Property(e => e.MediumQuestionsCorrect).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionReplaced).HasColumnType("integer(10)");
-            entity.Property(e => e.RankPosition).HasColumnType("integer(10)");
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EasyQuestionsCorrect).HasColumnName("easy_questions_correct");
+            entity.Property(e => e.EndTime)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("end_time");
+            entity.Property(e => e.ExamId).HasColumnName("exam_id");
+            entity.Property(e => e.HardQuestionsCorrect).HasColumnName("hard_questions_correct");
+            entity.Property(e => e.MaxPossiblePoints).HasColumnName("max_possible_points");
+            entity.Property(e => e.MediumQuestionsCorrect).HasColumnName("medium_questions_correct");
+            entity.Property(e => e.QuestionReplaced).HasColumnName("question_replaced");
+            entity.Property(e => e.RankPosition).HasColumnName("rank_position");
+            entity.Property(e => e.Score)
+                .HasPrecision(19)
+                .HasColumnName("score");
+            entity.Property(e => e.StartTime)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("start_time");
             entity.Property(e => e.Status)
                 .IsRequired()
-                .HasDefaultValueSql("'NotStarted'");
-            entity.Property(e => e.TotalPoints).HasColumnType("integer(10)");
-            entity.Property(e => e.TotalQuestions).HasColumnType("integer(10)");
+                .HasDefaultValueSql("'NotStarted'::text")
+                .HasColumnName("status");
+            entity.Property(e => e.TotalPoints).HasColumnName("total_points");
+            entity.Property(e => e.TotalQuestions).HasColumnName("total_questions");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
 
             entity.HasOne(d => d.Candidate).WithMany(p => p.Assignments)
                 .HasForeignKey(d => d.CandidateId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fkassignment254527");
 
             entity.HasOne(d => d.Exam).WithMany(p => p.Assignments)
                 .HasForeignKey(d => d.ExamId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fkassignment399169");
         });
 
         modelBuilder.Entity<Candidate>(entity =>
         {
-            entity.ToTable("Candidate");
+            entity.HasKey(e => e.Id).HasName("candidate_pkey");
 
+            entity.ToTable("candidate");
+
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.JobId).HasColumnName("job_id");
+            entity.Property(e => e.Name)
                 .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.IsActive).HasColumnType("integer(10)");
-            entity.Property(e => e.JobId).HasColumnType("integer(10)");
-            entity.Property(e => e.Name).IsRequired();
-            entity.Property(e => e.Phone).HasColumnType("integer(10)");
+                .HasColumnName("name");
+            entity.Property(e => e.Phone).HasColumnName("phone");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
 
             entity.HasOne(d => d.Job).WithMany(p => p.Candidates)
                 .HasForeignKey(d => d.JobId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fkcandidate822481");
         });
 
         modelBuilder.Entity<CandidateAnswer>(entity =>
         {
-            entity.Property(e => e.AssignmentId).HasColumnType("integer(10)");
+            entity.HasKey(e => e.Id).HasName("candidate_answers_pkey");
+
+            entity.ToTable("candidate_answers");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AnswerText).HasColumnName("answer_text");
+            entity.Property(e => e.AssignmentId).HasColumnName("assignment_id");
             entity.Property(e => e.CreatedAt)
-                .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.IsCorrect).HasColumnType("integer(10)");
-            entity.Property(e => e.IsFlagged).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionId).HasColumnType("integer(10)");
-            entity.Property(e => e.SelectedOptionId).HasColumnType("integer(10)");
-            entity.Property(e => e.TrueFalseAnswer).HasColumnType("integer(10)");
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsCorrect).HasColumnName("is_correct");
+            entity.Property(e => e.IsFlagged).HasColumnName("is_flagged");
+            entity.Property(e => e.MatchingPairsJson).HasColumnName("matching_pairs_json");
+            entity.Property(e => e.OrderingJson).HasColumnName("ordering_json");
+            entity.Property(e => e.QuestionId).HasColumnName("question_id");
+            entity.Property(e => e.SelectedOptionid).HasColumnName("selected_optionid");
+            entity.Property(e => e.SelectedOptionsJson).HasColumnName("selected_options_json");
+            entity.Property(e => e.TrueFalseAnswer).HasColumnName("true_false_answer");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
 
             entity.HasOne(d => d.Assignment).WithMany(p => p.CandidateAnswers)
                 .HasForeignKey(d => d.AssignmentId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fkcandidate_658198");
 
             entity.HasOne(d => d.Question).WithMany(p => p.CandidateAnswers)
                 .HasForeignKey(d => d.QuestionId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fkcandidate_408247");
         });
 
         modelBuilder.Entity<Exam>(entity =>
         {
-            entity.ToTable("Exam");
+            entity.HasKey(e => e.Id).HasName("exam_pkey");
 
+            entity.ToTable("exam");
+
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Duration).HasColumnName("duration");
+            entity.Property(e => e.EndDate)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("end_date");
+            entity.Property(e => e.JobId).HasColumnName("job_id");
+            entity.Property(e => e.Name)
                 .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.Duration).HasColumnType("integer(10)");
-            entity.Property(e => e.EndDate).IsRequired();
-            entity.Property(e => e.JobId).HasColumnType("integer(10)");
-            entity.Property(e => e.Name).IsRequired();
-            entity.Property(e => e.SendExamLinkToApplicants).HasColumnType("integer(1)");
-            entity.Property(e => e.ShowResultsImmediately).HasColumnType("integer(1)");
-            entity.Property(e => e.StartDate).IsRequired();
-            entity.Property(e => e.Status).IsRequired();
-            entity.Property(e => e.TotalQuestionsPerCandidate).HasColumnType("integer(10)");
+                .HasColumnName("name");
+            entity.Property(e => e.SendExamLinkToApplicants).HasColumnName("send_exam_link_to_applicants");
+            entity.Property(e => e.ShowResultsImmediately).HasColumnName("show_results_immediately");
+            entity.Property(e => e.StartDate)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("start_date");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasColumnName("status");
+            entity.Property(e => e.TotalQuestionsPerCandidate).HasColumnName("total_questions_per_candidate");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
 
             entity.HasOne(d => d.Job).WithMany(p => p.Exams)
                 .HasForeignKey(d => d.JobId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fkexam637152");
         });
 
-        modelBuilder.Entity<ExamQuestionSetManpping>(entity =>
+        modelBuilder.Entity<ExamQuestionSetMapping>(entity =>
         {
-            entity.ToTable("ExamQuestionSetManpping");
+            entity.HasKey(e => e.Id).HasName("exam_question_set_mapping_pkey");
 
-            entity.Property(e => e.DisplayOrder).HasColumnType("integer(10)");
-            entity.Property(e => e.ExamId).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionSetId).HasColumnType("integer(10)");
+            entity.ToTable("exam_question_set_mapping");
 
-            entity.HasOne(d => d.Exam).WithMany(p => p.ExamQuestionSetManppings).HasForeignKey(d => d.ExamId);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.DisplayOrder).HasColumnName("display_order");
+            entity.Property(e => e.ExamId).HasColumnName("exam_id");
+            entity.Property(e => e.QuestionSetId).HasColumnName("question_set_id");
 
-            entity.HasOne(d => d.QuestionSet).WithMany(p => p.ExamQuestionSetManppings).HasForeignKey(d => d.QuestionSetId);
+            entity.HasOne(d => d.Exam).WithMany(p => p.ExamQuestionSetMappings)
+                .HasForeignKey(d => d.ExamId)
+                .HasConstraintName("fkexam_quest628853");
+
+            entity.HasOne(d => d.QuestionSet).WithMany(p => p.ExamQuestionSetMappings)
+                .HasForeignKey(d => d.QuestionSetId)
+                .HasConstraintName("fkexam_quest965436");
         });
 
         modelBuilder.Entity<Job>(entity =>
         {
-            entity.ToTable("Job");
+            entity.HasKey(e => e.Id).HasName("job_pkey");
 
+            entity.ToTable("job");
+
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Title)
                 .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.Title).IsRequired();
+                .HasColumnName("title");
         });
 
         modelBuilder.Entity<MatchingPair>(entity =>
         {
-            entity.ToTable("MatchingPair");
+            entity.HasKey(e => e.Id).HasName("matching_pair_pkey");
 
-            entity.Property(e => e.CorrectOrder).HasColumnType("integer(10)");
-            entity.Property(e => e.DisplayOrder).HasColumnType("integer(10)");
-            entity.Property(e => e.LeftItem).IsRequired();
-            entity.Property(e => e.QuestionId).HasColumnType("integer(10)");
-            entity.Property(e => e.RightItem).IsRequired();
+            entity.ToTable("matching_pair");
 
-            entity.HasOne(d => d.Question).WithMany(p => p.MatchingPairs).HasForeignKey(d => d.QuestionId);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CorrectOrder).HasColumnName("correct_order");
+            entity.Property(e => e.DisplayOrder).HasColumnName("display_order");
+            entity.Property(e => e.LeftItem)
+                .IsRequired()
+                .HasColumnName("left_item");
+            entity.Property(e => e.QuestionId).HasColumnName("question_id");
+            entity.Property(e => e.RightItem)
+                .IsRequired()
+                .HasColumnName("right_item");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.MatchingPairs)
+                .HasForeignKey(d => d.QuestionId)
+                .HasConstraintName("fkmatching_p895745");
         });
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.ToTable("Notification");
+            entity.HasKey(e => e.Id).HasName("notification_pkey");
 
-            entity.Property(e => e.CandidateId).HasColumnType("integer(10)");
+            entity.ToTable("notification");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CandidateId).HasColumnName("candidate_id");
             entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsRead).HasColumnName("is_read");
+            entity.Property(e => e.Message)
                 .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.IsRead).HasColumnType("integer(10)");
-            entity.Property(e => e.Message).IsRequired();
-            entity.Property(e => e.Title).IsRequired();
+                .HasColumnName("message");
+            entity.Property(e => e.ReadAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("read_at");
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasColumnName("title");
             entity.Property(e => e.Type)
                 .IsRequired()
-                .HasDefaultValueSql("'info'");
+                .HasDefaultValueSql("'info'::text")
+                .HasColumnName("type");
 
             entity.HasOne(d => d.Candidate).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.CandidateId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fknotificati540497");
         });
 
         modelBuilder.Entity<Option>(entity =>
         {
+            entity.HasKey(e => e.Id).HasName("Option_pkey");
+
             entity.ToTable("Option");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Displayorder).HasColumnName("displayorder");
+            entity.Property(e => e.IsCorrect).HasColumnName("is_correct");
+            entity.Property(e => e.QuestionId).HasColumnName("question_id");
+            entity.Property(e => e.Text)
+                .IsRequired()
+                .HasColumnName("text");
 
             entity.HasOne(d => d.Question).WithMany(p => p.Options)
                 .HasForeignKey(d => d.QuestionId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .HasConstraintName("fkoption336609");
         });
 
         modelBuilder.Entity<OptionChoice>(entity =>
         {
-            entity.ToTable("OptionChoice");
+            entity.HasKey(e => e.Id).HasName("option_choice_pkey");
 
-            entity.Property(e => e.DisplayOrder).HasColumnType("integer(10)");
-            entity.Property(e => e.IsCorrect).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionId).HasColumnType("integer(10)");
-            entity.Property(e => e.Text).IsRequired();
+            entity.ToTable("option_choice");
 
-            entity.HasOne(d => d.Question).WithMany(p => p.OptionChoices).HasForeignKey(d => d.QuestionId);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.QuestionId).HasColumnName("question_id");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.OptionChoices)
+                .HasForeignKey(d => d.QuestionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fkoption_cho26231");
         });
 
         modelBuilder.Entity<OrderingItem>(entity =>
         {
-            entity.ToTable("OrderingItem");
+            entity.HasKey(e => e.Id).HasName("ordering_item_pkey");
 
-            entity.Property(e => e.CorrectOrder).HasColumnType("integer(10)");
-            entity.Property(e => e.DisplayOrder).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionId).HasColumnType("integer(10)");
-            entity.Property(e => e.Text).IsRequired();
+            entity.ToTable("ordering_item");
 
-            entity.HasOne(d => d.Question).WithMany(p => p.OrderingItems).HasForeignKey(d => d.QuestionId);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CorrectOrder).HasColumnName("correct_order");
+            entity.Property(e => e.DisplayOrder).HasColumnName("display_order");
+            entity.Property(e => e.QuestionId).HasColumnName("question_id");
+            entity.Property(e => e.Text)
+                .IsRequired()
+                .HasColumnName("text");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.OrderingItems)
+                .HasForeignKey(d => d.QuestionId)
+                .HasConstraintName("fkordering_i947229");
         });
 
         modelBuilder.Entity<OtpVerification>(entity =>
         {
-            entity.ToTable("OtpVerification");
+            entity.HasKey(e => e.Id).HasName("otp_verification_pkey");
 
+            entity.ToTable("otp_verification");
+
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("expires_at");
+            entity.Property(e => e.IsVerified).HasColumnName("is_verified");
+            entity.Property(e => e.OtpCode)
                 .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.ExpiresAt).IsRequired();
-            entity.Property(e => e.IsVerified).HasColumnType("integer(10)");
-            entity.Property(e => e.Otpcode)
-                .IsRequired()
-                .HasColumnName("OTPCode");
-            entity.Property(e => e.PhoneNumber).HasColumnType("integer(10)");
+                .HasColumnName("otp_code");
+            entity.Property(e => e.PhoneNumber).HasColumnName("phone_number");
         });
 
         modelBuilder.Entity<Question>(entity =>
         {
-            entity.ToTable("Question");
+            entity.HasKey(e => e.Id).HasName("question_pkey");
 
-            entity.Property(e => e.AnswerIndex).HasColumnType("integer(10)");
+            entity.ToTable("question");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Answer).HasColumnName("answer");
+            entity.Property(e => e.AnswerIndex).HasColumnName("answer_index");
             entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DifficultyLevel)
                 .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.DifficultyLevel).IsRequired();
-            entity.Property(e => e.DisplayOrder).HasColumnType("integer(10)");
-            entity.Property(e => e.Index).HasColumnType("integer(10)");
-            entity.Property(e => e.Points).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionSetId).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionText).IsRequired();
-            entity.Property(e => e.QuestionType).IsRequired();
-            entity.Property(e => e.TrueFalseAnswer).HasColumnType("integer(10)");
+                .HasColumnName("difficulty_level");
+            entity.Property(e => e.DisplayOrder).HasColumnName("display_order");
+            entity.Property(e => e.ExternalId).HasColumnName("external_id");
+            entity.Property(e => e.InstructionText).HasColumnName("instruction_text");
+            entity.Property(e => e.Points).HasColumnName("points");
+            entity.Property(e => e.QuestionSetId).HasColumnName("question_set_id");
+            entity.Property(e => e.QuestionText)
+                .IsRequired()
+                .HasColumnName("question_text");
+            entity.Property(e => e.QuestionType)
+                .IsRequired()
+                .HasColumnName("question_type");
+            entity.Property(e => e.SampleAnswer).HasColumnName("sample_answer");
+            entity.Property(e => e.TrueFalseAnswer).HasColumnName("true_false_answer");
 
             entity.HasOne(d => d.QuestionSet).WithMany(p => p.Questions)
                 .HasForeignKey(d => d.QuestionSetId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fkquestion48691");
         });
 
         modelBuilder.Entity<QuestionSet>(entity =>
         {
-            entity.ToTable("QuestionSet");
+            entity.HasKey(e => e.Id).HasName("question_set_pkey");
 
-            entity.Property(e => e.ContentSourceType).IsRequired();
-            entity.Property(e => e.CreatedAt)
+            entity.ToTable("question_set");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Content).HasColumnName("content");
+            entity.Property(e => e.ContentSourceType)
                 .IsRequired()
-                .HasDefaultValueSql("'GETUTCDATE()'");
-            entity.Property(e => e.Description).IsRequired();
+                .HasColumnName("content_source_type");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description)
+                .IsRequired()
+                .HasColumnName("description");
             entity.Property(e => e.DifficultySet)
                 .IsRequired()
-                .HasDefaultValueSql("'medium'");
+                .HasDefaultValueSql("'medium'::text")
+                .HasColumnName("difficulty_set");
+            entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+            entity.Property(e => e.FileName).HasColumnName("file_name");
+            entity.Property(e => e.FileUploadedCode).HasColumnName("file_uploaded_code");
             entity.Property(e => e.Language)
                 .IsRequired()
-                .HasDefaultValueSql("'Arabic'");
-            entity.Property(e => e.Name).IsRequired();
-            entity.Property(e => e.NumberOfCorrectOptions).HasColumnType("integer(10)");
-            entity.Property(e => e.NumberOfRows).HasColumnType("integer(10)");
-            entity.Property(e => e.OptionsCount).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionCount).HasColumnType("integer(10)");
-            entity.Property(e => e.QuestionType).IsRequired();
-            entity.Property(e => e.RetryCount).HasColumnType("integer(10)");
+                .HasDefaultValueSql("'Arabic'::text")
+                .HasColumnName("language");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasColumnName("name");
+            entity.Property(e => e.NumberOfCorrectOptions).HasColumnName("number_of_correct_options");
+            entity.Property(e => e.NumberOfRows).HasColumnName("number_of_rows");
+            entity.Property(e => e.OptionsCount).HasColumnName("options_count");
+            entity.Property(e => e.ProcessedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("processed_at");
+            entity.Property(e => e.QuestionCount).HasColumnName("question_count");
+            entity.Property(e => e.QuestionType)
+                .IsRequired()
+                .HasColumnName("question_type");
+            entity.Property(e => e.RetryCount).HasColumnName("retry_count");
             entity.Property(e => e.Status)
                 .IsRequired()
-                .HasDefaultValueSql("0");
+                .HasDefaultValueSql("'0'::text")
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.Url).HasColumnName("url");
         });
 
         OnModelCreatingPartial(modelBuilder);

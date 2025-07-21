@@ -22,25 +22,20 @@ namespace TawtheefTest.Infrastructure
           .ReverseMap();
 
       CreateMap<Question, ExamQuestionDTO>();
-      CreateMap<QuestionOption, QuestionOptionDTO>();
-      CreateMap<Otpverification, OTPVerificationDto>()
-        .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => (int)src.PhoneNumber))
-        .ForMember(dest => dest.OTPCode, opt => opt.MapFrom(src => src.Otpcode))
-        .ForMember(dest => dest.IsVerified, opt => opt.MapFrom(src => src.IsVerified == 1))
-        .ForMember(dest => dest.ExpiresAt, opt => opt.MapFrom(src => DateTime.Parse(src.ExpiresAt)))
-        .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Parse(src.CreatedAt)));
+      CreateMap<Option, QuestionOptionDTO>();
+      CreateMap<OtpVerification, OTPVerificationDto>();
       CreateMap<CandidateAnswer, CandidateAnswerDTO>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText ?? string.Empty));
 
       // تخطيط CandidateExam إلى CandidateExamViewModel
-      CreateMap<CandidateExam, CandidateExamViewModel>()
+      CreateMap<Assignment, AssignmentViewModel>()
           .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Candidate.Name))
           .ForMember(dest => dest.ExamTitle, opt => opt.MapFrom(src => src.Exam.Name))
           .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Exam.Job.Title))
           .ForMember(dest => dest.Duration, opt => opt.MapFrom(src => src.Exam.Duration))
           .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.TotalQuestions > 0
               ? src.TotalQuestions
-              : src.Exam.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
+              : src.Exam.ExamQuestionSetMappings.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
           .ForMember(dest => dest.CompletedQuestions, opt => opt.MapFrom(src => src.CompletedQuestions > 0
               ? src.CompletedQuestions
               : src.CandidateAnswers.Select(ca => ca.QuestionId).Distinct().Count()));
@@ -48,12 +43,11 @@ namespace TawtheefTest.Infrastructure
       // تخطيط Exam إلى ExamForCandidateViewModel
       CreateMap<Exam, ExamForCandidateViewModel>()
           .ForMember(dest => dest.JobName, opt => opt.MapFrom(src => src.Job.Title))
-          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
-          .ForMember(dest => dest.PassPercentage, opt => opt.MapFrom(src => src.PassPercentage ?? 60m))
+          .ForMember(dest => dest.TotalQuestions, opt => opt.MapFrom(src => src.ExamQuestionSetMappings.SelectMany(eqs => eqs.QuestionSet.Questions).Count()))
           .ForMember(dest => dest.QuestionCountForEachCandidate, opt => opt.MapFrom(src => src.TotalQuestionsPerCandidate));
 
       // تخطيط CandidateExam إلى CandidateExamResultViewModel
-      CreateMap<CandidateExam, CandidateExamResultViewModel>()
+      CreateMap<Assignment, AssignmentResultViewModel>()
           .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Candidate.Name))
           .ForMember(dest => dest.ExamTitle, opt => opt.MapFrom(src => src.Exam.Name))
           .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src => src.Exam.Job.Title))
@@ -78,7 +72,7 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.MatchingPairs, opt => opt.MapFrom(src => src.MatchingPairs))
           .ForMember(dest => dest.InstructionText, opt => opt.MapFrom(src => src.InstructionText));
 
-      CreateMap<QuestionOption, QuestionOptionViewModel>();
+      CreateMap<Option, QuestionOptionViewModel>();
       CreateMap<OrderingItem, OrderingItemViewModel>();
       CreateMap<MatchingPair, MatchingPairViewModel>()
           .ForMember(dest => dest.LeftSide, opt => opt.MapFrom(src => src.LeftItem))
@@ -86,7 +80,7 @@ namespace TawtheefTest.Infrastructure
 
       // للتعامل مع نماذج توليد الأسئلة
       CreateMap<QuestionSet, QuestionSetDto>()
-          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetQuestionSetStatusDescription((QuestionSetStatus)src.Status)))
+          .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
           .ForMember(dest => dest.Questions, opt => opt.Ignore())
           .ForMember(dest => dest.UsageCount, opt => opt.Ignore())
           .ForMember(dest => dest.UsedInExams, opt => opt.Ignore());
@@ -96,7 +90,7 @@ namespace TawtheefTest.Infrastructure
       CreateMap<QuestionViewModel, QuestionDto>();
 
       CreateMap<Question, QuestionViewModel>();
-      CreateMap<QuestionOption, QuestionOptionViewModel>();
+      CreateMap<Option, QuestionOptionViewModel>();
 
       // تخطيط Notification إلى NotificationViewModel
       CreateMap<Notification, NotificationViewModel>()
@@ -107,16 +101,16 @@ namespace TawtheefTest.Infrastructure
       CreateMap<ExamDTO, Exam>();
       CreateMap<CandidateDTO, Candidate>();
       CreateMap<ExamQuestionDTO, Question>();
-      CreateMap<QuestionOptionDTO, QuestionOption>();
+      CreateMap<QuestionOptionDTO, Option>();
       CreateMap<CandidateAnswerDTO, CandidateAnswer>()
           .ForMember(dest => dest.AnswerText, opt => opt.MapFrom(src => src.AnswerText));
       CreateMap<CreateExamDTO, Exam>();
       CreateMap<EditExamDTO, Exam>();
       CreateMap<CreateJobDTO, Job>();
       CreateMap<EditJobDTO, Job>();
-      CreateMap<OTPVerificationDto, Otpverification>()
+      CreateMap<OTPVerificationDto, OtpVerification>()
         .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => (long)src.PhoneNumber))
-        .ForMember(dest => dest.Otpcode, opt => opt.MapFrom(src => src.OTPCode))
+        .ForMember(dest => dest.OtpCode, opt => opt.MapFrom(src => src.OTPCode))
         .ForMember(dest => dest.IsVerified, opt => opt.MapFrom(src => src.IsVerified ? 1L : 0L))
         .ForMember(dest => dest.ExpiresAt, opt => opt.MapFrom(src => src.ExpiresAt.ToString("yyyy-MM-dd HH:mm:ss")))
         .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")));
@@ -127,7 +121,7 @@ namespace TawtheefTest.Infrastructure
 
       CreateMap<QuestionSet, QuestionSetDetailsViewModel>()
           .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
-          .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSetManppings.FirstOrDefault().ExamId));
+          .ForMember(dest => dest.ExamId, opt => opt.MapFrom(src => src.ExamQuestionSetMappings.FirstOrDefault().ExamId));
       CreateMap<QuestionSet, QuestionSetStatusViewModel>()
           .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
           .ForMember(dest => dest.QuestionsGenerated, opt => opt.MapFrom(src => src.Questions.Count));
@@ -177,20 +171,9 @@ namespace TawtheefTest.Infrastructure
       CreateMap<ExamInstructionsViewModel, ExamInstructionsDto>();
     }
 
-    private string GetStatusDescription(Enums.QuestionSetStatus status)
+    private string GetStatusDescription(string statuss)
     {
-      return status switch
-      {
-        Enums.QuestionSetStatus.Pending => "في الانتظار",
-        Enums.QuestionSetStatus.Processing => "قيد المعالجة",
-        Enums.QuestionSetStatus.Completed => "مكتمل",
-        Enums.QuestionSetStatus.Failed => "فشل",
-        _ => "غير معروف"
-      };
-    }
-
-    private string GetQuestionSetStatusDescription(QuestionSetStatus status)
-    {
+      QuestionSetStatus status = Enum.Parse<QuestionSetStatus>(statuss, true);
       return status switch
       {
         Enums.QuestionSetStatus.Pending => "في الانتظار",

@@ -1,57 +1,50 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using TawtheefTest.Data.Structure;
-using TawtheefTest.Services;
-using TawtheefTest.ViewModels;
-using TawtheefTest.DTOs;
-using System.Threading.Tasks;
 using System.Linq;
-using TawtheefTest.Enums;
+using System.Threading.Tasks;
+using TawtheefTest.Data.Structure;
+using TawtheefTest.DTOs;
 using TawtheefTest.DTOs.ExamModels;
+using TawtheefTest.Enums;
+using TawtheefTest.Services;
+using TawtheefTest.Services.Exams;
+using TawtheefTest.ViewModels;
 
 namespace TawtheefTest.Controllers
 {
   public class ExamsController : Controller
   {
     private readonly ApplicationDbContext _context;
+    private readonly IExamService _examService;
+    private readonly IQuestionSetService _questionSetService;
+    private readonly IQuestionManagementService _questionManagementService;
+    private readonly IExamPublishingService _examPublishingService;
+    private readonly IExamValidationService _examValidationService;
+    private readonly IExamUtilityService _examUtilityService;
 
-    public ExamsController(ApplicationDbContext context)
+    public ExamsController(
+        ApplicationDbContext context,
+        IExamService examService,
+        IQuestionSetService questionSetService,
+        IQuestionManagementService questionManagementService,
+        IExamPublishingService examPublishingService,
+        IExamValidationService examValidationService,
+        IExamUtilityService examUtilityService)
     {
       _context = context;
+      _examService = examService;
+      _questionSetService = questionSetService;
+      _questionManagementService = questionManagementService;
+      _examPublishingService = examPublishingService;
+      _examValidationService = examValidationService;
+      _examUtilityService = examUtilityService;
     }
 
     // GET: Exams
     public async Task<IActionResult> Index()
     {
-      var exams = await _context.Exams
-          .Include(e => e.CandidateExams)
-          .Include(e => e.Job)
-            .ThenInclude(e => e.Candidates)
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-          .Select(e => new ExamDto
-          {
-            Id = e.Id,
-            Name = e.Name,
-            Description = e.Description,
-            JobId = e.JobId,
-            JobName = e.Job.Title,
-            Duration = e.Duration,
-            StartDate = e.StartDate ?? DateTime.Now,
-            EndDate = e.EndDate ?? DateTime.Now.AddDays(7),
-            CreatedDate = e.CreatedAt,
-            CandidatesCount = e.Job.Candidates.Count(),
-            QuestionSets = e.ExamQuestionSetManppings.Select(eqs => new QuestionSetDto
-            {
-              Id = eqs.QuestionSet.Id,
-              Name = eqs.QuestionSet.Name,
-              Status = eqs.QuestionSet.Status,
-              QuestionCount = eqs.QuestionSet.QuestionCount
-            }).ToList()
-          })
-          .ToListAsync();
-
+      var exams = await _examService.GetAllExamsAsync();
       return View(exams);
     }
 
@@ -63,127 +56,20 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var exam = await _context.Exams
-          .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-                  .ThenInclude(qs => qs.Questions)
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-                  .ThenInclude(qs => qs.Questions)
-                      .ThenInclude(q => q.QuestionOptions)
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-                  .ThenInclude(qs => qs.Questions)
-                      .ThenInclude(q => q.MatchingPairs)
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-                  .ThenInclude(qs => qs.Questions)
-                      .ThenInclude(q => q.OrderingItems)
-          .Include(e => e.CandidateExams)
-              .ThenInclude(ce => ce.Candidate)
-          .FirstOrDefaultAsync(m => m.Id == id);
-
-      if (exam == null)
+      var examDetails = await _examService.GetExamDetailsAsync(id.Value);
+      if (examDetails == null)
       {
         return NotFound();
       }
 
-      var examDetailsDto = new ExamDetailsDTO
-      {
-        Id = exam.Id,
-        Name = exam.Name,
-        Description = exam.Description,
-        JobId = exam.JobId,
-        JobName = exam.Job.Title,
-        Duration = exam.Duration,
-        CreatedDate = exam.CreatedAt,
-        ExamStartDate = exam.StartDate ?? DateTime.Now,
-        ExamEndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
-        TotalQuestionsPerCandidate = exam.TotalQuestionsPerCandidate,
-        ShowResultsImmediately = exam.ShowResultsImmediately,
-        SendExamLinkToApplicants = exam.SendExamLinkToApplicants,
-        Status = exam.Status,
-        QuestionSets = exam.ExamQuestionSetManppings
-            .OrderBy(eqs => eqs.DisplayOrder)
-            .Select(eqs => new QuestionSetDto
-            {
-              Id = eqs.QuestionSet.Id,
-              Name = eqs.QuestionSet.Name,
-              Description = eqs.QuestionSet.Description,
-              QuestionType = eqs.QuestionSet.QuestionType,
-              QuestionCount = eqs.QuestionSet.QuestionCount,
-              Status = (QuestionSetStatus)eqs.QuestionSet.Status,
-              StatusDescription = GetStatusDescription((QuestionSetStatus)eqs.QuestionSet.Status),
-              ContentSourceType = eqs.QuestionSet.ContentSourceType,
-              Difficulty = eqs.QuestionSet.Difficulty,
-              ProcessedAt = eqs.QuestionSet.UpdatedAt,
-              CreatedAt = eqs.QuestionSet.CreatedAt
-            }).ToList(),
-        Candidates = exam.CandidateExams
-            .Select(ce => new ExamCandidateDTO
-            {
-              Id = ce.Id,
-              CandidateId = ce.CandidateId,
-              Name = ce.Candidate.Name,
-              StartTime = ce.StartTime,
-              EndTime = ce.EndTime,
-              Score = ce.Score,
-              Status = Enum.GetValues<CandidateExamStatus>().FirstOrDefault(s => s.ToString() == ce.Status.ToString()),
-            }).ToList()
-      };
-
-      // طباعة قيمة Status للتحقق
-      System.Diagnostics.Debug.WriteLine($"Exam Status: {exam.Status} - DTO Status: {examDetailsDto.Status}");
-
-      // للاستكشاف: سأضيف رسالة توضيحية في TempData
-      TempData["StatusDebug"] = $"قيمة Status في الـ DTO: {examDetailsDto.Status} | قيمة Status في النموذج الأصلي: {exam.Status}";
-
-      // جلب الأسئلة للاختبار
-      var allQuestions = exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
-
-      var questions = allQuestions
-          .OrderBy(q => q.Index)
-          .Select(q => new ExamQuestionDTO
-          {
-            Id = q.Id,
-            SequenceNumber = q.Index,
-            QuestionText = q.QuestionText,
-            QuestionType = q.QuestionType,
-            Answer = q.Answer,
-            TrueFalseAnswer = q.TrueFalseAnswer,
-            InstructionText = q.InstructionText,
-            // للأسئلة من نوع الترتيب
-            CorrectlyOrdered = q.QuestionType.ToLower() == "ordering"
-                  ? q.OrderingItems.OrderBy(o => o.CorrectOrder).Select(o => o.Text).ToList()
-                  : null,
-            ShuffledOrder = q.QuestionType.ToLower() == "ordering"
-                  ? q.OrderingItems.OrderBy(o => o.DisplayOrder).Select(o => o.Text).ToList()
-                  : null,
-            // للأسئلة من نوع المطابقة
-            MatchingPairs = q.QuestionType.ToLower() == "matching"
-                  ? q.MatchingPairs.Select(m => new MatchingPairDTO
-                  {
-                    Left = m.LeftItem,
-                    Right = m.RightItem,
-                    Index = m.DisplayOrder ?? 0
-                  }).ToList()
-                  : null,
-            Options = q.QuestionOptions?.Select(o => new QuestionOptionDTO
-            {
-              Id = o.Id,
-              Text = o.Text,
-              Index = o.Index,
-              IsCorrect = o.IsCorrect
-            }).ToList()
-          })
-          .ToList();
-
+      // Get questions for the exam
+      var questions = await _questionManagementService.GetExamQuestionsAsync(id.Value);
       ViewBag.Questions = questions;
 
-      return View(examDetailsDto);
+      // Debug information for status
+      TempData["StatusDebug"] = $"قيمة Status في الـ DTO: {examDetails.Status}";
+
+      return View(examDetails);
     }
 
     // GET: Exams/Create
@@ -200,25 +86,14 @@ namespace TawtheefTest.Controllers
     {
       if (ModelState.IsValid)
       {
-        var exam = new Exam
+        var exam = await _examService.CreateExamAsync(model);
+        if (exam != null)
         {
-          Name = model.Name,
-          Description = model.Description,
-          JobId = model.JobId,
-          Duration = model.Duration,
-          StartDate = model.ExamStartDate.ToString("yyyy-MM-dd HH:mm:ss"),
-          EndDate = model.ExamEndDate.ToString("yyyy-MM-dd HH:mm:ss"),
-          Status = ExamStatus.Draft.GetHashCode(),
-          CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
-          ShowResultsImmediately = model.ShowResultsImmediately,
-          SendExamLinkToApplicants = model.SendExamLinkToApplicants
-        };
+          TempData["SuccessMessage"] = "تم إنشاء الاختبار بنجاح";
+          return RedirectToAction(nameof(Details), new { id = exam.Id });
+        }
 
-        _context.Add(exam);
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = "تم إنشاء الاختبار بنجاح";
-        return RedirectToAction(nameof(Details), new { id = exam.Id });
+        ModelState.AddModelError("", "حدث خطأ أثناء إنشاء الاختبار");
       }
 
       ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title", model.JobId);
@@ -233,7 +108,7 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var exam = await _context.Exams.FindAsync(id);
+      var exam = await _examService.GetExamByIdAsync(id.Value);
       if (exam == null)
       {
         return NotFound();
@@ -243,11 +118,10 @@ namespace TawtheefTest.Controllers
       {
         Id = exam.Id,
         Name = exam.Name,
-        Description = exam.Description,
         JobId = exam.JobId,
         Duration = exam.Duration,
-        StartDate = exam.StartDate ?? DateTime.Now,
-        EndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
+        StartDate = exam.StartDate,
+        EndDate = exam.EndDate,
         ShowResultsImmediately = exam.ShowResultsImmediately,
         SendExamLinkToApplicants = exam.SendExamLinkToApplicants
       };
@@ -270,31 +144,18 @@ namespace TawtheefTest.Controllers
       {
         try
         {
-          var exam = await _context.Exams.FindAsync(id);
-
-          if (exam == null)
+          var updatedExam = await _examService.UpdateExamAsync(id, examDto);
+          if (updatedExam != null)
           {
-            return NotFound();
+            TempData["SuccessMessage"] = "تم تحديث الاختبار بنجاح";
+            return RedirectToAction(nameof(Details), new { id });
           }
 
-          exam.Name = examDto.Name;
-          exam.Description = examDto.Description;
-          exam.JobId = examDto.JobId;
-          exam.Duration = examDto.Duration;
-          exam.StartDate = examDto.StartDate.ToString("yyyy-MM-dd HH:mm:ss");
-          exam.EndDate = examDto.EndDate.ToString("yyyy-MM-dd HH:mm:ss");
-          exam.ShowResultsImmediately = examDto.ShowResultsImmediately;
-          exam.SendExamLinkToApplicants = examDto.SendExamLinkToApplicants;
-          exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-
-          _context.Update(exam);
-          await _context.SaveChangesAsync();
-
-          TempData["SuccessMessage"] = "تم تحديث الاختبار بنجاح";
+          return NotFound();
         }
         catch (DbUpdateConcurrencyException)
         {
-          if (!ExamExists(examDto.Id))
+          if (!await _examService.ExamExistsAsync(examDto.Id))
           {
             return NotFound();
           }
@@ -303,7 +164,6 @@ namespace TawtheefTest.Controllers
             throw;
           }
         }
-        return RedirectToAction(nameof(Details), new { id });
       }
 
       ViewBag.Jobs = new SelectList(_context.Jobs, "Id", "Title", examDto.JobId);
@@ -318,29 +178,15 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var exam = await _context.Exams
-          .Include(e => e.CandidateExams)
-              .ThenInclude(ce => ce.Candidate)
-          .FirstOrDefaultAsync(m => m.Id == id);
-
-      if (exam == null)
+      var results = await _examService.GetExamResultsAsync(id.Value);
+      if (results == null || !results.Any())
       {
         return NotFound();
       }
 
-      var results = exam.CandidateExams.Select(ce => new ExamResultDto
-      {
-        Id = ce.Id,
-        ExamId = ce.ExamId,
-        ApplicantName = ce.Candidate.Name,
-        StartTime = ce.StartTime.ToString("yyyy-MM-dd HH:mm:ss"),
-        EndTime = ce.EndTime.ToString("yyyy-MM-dd HH:mm:ss"),
-        Score = ce.Score,
-        Status = ce.Status.ToString()
-      }).ToList();
-
-      ViewBag.ExamName = exam.Name;
-      ViewBag.ExamId = exam.Id;
+      var exam = await _examService.GetExamByIdAsync(id.Value);
+      ViewBag.ExamName = exam?.Name;
+      ViewBag.ExamId = exam?.Id;
 
       return View(results);
     }
@@ -359,30 +205,13 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var exams = await _context.Exams
-          .Where(e => e.JobId == id)
-          .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-                  .ThenInclude(qs => qs.Questions)
-          .Select(e => new ExamListDTO
-          {
-            Id = e.Id,
-            Name = e.Name,
-            JobId = e.JobId,
-            JobName = e.Job.Title,
-            Duration = e.Duration,
-            QuestionsCount = e.ExamQuestionSetManppings.Sum(eqs => eqs.QuestionSet.Questions.Count),
-            CreatedDate = e.CreatedAt
-          })
-          .ToListAsync();
+      var exams = await _examService.GetExamsByJobAsync(id.Value);
 
       ViewBag.JobName = job.Title;
       ViewBag.JobId = job.Id;
 
       return View(exams);
     }
-
 
     // GET: Exams/ExamQuestions/5
     public async Task<IActionResult> ExamQuestions(int? id)
@@ -392,58 +221,24 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var exam = await _context.Exams
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-                  .ThenInclude(qs => qs.Questions)
-                    .ThenInclude(q => q.QuestionOptions)
-          .FirstOrDefaultAsync(m => m.Id == id);
-
+      var exam = await _examService.GetExamByIdAsync(id.Value);
       if (exam == null)
       {
         return NotFound();
       }
 
-      // تجميع الأسئلة من جميع مجموعات الأسئلة
-      var allQuestions = exam.ExamQuestionSetManppings
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .ToList();
+      var questions = await _questionManagementService.GetExamQuestionsAsync(id.Value);
 
-      if (allQuestions.Count == 0)
+      if (!questions.Any())
       {
         TempData["WarningMessage"] = "لا توجد أسئلة في هذا الاختبار بعد. يرجى إضافة بعض الأسئلة أولاً.";
         return RedirectToAction(nameof(Details), new { id });
       }
 
-      var questions = allQuestions.Select(q => new ExamQuestionDTO
-      {
-        Id = q.Id,
-        QuestionText = q.QuestionText,
-        QuestionType = q.QuestionType,
-        Options = q.Options.Select(o => new QuestionOptionDTO
-        {
-          Id = o.Id,
-          Text = o.Text,
-          IsCorrect = o.IsCorrect
-        }).ToList()
-      }).ToList();
-
       ViewBag.ExamId = id;
       ViewBag.ExamName = exam.Name;
 
       return View(questions);
-    }
-
-    private string GetStatusDescription(QuestionSetStatus status)
-    {
-      return status switch
-      {
-        QuestionSetStatus.Pending => "في الانتظار",
-        QuestionSetStatus.Processing => "قيد المعالجة",
-        QuestionSetStatus.Completed => "مكتمل",
-        QuestionSetStatus.Failed => "فشل",
-        _ => status.ToString()
-      };
     }
 
     // POST: Exams/ToggleShowResults
@@ -452,19 +247,13 @@ namespace TawtheefTest.Controllers
     {
       try
       {
-        var exam = await _context.Exams.FindAsync(id);
-        if (exam == null)
+        var success = await _examService.ToggleShowResultsAsync(id);
+        if (!success)
         {
           return Json(new { success = false, message = "الاختبار غير موجود" });
         }
 
-        // تبديل حالة عرض النتائج
-        exam.ShowResultsImmediately = !exam.ShowResultsImmediately;
-        exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-
-        _context.Update(exam);
-        await _context.SaveChangesAsync();
-
+        var exam = await _examService.GetExamByIdAsync(id);
         return Json(new
         {
           success = true,
@@ -472,7 +261,7 @@ namespace TawtheefTest.Controllers
           message = exam.ShowResultsImmediately ? "تم تفعيل عرض النتائج للمرشحين فوراً" : "تم إلغاء عرض النتائج للمرشحين فوراً"
         });
       }
-      catch (Exception ex)
+      catch (Exception)
       {
         return Json(new { success = false, message = "حدث خطأ أثناء تحديث الإعداد" });
       }
@@ -484,19 +273,13 @@ namespace TawtheefTest.Controllers
     {
       try
       {
-        var exam = await _context.Exams.FindAsync(id);
-        if (exam == null)
+        var success = await _examService.ToggleExamLinksAsync(id);
+        if (!success)
         {
           return Json(new { success = false, message = "الاختبار غير موجود" });
         }
 
-        // تبديل حالة إرسال الروابط
-        exam.SendExamLinkToApplicants = !exam.SendExamLinkToApplicants;
-        exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-
-        _context.Update(exam);
-        await _context.SaveChangesAsync();
-
+        var exam = await _examService.GetExamByIdAsync(id);
         return Json(new
         {
           success = true,
@@ -504,42 +287,10 @@ namespace TawtheefTest.Controllers
           message = exam.SendExamLinkToApplicants ? "تم تفعيل إرسال روابط الاختبار للمرشحين" : "تم إلغاء إرسال روابط الاختبار للمرشحين"
         });
       }
-      catch (Exception ex)
+      catch (Exception)
       {
         return Json(new { success = false, message = "حدث خطأ أثناء تحديث الإعداد" });
       }
-    }
-
-    private bool ExamExists(int id)
-    {
-      return _context.Exams.Any(e => e.Id == id);
-    }
-
-    private string GetQuestionTypeName(QuestionTypeEnum type)
-    {
-      return type switch
-      {
-        QuestionTypeEnum.MCQ => "اختيار من متعدد",
-        QuestionTypeEnum.TF => "صح/خطأ",
-        QuestionTypeEnum.Open => "إجابة مفتوحة",
-        QuestionTypeEnum.FillInTheBlank => "ملء الفراغات",
-        QuestionTypeEnum.Ordering => "ترتيب",
-        QuestionTypeEnum.Matching => "مطابقة",
-        QuestionTypeEnum.MultiSelect => "اختيار متعدد",
-        QuestionTypeEnum.ShortAnswer => "إجابة قصيرة",
-        _ => type.ToString()
-      };
-    }
-
-    private string GetDifficultyName(string difficulty)
-    {
-      return difficulty switch
-      {
-        "easy" => "سهل",
-        "medium" => "متوسط",
-        "hard" => "صعب",
-        _ => difficulty
-      };
     }
 
     // GET: Exams/PublishExam/5
@@ -550,40 +301,20 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var exam = await _context.Exams
-          .Include(e => e.Job)
-          .FirstOrDefaultAsync(m => m.Id == id);
-
-      if (exam == null)
+      var publishModel = await _examPublishingService.PrepareExamForPublishingAsync(id.Value);
+      if (publishModel == null)
       {
         return NotFound();
       }
 
-      // التحقق من أن الاختبار يحتوي على أسئلة
-      var questionsCount = await _context.ExamQuestionSetManppings
-          .Where(eqs => eqs.ExamId == id)
-          .SelectMany(eqs => eqs.QuestionSet.Questions)
-          .CountAsync();
-
-      if (questionsCount == 0)
+      // Validate exam can be published
+      var canBePublished = await _examPublishingService.CanExamBePublishedAsync(id.Value);
+      if (!canBePublished)
       {
-        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
+        var validationResult = await _examValidationService.ValidateExamForPublishingAsync(id.Value);
+        TempData["ErrorMessage"] = validationResult.ErrorMessage;
         return RedirectToAction(nameof(Details), new { id });
       }
-
-      // إعداد نموذج تأكيد النشر
-      var publishModel = new PublishExamViewModel
-      {
-        ExamId = exam.Id,
-        ExamName = exam.Name,
-        JobName = exam.Job.Title,
-        StartDate = exam.StartDate ?? DateTime.Now,
-        EndDate = exam.EndDate ?? DateTime.Now.AddDays(7),
-        SendSmsNotification = true,
-        ApplicantsCount = await _context.Candidates
-            .Where(c => c.JobId == exam.JobId && c.IsActive)
-            .CountAsync()
-      };
 
       return View(publishModel);
     }
@@ -598,114 +329,14 @@ namespace TawtheefTest.Controllers
         return View("PublishExam", model);
       }
 
-      var exam = await _context.Exams
-          .Include(e => e.Job)
-          .Include(e => e.ExamQuestionSetManppings)
-              .ThenInclude(eqs => eqs.QuestionSet)
-                  .ThenInclude(qs => qs.Questions)
-          .FirstOrDefaultAsync(e => e.Id == model.ExamId);
-
-      // check if exam has questions
-      if (exam.ExamQuestionSetManppings.Count == 0)
+      var result = await _examPublishingService.PublishExamAsync(model);
+      if (result.Success)
       {
-        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
-        return RedirectToAction(nameof(Details), new { id = model.ExamId });
-      }
-
-      // check if exam has candidates
-      var candidatesCount = await _context.Candidates
-          .Where(c => c.JobId == exam.JobId && c.IsActive)
-          .CountAsync();
-
-      if (candidatesCount == 0)
-      {
-        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على متقدمين";
-        return RedirectToAction(nameof(Details), new { id = model.ExamId });
-      }
-
-      // check if exam has n no of questions to be published
-
-      if (exam.TotalQuestionsPerCandidate > exam.ExamQuestionSetManppings.SelectMany(eqs => eqs.QuestionSet.Questions).Count())
-      {
-        TempData["ErrorMessage"] = "لا يمكن نشر الاختبار لأنه لا يحتوي على أسئلة";
-        return RedirectToAction(nameof(Details), new { id = model.ExamId });
-      }
-
-
-      if (exam == null)
-      {
-        return NotFound();
-      }
-
-      // تعديل حالة الاختبار ليكون منشوراً
-      exam.Status = ExamStatus.Published.GetHashCode();
-      exam.SendExamLinkToApplicants = true;
-      exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-
-      _context.Update(exam);
-      await _context.SaveChangesAsync();
-
-      if (model.SendSmsNotification)
-      {
-        // الحصول على المتقدمين للوظيفة
-        var applicants = await _context.Candidates
-            .Where(c => c.JobId == exam.JobId && c.IsActive)
-            .ToListAsync();
-
-        // إنشاء نص الرسالة للمتقدمين
-        string messageTemplate = model.NotificationText ??
-          $"مرحباً {{اسم_المتقدم}}، لديك اختبار \"{exam.Name}\" متاح من {{تاريخ_البدء}} إلى {{تاريخ_الانتهاء}}. " +
-          $"يمكنك إجراء الاختبار في أي وقت خلال هذه الفترة. رابط الاختبار: {{رابط_الاختبار}}";
-
-        string startDateStr = exam.StartDate?.ToString("yyyy/MM/dd") ?? DateTime.Now.ToString("yyyy/MM/dd");
-        string endDateStr = exam.EndDate?.ToString("yyyy/MM/dd") ?? DateTime.Now.AddDays(7).ToString("yyyy/MM/dd");
-        string examUrl = $"{Request.Scheme}://{Request.Host}/CandidateExam/Start/{exam.Id}";
-
-        // تسجيل سجل بالإشعارات المرسلة
-        int successCount = 0;
-        int failedCount = 0;
-
-        // إرسال الرسائل النصية (تنفيذ فعلي يحتاج إلى خدمة SMS)
-        foreach (var applicant in applicants)
-        {
-          try
-          {
-            // استبدال المتغيرات في القالب
-            string personalizedMessage = messageTemplate
-                .Replace("{اسم_المتقدم}", applicant.Name)
-                .Replace("{اسم_الاختبار}", exam.Name)
-                .Replace("{تاريخ_البدء}", startDateStr)
-                .Replace("{تاريخ_الانتهاء}", endDateStr)
-                .Replace("{رابط_الاختبار}", examUrl);
-
-            // TODO: استدعاء خدمة الرسائل النصية هنا
-            // await _smsService.SendSmsAsync(applicant.Phone, personalizedMessage);
-
-            // تسجيل نجاح الإرسال
-            successCount++;
-
-            // تسجيل الإرسال في قاعدة البيانات إذا لزم الأمر
-            // _context.NotificationLogs.Add(new NotificationLog { ... });
-          }
-          catch (Exception ex)
-          {
-            // تسجيل فشل الإرسال
-            failedCount++;
-            // يمكن تسجيل الخطأ في سجل الأخطاء
-            // _logger.LogError(ex, $"Error sending SMS to candidate {applicant.Id}");
-          }
-        }
-
-        string resultMessage = $"تم نشر الاختبار بنجاح وإرسال {successCount} رسالة نصية للمتقدمين";
-        if (failedCount > 0)
-        {
-          resultMessage += $"، وفشل إرسال {failedCount} رسالة";
-        }
-        TempData["SuccessMessage"] = resultMessage;
+        TempData["SuccessMessage"] = result.Message;
       }
       else
       {
-        TempData["SuccessMessage"] = "تم نشر الاختبار بنجاح";
+        TempData["ErrorMessage"] = result.Message;
       }
 
       return RedirectToAction(nameof(Details), new { id = model.ExamId });
@@ -719,27 +350,15 @@ namespace TawtheefTest.Controllers
         return NotFound();
       }
 
-      var exam = await _context.Exams.FindAsync(id);
-      if (exam == null)
+      var success = await _examService.TogglePublishStatusAsync(id.Value);
+      if (!success)
       {
         return NotFound();
       }
 
-      // تبديل حالة النشر
-      if (exam.Status == ExamStatus.Published.GetHashCode())
-      {
-        exam.Status = ExamStatus.Draft.GetHashCode();
-        TempData["SuccessMessage"] = "تم إلغاء نشر الاختبار";
-      }
-      else
-      {
-        exam.Status = ExamStatus.Published.GetHashCode();
-        TempData["SuccessMessage"] = "تم نشر الاختبار";
-      }
-
-      exam.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-      _context.Update(exam);
-      await _context.SaveChangesAsync();
+      var exam = await _examService.GetExamByIdAsync(id.Value);
+      var message = exam.Status == nameof(ExamStatus.Published) ? "تم نشر الاختبار" : "تم إلغاء نشر الاختبار";
+      TempData["SuccessMessage"] = message;
 
       return RedirectToAction(nameof(Details), new { id });
     }
@@ -749,33 +368,11 @@ namespace TawtheefTest.Controllers
     {
       try
       {
-        // التحقق من وجود الامتحان
-        var exam = await _context.Exams
-            .Include(e => e.ExamQuestionSetManppings)
-            .FirstOrDefaultAsync(e => e.Id == examId);
-
-        if (exam == null)
+        var success = await _questionSetService.AssignQuestionSetsToExamAsync(examId, questionSetIds);
+        if (!success)
         {
           return NotFound(new { success = false, message = "الامتحان غير موجود" });
         }
-
-        // حذف مجموعات الأسئلة الحالية المرتبطة بالامتحان
-        _context.ExamQuestionSetManppings.RemoveRange(exam.ExamQuestionSetManppings);
-
-        // إضافة مجموعات الأسئلة المحددة إلى الامتحان
-        int displayOrder = 1;
-        foreach (var questionSetId in questionSetIds)
-        {
-          var examQuestionSet = new TawtheefTest.Data.Structure.ExamQuestionSet
-          {
-            ExamId = examId,
-            QuestionSetId = questionSetId,
-            DisplayOrder = displayOrder++
-          };
-          _context.ExamQuestionSetManppings.Add(examQuestionSet);
-        }
-
-        await _context.SaveChangesAsync();
 
         return Ok(new { success = true, message = "تم تعيين مجموعات الأسئلة بنجاح" });
       }
@@ -790,20 +387,14 @@ namespace TawtheefTest.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteQuestion(int id)
     {
-      // الحصول على السؤال من خلال معرّفه
-      var question = await _context.Questions
-          .Include(q => q.QuestionSet)
-              .ThenInclude(qs => qs.ExamQuestionSetManppings)
-          .FirstOrDefaultAsync(q => q.Id == id);
-
+      var question = await _questionManagementService.GetQuestionWithDetailsAsync(id);
       if (question == null)
       {
         return NotFound();
       }
 
-      // التحقق من أن السؤال ينتمي إلى مجموعة أسئلة مرتبطة بامتحان
-      var examId = question.QuestionSet.ExamQuestionSetManppings.FirstOrDefault()?.ExamId;
-
+      // Get exam ID before deleting the question
+      var examId = question.QuestionSet.ExamQuestionSetMappings.FirstOrDefault()?.ExamId;
       if (examId == null)
       {
         TempData["ErrorMessage"] = "لم يتم العثور على الامتحان المرتبط بهذا السؤال.";
@@ -812,9 +403,15 @@ namespace TawtheefTest.Controllers
 
       try
       {
-        _context.Questions.Remove(question);
-        await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = "تم حذف السؤال بنجاح.";
+        var success = await _questionManagementService.DeleteQuestionAsync(id);
+        if (success)
+        {
+          TempData["SuccessMessage"] = "تم حذف السؤال بنجاح.";
+        }
+        else
+        {
+          TempData["ErrorMessage"] = "حدث خطأ أثناء حذف السؤال.";
+        }
       }
       catch (Exception ex)
       {
@@ -825,13 +422,11 @@ namespace TawtheefTest.Controllers
     }
 
     // GET: Exams/AddQuestion/5
-    public IActionResult AddQuestion(int id)
+    public async Task<IActionResult> AddQuestion(int id)
     {
-      var questionSets = _context.QuestionSets
-          .Where(qs => qs.ExamQuestionSetManppings.Any(eqs => eqs.ExamId == id))
-          .ToList();
+      var questionSets = await _questionSetService.GetQuestionSetsByExamAsync(id);
 
-      if (questionSets.Count == 0)
+      if (!questionSets.Any())
       {
         TempData["ErrorMessage"] = "لا توجد مجموعات أسئلة متاحة لهذا الامتحان. يرجى إضافة مجموعة أسئلة أولاً.";
         return RedirectToAction(nameof(Details), new { id });
@@ -856,71 +451,14 @@ namespace TawtheefTest.Controllers
       {
         try
         {
-          // التحقق من وجود الامتحان
-          var exam = await _context.Exams
-              .Include(e => e.ExamQuestionSetManppings)
-                  .ThenInclude(eqs => eqs.QuestionSet)
-                      .ThenInclude(qs => qs.Questions)
-              .FirstOrDefaultAsync(e => e.Id == id);
-
-          if (exam == null)
+          var question = await _questionManagementService.CreateQuestionAsync(id, model);
+          if (question != null)
           {
-            return NotFound();
+            TempData["SuccessMessage"] = "تم إضافة السؤال بنجاح.";
+            return RedirectToAction(nameof(ExamQuestions), new { id });
           }
 
-          // إنشاء سؤال جديد
-          var question = new Question
-          {
-            QuestionSetId = model.QuestionSetId,
-            QuestionText = model.QuestionText,
-            QuestionType = model.QuestionType,
-            Index = 0, // سيتم تحديثه لاحقًا
-            DisplayOrder = 0, // سيتم تحديثه لاحقًا
-            CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-          };
-
-          if (model.QuestionType == "TF")
-          {
-            question.TrueFalseAnswer = model.TrueFalseAnswer.GetHashCode();
-          }
-          else if (model.QuestionType == "ShortAnswer" || model.QuestionType == "FillInTheBlank")
-          {
-            question.Answer = model.Answer;
-          }
-
-          _context.Questions.Add(question);
-          await _context.SaveChangesAsync();
-
-          // تحديث مؤشر السؤال
-          var questionCount = exam.ExamQuestionSetManppings
-              .SelectMany(eqs => eqs.QuestionSet.Questions)
-              .Count();
-
-          question.Index = questionCount;
-          question.DisplayOrder = questionCount;
-          await _context.SaveChangesAsync();
-
-          // إضافة خيارات للسؤال (إذا كان من نوع الاختيار من متعدد)
-          if (model.QuestionType == "MCQ" && model.Options != null && model.Options.Count > 0)
-          {
-            int optionIndex = 0;
-            foreach (var optionText in model.Options)
-            {
-              var option = new QuestionOption
-              {
-                QuestionId = question.Id,
-                Text = optionText,
-                IsCorrect = optionIndex == model.CorrectOptionIndex,
-                Index = optionIndex
-              };
-              _context.QuestionOptions.Add(option);
-              optionIndex++;
-            }
-            await _context.SaveChangesAsync();
-          }
-
-          TempData["SuccessMessage"] = "تم إضافة السؤال بنجاح.";
-          return RedirectToAction(nameof(ExamQuestions), new { id });
+          ModelState.AddModelError("", "حدث خطأ أثناء إضافة السؤال.");
         }
         catch (Exception ex)
         {
@@ -928,14 +466,20 @@ namespace TawtheefTest.Controllers
         }
       }
 
-      // إعادة تحميل البيانات في حالة حدوث خطأ
-      var questionSets = await _context.QuestionSets
-          .Where(qs => qs.ExamQuestionSetManppings.Any(eqs => eqs.ExamId == id))
-          .ToListAsync();
-
+      // Reload data in case of error
+      var questionSets = await _questionSetService.GetQuestionSetsByExamAsync(id);
       ViewBag.QuestionSets = new SelectList(questionSets, "Id", "Name");
       ViewBag.ExamId = id;
       return View(model);
     }
+
+    #region Private Helper Methods
+
+    private bool ExamExists(int id)
+    {
+      return _context.Exams.Any(e => e.Id == id);
+    }
+
+    #endregion
   }
 }

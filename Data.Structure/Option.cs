@@ -7,15 +7,17 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class Option
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long QuestionId { get; set; }
-
-    public long Index { get; set; }
-
-    public long IsCorrect { get; set; }
+    public int QuestionId { get; set; }
 
     public string Text { get; set; }
+
+    public int Index { get; set; }
+
+    public bool IsCorrect { get; set; }
+
+    public int Displayorder { get; set; }
 
     public virtual Question Question { get; set; }
 }

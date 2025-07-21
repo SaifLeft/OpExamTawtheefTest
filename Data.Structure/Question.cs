@@ -7,11 +7,11 @@ namespace TawtheefTest.Data.Structure;
 
 public partial class Question
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public long QuestionSetId { get; set; }
+    public int QuestionSetId { get; set; }
 
-    public long Index { get; set; }
+    public int Index { get; set; }
 
     public string QuestionType { get; set; }
 
@@ -19,15 +19,15 @@ public partial class Question
 
     public string DifficultyLevel { get; set; }
 
-    public long Points { get; set; }
+    public int Points { get; set; }
 
-    public long DisplayOrder { get; set; }
+    public int DisplayOrder { get; set; }
 
-    public long? AnswerIndex { get; set; }
+    public int? AnswerIndex { get; set; }
 
     public string Answer { get; set; }
 
-    public long? TrueFalseAnswer { get; set; }
+    public bool? TrueFalseAnswer { get; set; }
 
     public string InstructionText { get; set; }
 
@@ -35,7 +35,7 @@ public partial class Question
 
     public string ExternalId { get; set; }
 
-    public string CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public virtual ICollection<CandidateAnswer> CandidateAnswers { get; set; } = new List<CandidateAnswer>();
 
