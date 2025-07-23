@@ -69,9 +69,9 @@ namespace TawtheefTest.Services
       {
         CandidateId = candidateId,
         ExamId = examId,
-        StartTime = DateTime.UtcNow,
+        StartTime = DateTime.Now,
         Status = AssignmentStatus.InProgress.ToString(),
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = DateTime.Now,
         TotalQuestions = exam.TotalQuestionsPerCandidate,
         CompletedQuestions = 0
       };
@@ -138,10 +138,10 @@ namespace TawtheefTest.Services
       var score = totalQuestions > 0 ? (decimal)correctAnswers / totalQuestions * 100 : 0;
 
       // Update assignment
-      assignment.EndTime = DateTime.UtcNow;
+      assignment.EndTime = DateTime.Now;
       assignment.Score = Math.Round(score, 2);
       assignment.Status = AssignmentStatus.Completed.ToString();
-      assignment.UpdatedAt = DateTime.UtcNow;
+      assignment.UpdatedAt = DateTime.Now;
       assignment.CompletedQuestions = answeredQuestions;
       assignment.TotalQuestions = totalQuestions;
 

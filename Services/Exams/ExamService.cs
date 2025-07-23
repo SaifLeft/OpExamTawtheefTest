@@ -147,7 +147,7 @@ namespace TawtheefTest.Services.Exams
         StartDate = model.ExamStartDate,
         EndDate = model.ExamEndDate,
         Status = nameof(ExamStatus.Draft),
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = DateTime.Now,
         ShowResultsImmediately = model.ShowResultsImmediately,
         SendExamLinkToApplicants = model.SendExamLinkToApplicants
       };
@@ -169,7 +169,7 @@ namespace TawtheefTest.Services.Exams
       exam.EndDate = examDto.EndDate;
       exam.ShowResultsImmediately = examDto.ShowResultsImmediately;
       exam.SendExamLinkToApplicants = examDto.SendExamLinkToApplicants;
-      exam.UpdatedAt = DateTime.UtcNow;
+      exam.UpdatedAt = DateTime.Now;
 
       _context.Update(exam);
       await _context.SaveChangesAsync();
@@ -229,7 +229,7 @@ namespace TawtheefTest.Services.Exams
       if (exam == null) return false;
 
       exam.ShowResultsImmediately = !exam.ShowResultsImmediately;
-      exam.UpdatedAt = DateTime.UtcNow;
+      exam.UpdatedAt = DateTime.Now;
 
       _context.Update(exam);
       await _context.SaveChangesAsync();
@@ -242,7 +242,7 @@ namespace TawtheefTest.Services.Exams
       if (exam == null) return false;
 
       exam.SendExamLinkToApplicants = !exam.SendExamLinkToApplicants;
-      exam.UpdatedAt = DateTime.UtcNow;
+      exam.UpdatedAt = DateTime.Now;
 
       _context.Update(exam);
       await _context.SaveChangesAsync();
@@ -258,7 +258,7 @@ namespace TawtheefTest.Services.Exams
           ? nameof(ExamStatus.Draft)
           : nameof(ExamStatus.Published);
 
-      exam.UpdatedAt = DateTime.UtcNow;
+      exam.UpdatedAt = DateTime.Now;
       _context.Update(exam);
       await _context.SaveChangesAsync();
       return true;

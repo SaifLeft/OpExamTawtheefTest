@@ -70,7 +70,7 @@ namespace TawtheefTest.Services.Exams
       // Update exam status
       exam.Status = nameof(ExamStatus.Published);
       exam.SendExamLinkToApplicants = true;
-      exam.UpdatedAt = DateTime.UtcNow;
+      exam.UpdatedAt = DateTime.Now;
 
       _context.Update(exam);
       await _context.SaveChangesAsync();

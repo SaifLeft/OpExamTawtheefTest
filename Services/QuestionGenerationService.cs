@@ -49,12 +49,12 @@ namespace TawtheefTest.Services
         QuestionType = model.QuestionType.ToString(),
         Language = model.Language,
         DifficultySet = model.Difficulty,
-        QuestionCount = (int)model.QuestionCount,
-        OptionsCount = (int?)model.OptionsCount, // "optionsCount": number // available for multiple choice and true/false
-        NumberOfRows = (int?)model.NumberOfRows, // "numberOfRows": number // available for matching and ordering
+        QuestionCount = model.QuestionCount,
+        OptionsCount = model.OptionsCount, // "optionsCount": number // available for multiple choice and true/false
+        NumberOfRows = model.NumberOfRows, // "numberOfRows": number // available for matching and ordering
         NumberOfCorrectOptions = !string.IsNullOrEmpty(model.NumberOfCorrectOptions) && int.TryParse(model.NumberOfCorrectOptions, out int result) ? result : null,
         Status = nameof(QuestionSetStatus.Pending),
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = DateTime.Now,
         ContentSourceType = model.ContentSourceType,
         FileName = model.FileName,
         Content = model.TextContent ?? model.Topic,
@@ -62,7 +62,8 @@ namespace TawtheefTest.Services
         ErrorMessage = null,
         ProcessedAt = null,
         UpdatedAt = null,
-
+        RetryCount = 0,
+        
       };
 
       _context.QuestionSets.Add(questionSet);
@@ -73,9 +74,9 @@ namespace TawtheefTest.Services
       {
         var examQuestionSet = new ExamQuestionSetMapping
         {
-          ExamId = (int)model.ExamId,
+          ExamId = model.ExamId,
           QuestionSetId = questionSet.Id,
-          DisplayOrder = await GetNextDisplayOrderAsync((int)model.ExamId)
+          DisplayOrder = await GetNextDisplayOrderAsync(model.ExamId)
         };
 
         _context.ExamQuestionSetMappings.Add(examQuestionSet);
@@ -173,7 +174,7 @@ namespace TawtheefTest.Services
       // تحديث حالة مجموعة الأسئلة
       questionSet.Status = nameof(QuestionSetStatus.Pending);
       questionSet.ProcessedAt = null;
-      questionSet.UpdatedAt = DateTime.UtcNow;
+      questionSet.UpdatedAt = DateTime.Now;
       await _context.SaveChangesAsync();
 
 

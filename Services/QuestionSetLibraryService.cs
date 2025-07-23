@@ -139,7 +139,7 @@ namespace TawtheefTest.Services
         QuestionCount = (int)model.QuestionCount,
         OptionsCount = (int?)model.OptionsCount,
         Status = nameof(QuestionSetStatus.Pending),
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = DateTime.Now,
         ContentSourceType = model.ContentSourceType,
         Content = model.Topic,
       };
@@ -216,7 +216,7 @@ namespace TawtheefTest.Services
         NumberOfRows = originalQuestionSet.NumberOfRows,
         NumberOfCorrectOptions = originalQuestionSet.NumberOfCorrectOptions,
         Status = nameof(QuestionSetStatus.Completed), // تعيين الحالة كمكتملة لأن الأسئلة ستكون جاهزة
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.Now
       };
 
       _context.QuestionSets.Add(newQuestionSet);
@@ -240,7 +240,7 @@ namespace TawtheefTest.Services
           QuestionType = question.QuestionType,
           QuestionSetId = newQuestionSet.Id,
           Index = question.Index,
-          CreatedAt = DateTime.UtcNow
+          CreatedAt = DateTime.Now
         };
 
         _context.Questions.Add(newQuestion);
@@ -460,7 +460,7 @@ namespace TawtheefTest.Services
         DifficultySet = model.MergedDifficulty,
         Language = model.MergedLanguage,
         Status = nameof(QuestionSetStatus.Completed),
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = DateTime.Now,
         QuestionCount = mergedQuestions.Count,
         OptionsCount = sets.First().OptionsCount,
         NumberOfRows = sets.First().NumberOfRows,
@@ -480,7 +480,7 @@ namespace TawtheefTest.Services
           QuestionText = question.QuestionText,
           QuestionType = question.QuestionType,
           Index = ++questionIndex, // ترتيب متسلسل جديد
-          CreatedAt = DateTime.UtcNow
+          CreatedAt = DateTime.Now
         };
 
         _context.Questions.Add(newQuestion);

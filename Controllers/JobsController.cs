@@ -41,12 +41,12 @@ namespace TawtheefTest.Controllers
     {
       if (ModelState.IsValid)
       {
-        var jobDTO = new JobDTO
+
+        var result = await _jobService.CreateJobAsync(new JobDTO
         {
           Name = model.Name
-        };
+        });
 
-        var result = await _jobService.CreateJobAsync(jobDTO);
         if (result)
         {
           TempData["SuccessMessage"] = "تم إضافة الوظيفة بنجاح";

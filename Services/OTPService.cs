@@ -43,7 +43,7 @@ namespace TawtheefTest.Services
       var otp = random.Next(100000, 999999).ToString();
 
       // Set expiration time (10 minutes from now)
-      var expirationTime = DateTime.UtcNow.AddMinutes(10);
+      var expirationTime = DateTime.Now.AddMinutes(10);
 
       // Create DTO first
       var otpVerificationDto = new OTPVerificationDto
@@ -52,7 +52,7 @@ namespace TawtheefTest.Services
         OTPCode = otp,
         IsVerified = false,
         ExpiresAt = expirationTime,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.Now
       };
 
       // Map DTO to data model

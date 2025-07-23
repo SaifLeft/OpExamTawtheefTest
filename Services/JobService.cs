@@ -88,7 +88,7 @@ namespace TawtheefTest.Services
         var job = new Job
         {
           Title = jobDTO.Name,
-          CreatedAt = DateTime.UtcNow,
+          CreatedAt = DateTime.Now,
           
         };
 

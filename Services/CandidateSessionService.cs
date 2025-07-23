@@ -89,7 +89,7 @@ namespace TawtheefTest.Services
       var candidate = await _context.Candidates.FindAsync(candidateId);
       if (candidate != null)
       {
-        candidate.UpdatedAt = DateTime.UtcNow;
+        candidate.UpdatedAt = DateTime.Now;
         await _context.SaveChangesAsync();
       }
     }

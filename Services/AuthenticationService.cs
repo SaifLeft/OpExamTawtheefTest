@@ -164,7 +164,7 @@ namespace TawtheefTest.Services
         Phone = model.Phone,
         JobId = model.JobId,
         IsActive = true,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.Now
       };
 
       _context.Add(candidate);

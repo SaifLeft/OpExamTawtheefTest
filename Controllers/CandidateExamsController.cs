@@ -443,7 +443,7 @@ namespace TawtheefTest.Controllers
 
       // Update assignment to mark question as replaced
       assignment.QuestionReplaced = true;
-      assignment.UpdatedAt = DateTime.UtcNow;
+      assignment.UpdatedAt = DateTime.Now;
       _context.Update(assignment);
 
       await _context.SaveChangesAsync();

@@ -54,7 +54,7 @@ namespace TawtheefTest.Services
         // Update existing answer
         existingAnswer.AnswerText = model.AnswerText;
         existingAnswer.IsCorrect = isCorrect;
-        existingAnswer.UpdatedAt = DateTime.UtcNow;
+        existingAnswer.UpdatedAt = DateTime.Now;
         _context.Update(existingAnswer);
       }
       else
@@ -66,7 +66,7 @@ namespace TawtheefTest.Services
           QuestionId = model.QuestionId,
           AnswerText = model.AnswerText,
           IsCorrect = isCorrect,
-          CreatedAt = DateTime.UtcNow,
+          CreatedAt = DateTime.Now,
         };
 
         _context.CandidateAnswers.Add(candidateAnswer);
@@ -204,14 +204,14 @@ namespace TawtheefTest.Services
           AssignmentId = model.AssignmentId,
           QuestionId = model.QuestionId,
           IsFlagged = model.IsFlagged,
-          CreatedAt = DateTime.UtcNow
+          CreatedAt = DateTime.Now
         };
         _context.CandidateAnswers.Add(candidateAnswer);
       }
       else
       {
         candidateAnswer.IsFlagged = model.IsFlagged;
-        candidateAnswer.UpdatedAt = DateTime.UtcNow;
+        candidateAnswer.UpdatedAt = DateTime.Now;
         _context.Update(candidateAnswer);
       }
 

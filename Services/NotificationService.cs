@@ -41,7 +41,7 @@ namespace TawtheefTest.Services
         Message = message,
         Type = type,
         IsRead = false,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.Now
       };
 
       _context.Notifications.Add(notification);
@@ -54,7 +54,7 @@ namespace TawtheefTest.Services
       if (notification != null)
       {
         notification.IsRead = true;
-        notification.ReadAt = DateTime.UtcNow;
+        notification.ReadAt = DateTime.Now;
         await _context.SaveChangesAsync();
       }
     }

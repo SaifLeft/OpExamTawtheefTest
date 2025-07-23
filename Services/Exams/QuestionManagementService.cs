@@ -100,7 +100,7 @@ namespace TawtheefTest.Services.Exams
         QuestionType = model.QuestionType,
         Index = 0,
         DisplayOrder = 0,
-        CreatedAt = DateTime.UtcNow
+        CreatedAt = DateTime.Now
       };
 
       if (model.QuestionType == "TF")

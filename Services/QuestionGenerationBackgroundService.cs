@@ -70,7 +70,7 @@ namespace TawtheefTest.Services
 
       // تحديث الحالة إلى "قيد المعالجة"
       pendingQuestionSet.Status = nameof(QuestionSetStatus.Processing);
-      pendingQuestionSet.UpdatedAt = DateTime.UtcNow;
+      pendingQuestionSet.UpdatedAt = DateTime.Now;
       pendingQuestionSet.RetryCount = pendingQuestionSet.RetryCount + 1;
       await context.SaveChangesAsync();
 
@@ -136,7 +136,7 @@ namespace TawtheefTest.Services
         pendingQuestionSet.Status = nameof(QuestionSetStatus.Failed);
         pendingQuestionSet.RetryCount = pendingQuestionSet.RetryCount + 1;
         pendingQuestionSet.ErrorMessage = $"حدث خطأ غير متوقع: {ex.Message}";
-        pendingQuestionSet.UpdatedAt = DateTime.UtcNow;
+        pendingQuestionSet.UpdatedAt = DateTime.Now;
         await context.SaveChangesAsync();
       }
     }
@@ -180,7 +180,7 @@ namespace TawtheefTest.Services
       foreach (var questionSet in questionSets)
       {
         questionSet.Status = nameof(QuestionSetStatus.Pending);
-        questionSet.UpdatedAt = DateTime.UtcNow;
+        questionSet.UpdatedAt = DateTime.Now;
       }
 
       await context.SaveChangesAsync();

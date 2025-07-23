@@ -137,7 +137,7 @@ namespace TawtheefTest.Services
     private async Task UpdateQuestionSetStatusAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, QuestionSetStatus status)
     {
       questionSet.Status = nameof(status);
-      questionSet.UpdatedAt = DateTime.UtcNow;
+      questionSet.UpdatedAt = DateTime.Now;
       await _dbContext.SaveChangesAsync();
     }
 
@@ -210,7 +210,7 @@ namespace TawtheefTest.Services
     private async Task UpdateQuestionSetToCompletedAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, int questionCount)
     {
       questionSet.Status = nameof(QuestionSetStatus.Completed);
-      questionSet.ProcessedAt = DateTime.UtcNow;
+      questionSet.ProcessedAt = DateTime.Now;
       questionSet.QuestionCount = questionCount;
       await _dbContext.SaveChangesAsync();
     }
@@ -282,7 +282,7 @@ namespace TawtheefTest.Services
           QuestionText = tfQuestion.QuestionText,
           Index = tfQuestion.Index,
           QuestionType = questionSet.QuestionType,
-          CreatedAt = DateTime.UtcNow,
+          CreatedAt = DateTime.Now,
           DifficultyLevel = questionSet.DifficultySet,
           TrueFalseAnswer = tfQuestion.Answer == 1,
           ExternalId = tfQuestion.Id,
@@ -313,7 +313,7 @@ namespace TawtheefTest.Services
           Options = CreateOptions(multiSelectQuestion.Options, null, multiSelectQuestion.AnswerIndexs?.Select(x => (long)x).ToList()),
           Answer = multiSelectQuestion.AnswerIndexs != null ? string.Join(",", multiSelectQuestion.AnswerIndexs) : null,
           AnswerIndex = null,
-          CreatedAt = DateTime.UtcNow,
+          CreatedAt = DateTime.Now,
         };
 
         questions.Add(question);
@@ -346,7 +346,7 @@ namespace TawtheefTest.Services
         QuestionText = opExamQuestion.QuestionText,
         Index = opExamQuestion.Index,
         QuestionType = questionSet.QuestionType,
-        CreatedAt = DateTime.UtcNow,
+        CreatedAt = DateTime.Now,
         ExternalId = opExamQuestion.Id,
         DifficultyLevel = questionSet.DifficultySet
       };

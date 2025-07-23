@@ -186,7 +186,7 @@ namespace TawtheefTest.Infrastructure
 
     private string GetTimeSince(DateTime dateTime)
     {
-      var span = DateTime.UtcNow - dateTime;
+      var span = DateTime.Now - dateTime;
 
       if (span.TotalDays > 7)
       {
