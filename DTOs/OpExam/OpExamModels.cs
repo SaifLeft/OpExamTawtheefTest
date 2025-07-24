@@ -151,7 +151,9 @@ namespace TawtheefTest.DTOs.OpExam
 
     [JsonPropertyName("options")]
     public List<string> Options { get; set; }
+    [JsonPropertyName("answerIndexs")]
     public List<int> AnswerIndexs { get; set; }
+    [JsonPropertyName("answer")]
     public List<string> Answer { get; set; }
   }
 

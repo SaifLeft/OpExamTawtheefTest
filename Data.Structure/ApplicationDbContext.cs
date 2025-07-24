@@ -429,6 +429,7 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.QuestionType)
                 .IsRequired()
                 .HasColumnName("question_type");
+            entity.Property(e => e.ResponseString).HasColumnName("response_string");
             entity.Property(e => e.RetryCount).HasColumnName("retry_count");
             entity.Property(e => e.Status)
                 .IsRequired()

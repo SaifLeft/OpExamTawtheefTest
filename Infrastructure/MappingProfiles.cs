@@ -83,7 +83,8 @@ namespace TawtheefTest.Infrastructure
           .ForMember(dest => dest.StatusDescription, opt => opt.MapFrom(src => GetStatusDescription(src.Status)))
           .ForMember(dest => dest.Questions, opt => opt.Ignore())
           .ForMember(dest => dest.UsageCount, opt => opt.Ignore())
-          .ForMember(dest => dest.UsedInExams, opt => opt.Ignore());
+          .ForMember(dest => dest.UsedInExams, opt => opt.Ignore())
+          .ReverseMap();
 
       // تعيين Question إلى QuestionDto بدلاً من QuestionViewModel
       CreateMap<Question, QuestionDto>();

@@ -93,7 +93,18 @@ namespace TawtheefTest.Services
         await UpdateQuestionSetStatusAsync(questionSet, QuestionSetStatus.Processing);
 
         // إرسال الطلب إلى API وتلقي الاستجابة
-        string responseString = await SendQuestionGenerationRequestAsync(request);
+        //string responseString = await SendQuestionGenerationRequestAsync(request);
+        string responseString = await File.ReadAllTextAsync("Test_MultiSelect_Arabic_Medium_10_4_4_2_Topic.json");
+
+        // حفظ الرسبون في سجل الأحداث
+        _logger.LogInformation("استجابة API لتوليد الأسئلة: {Response}", responseString);
+        if (string.IsNullOrWhiteSpace(responseString))
+        {
+          throw new InvalidOperationException("استجابة API فارغة أو غير صالحة");
+        }
+
+        await SaveResponseString(questionSet, responseString);
+
 
         // معالجة الاستجابة حسب نوع السؤال
         QuestionGenerationResult questionsData = await ProcessApiResponseAsync(responseString, request.QuestionType);
@@ -123,7 +134,14 @@ namespace TawtheefTest.Services
       }
     }
 
-    private async Task<TawtheefTest.Data.Structure.QuestionSet> GetQuestionSetByIdAsync(int questionSetId)
+    private async Task SaveResponseString(QuestionSet questionSet, string responseString)
+    {
+      questionSet.ResponseString = responseString;
+      questionSet.UpdatedAt = DateTime.Now;
+      await _dbContext.SaveChangesAsync();
+    }
+
+    private async Task<QuestionSet> GetQuestionSetByIdAsync(int questionSetId)
     {
       var questionSet = await _dbContext.QuestionSets
           .FirstOrDefaultAsync(qs => qs.Id == questionSetId);
@@ -134,9 +152,9 @@ namespace TawtheefTest.Services
       return questionSet;
     }
 
-    private async Task UpdateQuestionSetStatusAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, QuestionSetStatus status)
+    private async Task UpdateQuestionSetStatusAsync(QuestionSet questionSet, QuestionSetStatus status)
     {
-      questionSet.Status = nameof(status);
+      questionSet.Status = status.ToString();
       questionSet.UpdatedAt = DateTime.Now;
       await _dbContext.SaveChangesAsync();
     }
@@ -207,7 +225,7 @@ namespace TawtheefTest.Services
     }
 
 
-    private async Task UpdateQuestionSetToCompletedAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, int questionCount)
+    private async Task UpdateQuestionSetToCompletedAsync(QuestionSet questionSet, int questionCount)
     {
       questionSet.Status = nameof(QuestionSetStatus.Completed);
       questionSet.ProcessedAt = DateTime.Now;
@@ -215,7 +233,7 @@ namespace TawtheefTest.Services
       await _dbContext.SaveChangesAsync();
     }
 
-    private async Task HandleQuestionGenerationErrorAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, Exception ex, string logMessage)
+    private async Task HandleQuestionGenerationErrorAsync(QuestionSet questionSet, Exception ex, string logMessage)
     {
       _logger.LogError(ex, logMessage);
 
@@ -244,7 +262,7 @@ namespace TawtheefTest.Services
       public int QuestionCount { get; set; }
     }
 
-    private async Task SaveGeneratedQuestionsAsync(TawtheefTest.Data.Structure.QuestionSet questionSet, QuestionGenerationResult questionsData)
+    private async Task SaveGeneratedQuestionsAsync(QuestionSet questionSet, QuestionGenerationResult questionsData)
     {
       var questions = new List<Question>();
 
@@ -268,7 +286,7 @@ namespace TawtheefTest.Services
       }
     }
 
-    private List<Question> ProcessTrueFalseQuestions(TawtheefTest.Data.Structure.QuestionSet questionSet, OpExamTFQuestionResponse? tfResponse)
+    private List<Question> ProcessTrueFalseQuestions(QuestionSet questionSet, OpExamTFQuestionResponse? tfResponse)
     {
       var questions = new List<Question>();
 
@@ -294,7 +312,7 @@ namespace TawtheefTest.Services
       return questions;
     }
 
-    private List<Question> ProcessMultiSelectQuestions(TawtheefTest.Data.Structure.QuestionSet questionSet, OpExamMultiSelectQuestionResponse? multiSelectResponse)
+    private List<Question> ProcessMultiSelectQuestions(QuestionSet questionSet, OpExamMultiSelectQuestionResponse? multiSelectResponse)
     {
       var questions = new List<Question>();
 
@@ -322,7 +340,7 @@ namespace TawtheefTest.Services
       return questions;
     }
 
-    private List<Question> ProcessStandardQuestions(TawtheefTest.Data.Structure.QuestionSet questionSet, OpExamQuestionGenerationResponse? standardResponse)
+    private List<Question> ProcessStandardQuestions(QuestionSet questionSet, OpExamQuestionGenerationResponse? standardResponse)
     {
       var questions = new List<Question>();
 
@@ -358,10 +376,7 @@ namespace TawtheefTest.Services
       {
         case "mcq":
           question.Options = CreateOptions(opExamQuestion.Options, opExamQuestion.AnswerIndex);
-          if (opExamQuestion.AnswerIndex.HasValue && opExamQuestion.Options != null)
-          {
-            question.Answer = opExamQuestion.Options[opExamQuestion.AnswerIndex.Value];
-          }
+          question.Answer = opExamQuestion.Options[opExamQuestion.AnswerIndex];
           _logger.LogInformation($"تم إنشاء سؤال MCQ: {question.QuestionText}, عدد الخيارات: {question.Options?.Count ?? 0}, الإجابة الصحيحة: {question.Answer}");
           break;
 
@@ -387,6 +402,7 @@ namespace TawtheefTest.Services
 
         case "ordering":
           question.InstructionText = opExamQuestion.InstructionText;
+          question.QuestionText = opExamQuestion.QuestionText ?? question.InstructionText;
           question.OrderingItems = PrepareOrderItems(opExamQuestion.CorrectlyOrdered, opExamQuestion.ShuffledOrder);
           _logger.LogInformation($"تم إنشاء سؤال ترتيب: {question.QuestionText}, عدد العناصر: {question.OrderingItems?.Count ?? 0}");
           break;
@@ -436,14 +452,21 @@ namespace TawtheefTest.Services
       // إنشاء عناصر الترتيب حيث كل عنصر له ترتيب عرض وترتيب صحيح
       for (int i = 0; i < shuffledOrder.Count; i++)
       {
-        // البحث عن موقع هذا العنصر في الترتيب الصحيح
-        var correctOrderIndex = correctlyOrdered.IndexOf(shuffledOrder[i]);
-
         result.Add(new OrderingItem
         {
           Text = shuffledOrder[i],
-          DisplayOrder = i + 1,  // ترتيب العرض (المخلوط)
-          CorrectOrder = correctOrderIndex + 1  // الترتيب الصحيح
+          CorrectOrder = 0,
+          DisplayOrder = i +1
+        });
+      }
+
+      for (int i = 0; i < correctlyOrdered.Count; i++)
+      {
+        result.Add(new OrderingItem
+        {
+          Text = correctlyOrdered[i],
+          CorrectOrder = i +1,
+          DisplayOrder = 0
         });
       }
 

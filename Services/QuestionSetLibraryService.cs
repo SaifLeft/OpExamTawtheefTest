@@ -134,10 +134,10 @@ namespace TawtheefTest.Services
         Name = model.Name,
         Description = model.Description,
         QuestionType = model.QuestionType,
-        Language = "Arabic", // يمكن تغييرها لتصبح قابلة للتخصيص
+        Language = nameof(QuestionSetLanguage.Arabic), // يمكن تغييرها لتصبح قابلة للتخصيص
         DifficultySet = model.Difficulty,
-        QuestionCount = (int)model.QuestionCount,
-        OptionsCount = (int?)model.OptionsCount,
+        QuestionCount = model.QuestionCount,
+        OptionsCount = model.OptionsCount,
         Status = nameof(QuestionSetStatus.Pending),
         CreatedAt = DateTime.Now,
         ContentSourceType = model.ContentSourceType,

@@ -49,6 +49,8 @@ public partial class QuestionSet
 
     public int? RetryCount { get; set; }
 
+    public string ResponseString { get; set; }
+
     public virtual ICollection<ExamQuestionSetMapping> ExamQuestionSetMappings { get; set; } = new List<ExamQuestionSetMapping>();
 
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();

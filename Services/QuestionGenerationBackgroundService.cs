@@ -1,16 +1,8 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ITAM.Service;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using TawtheefTest.Data.Structure;
 using TawtheefTest.DTOs.OpExam;
 using TawtheefTest.Enums;
-using NodaTime;
 
 namespace TawtheefTest.Services
 {
@@ -174,7 +166,7 @@ namespace TawtheefTest.Services
       var opExamsService = scope.ServiceProvider.GetRequiredService<IOpExamQuestionGenerationService>();
 
       var questionSets = await context.QuestionSets
-          .Where(qs => (qs.Status == nameof(QuestionSetStatus.Processing) || qs.Status == nameof(QuestionSetStatus.Failed)) && qs.UpdatedAt != null && qs.UpdatedAt < DateTime.UtcNow.AddMinutes(-3))
+          .Where(qs => (qs.Status == nameof(QuestionSetStatus.Processing) || qs.Status == nameof(QuestionSetStatus.Failed)) && qs.UpdatedAt != null && qs.UpdatedAt < DateTime.Now.AddMinutes(-3))
           .ToListAsync();
 
       foreach (var questionSet in questionSets)
