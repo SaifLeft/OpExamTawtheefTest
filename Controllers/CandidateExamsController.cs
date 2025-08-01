@@ -233,14 +233,14 @@ namespace TawtheefTest.Controllers
     // GET: Assignments/Take/5
     public async Task<IActionResult> Take(int id)
     {
-      var candidateId = _sessionService.GetCurrentCandidateId();
+      int? candidateId = _sessionService.GetCurrentCandidateId();
       if (candidateId == null)
       {
         TempData["ErrorMessage"] = "يرجى تسجيل الدخول أولاً.";
         return RedirectToAction("Login", "Auth");
       }
 
-      var assignment = await _assignmentService.GetAssignmentWithDetailsAsync(id, candidateId.Value);
+      Assignment assignment = await _assignmentService.GetAssignmentWithDetailsAsync(id, candidateId.Value);
       if (assignment == null)
       {
         TempData["ErrorMessage"] = "الاختبار غير موجود.";
@@ -261,15 +261,17 @@ namespace TawtheefTest.Controllers
       }
 
       // Get all questions for the exam
-      var allQuestions = await _questionService.GetQuestionsForAssignmentAsync(id);
+      List<Question> allQuestions = await _questionService.GetQuestionsForAssignmentAsync(id);
 
       // Get candidate answers
-      var candidateAnswers = assignment.CandidateAnswers.ToList();
+      List<CandidateAnswer> candidateAnswers = assignment.CandidateAnswers.ToList();
 
       // Calculate totals
-      var totalQuestions = assignment.TotalQuestions > 0 ? assignment.TotalQuestions : allQuestions.Count;
-      var completedQuestions = assignment.CompletedQuestions > 0 ? assignment.CompletedQuestions : 0;
+      int totalQuestions = assignment.TotalQuestions > 0 ? assignment.TotalQuestions : allQuestions.Count;
+      int completedQuestions = assignment.CompletedQuestions > 0 ? assignment.CompletedQuestions : 0;
 
+      TimeSpan? RemainingTime = _calculationService.CalculateRemainingTime(assignment);
+      int ProgressPercentage = _calculationService.CalculateProgressPercentage(assignment, candidateAnswers);
       // Create assignment view model
       var assignmentViewModel = new AssignmentViewModel()
       {
@@ -286,18 +288,90 @@ namespace TawtheefTest.Controllers
         Score = assignment.Score,
         Status = assignment.Status,
         FlaggedQuestions = candidateAnswers.Where(ca => ca.IsFlagged).Select(ca => ca.QuestionId).ToList(),
-        RemainingTime = _calculationService.CalculateRemainingTime(assignment)
+        CandidateAnswers = candidateAnswers,
+        RemainingTime = RemainingTime,
+        ProgressPercentage = ProgressPercentage,
+        Questions = _mapper.Map<List<CandidateQuestionViewModel>>(allQuestions),
       };
 
-      // Load questions
-      assignmentViewModel.Questions = _mapper.Map<List<CandidateQuestionViewModel>>(allQuestions);
-
-      ViewData["CandidateAnswers"] = candidateAnswers;
-      ViewData["ProgressPercentage"] = _calculationService.CalculateProgressPercentage(assignment, candidateAnswers);
 
       return View(assignmentViewModel);
     }
+    // إضافة method محسّن في CandidateExamsController
+    [HttpGet]
+    public async Task<IActionResult> GetQuestionWithMetadata(int AssignmentId, int questionIndex)
+    {
+      var candidateId = _sessionService.GetCurrentCandidateId();
+      if (candidateId == null)
+      {
+        return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
+      }
 
+      // التحقق من صحة الوصول للاختبار
+      if (!await _assignmentService.ValidateAssignmentAccessAsync(AssignmentId, candidateId.Value))
+      {
+        return NotFound(new { success = false, message = "الاختبار غير موجود." });
+      }
+
+      // الحصول على جميع الأسئلة
+      var allQuestions = await _questionService.GetQuestionsForAssignmentAsync(AssignmentId);
+
+      // التحقق من صحة فهرس السؤال
+      if (questionIndex < 0 || questionIndex >= allQuestions.Count)
+      {
+        return BadRequest(new { success = false, message = "رقم السؤال غير صالح." });
+      }
+
+      var question = allQuestions[questionIndex];
+      var candidateAnswer = await _answerService.GetCandidateAnswerAsync(AssignmentId, question.Id);
+
+      // الحصول على إحصائيات إضافية
+      var assignment = await _assignmentService.GetAssignmentWithDetailsAsync(AssignmentId, candidateId.Value);
+      var progressInfo = _calculationService.GetProgressStatistics(assignment);
+
+      var questionViewModel = _mapper.Map<CandidateQuestionViewModel>(question);
+      questionViewModel.IsAnswered = candidateAnswer != null && !string.IsNullOrEmpty(candidateAnswer.AnswerText);
+      questionViewModel.IsFlagged = candidateAnswer != null && candidateAnswer.IsFlagged;
+
+      // تحديد خصائص نوع السؤال
+      SetQuestionTypeProperties(questionViewModel, question);
+
+      return Ok(new
+      {
+        success = true,
+        question = questionViewModel,
+        currentIndex = questionIndex,
+        totalQuestions = allQuestions.Count,
+        answer = candidateAnswer?.AnswerText,
+        metadata = new
+        {
+          timeRemaining = _calculationService.CalculateRemainingTime(assignment)?.ToString(@"hh\:mm\:ss"),
+          progressPercentage = progressInfo.ProgressPercentage,
+          questionsRemaining = progressInfo.RemainingQuestions,
+          hasUnsavedChanges = false
+        }
+      });
+    }
+
+    private void SetQuestionTypeProperties(CandidateQuestionViewModel questionViewModel, Question question)
+    {
+      switch (question.QuestionType.ToUpper())
+      {
+        case nameof(QuestionTypeEnum.Matching):
+          questionViewModel.MatchingPairs = _mapper.Map<List<MatchingPairViewModel>>(question.MatchingPairs);
+          break;
+        case nameof(QuestionTypeEnum.Ordering):
+          questionViewModel.OrderingItems = _mapper.Map<List<OrderingItemViewModel>>(question.OrderingItems);
+          break;
+        case nameof(QuestionTypeEnum.TF):
+          questionViewModel.TrueFalseAnswer = question.TrueFalseAnswer;
+          break;
+        case nameof(QuestionTypeEnum.MCQ):
+        case nameof(QuestionTypeEnum.MultiSelect):
+          questionViewModel.Options = _mapper.Map<List<QuestionOptionViewModel>>(question.Options);
+          break;
+      }
+    }
     // POST: Assignments/SaveAnswer
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -482,7 +556,6 @@ namespace TawtheefTest.Controllers
       });
     }
 
-    // GET: Get question by index
     [HttpGet]
     public async Task<IActionResult> GetQuestion(int AssignmentId, int questionIndex)
     {
@@ -492,45 +565,31 @@ namespace TawtheefTest.Controllers
         return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
       }
 
-      // Validate assignment access
       if (!await _assignmentService.ValidateAssignmentAccessAsync(AssignmentId, candidateId.Value))
       {
         return NotFound(new { success = false, message = "الاختبار غير موجود." });
       }
 
-      // Get all questions for assignment
       var allQuestions = await _questionService.GetQuestionsForAssignmentAsync(AssignmentId);
 
-      // Validate question index
       if (questionIndex < 0 || questionIndex >= allQuestions.Count)
       {
         return BadRequest(new { success = false, message = "رقم السؤال غير صالح." });
       }
 
       var question = allQuestions[questionIndex];
-
-      // Get candidate answer
       var candidateAnswer = await _answerService.GetCandidateAnswerAsync(AssignmentId, question.Id);
+
+      // الحصول على إحصائيات التقدم
+      var assignment = await _assignmentService.GetAssignmentWithDetailsAsync(AssignmentId, candidateId.Value);
+      var progressStatistics = _calculationService.GetProgressStatistics(assignment);
 
       var questionViewModel = _mapper.Map<CandidateQuestionViewModel>(question);
       questionViewModel.IsAnswered = candidateAnswer != null && !string.IsNullOrEmpty(candidateAnswer.AnswerText);
       questionViewModel.IsFlagged = candidateAnswer != null && candidateAnswer.IsFlagged;
 
-      // Set question type specific properties
-      if (question.QuestionType == nameof(QuestionTypeEnum.Matching))
-      {
-        questionViewModel.MatchingPairs = _mapper.Map<List<MatchingPairViewModel>>(question.MatchingPairs);
-      }
-
-      if (question.QuestionType == nameof(QuestionTypeEnum.Ordering))
-      {
-        questionViewModel.OrderingItems = _mapper.Map<List<OrderingItemViewModel>>(question.OrderingItems);
-      }
-
-      if (question.QuestionType == nameof(QuestionTypeEnum.TF))
-      {
-        questionViewModel.TrueFalseAnswer = candidateAnswer != null && candidateAnswer.TrueFalseAnswer.HasValue;
-      }
+      // تحديد خصائص نوع السؤال
+      SetQuestionTypeProperties(questionViewModel, question);
 
       return Ok(new
       {
@@ -538,7 +597,41 @@ namespace TawtheefTest.Controllers
         question = questionViewModel,
         currentIndex = questionIndex,
         totalQuestions = allQuestions.Count,
-        answer = candidateAnswer?.AnswerText
+        answer = candidateAnswer?.AnswerText,
+        progress = new
+        {
+          statistics = progressStatistics,
+          timeRemaining = progressStatistics.RemainingTime?.ToString(@"hh\:mm\:ss"),
+          progressPercentage = progressStatistics.ProgressPercentage,
+          questionsRemaining = progressStatistics.RemainingQuestions,
+          warnings = progressStatistics.Warnings,
+          needsAttention = progressStatistics.NeedsAttention
+        }
+      });
+    }
+
+    // طريقة جديدة للحصول على إحصائيات التقدم فقط
+    [HttpGet]
+    public async Task<IActionResult> GetProgressStatistics(int AssignmentId)
+    {
+      var candidateId = _sessionService.GetCurrentCandidateId();
+      if (candidateId == null)
+      {
+        return Unauthorized(new { success = false, message = "يرجى تسجيل الدخول أولاً." });
+      }
+
+      var assignment = await _assignmentService.GetAssignmentWithDetailsAsync(AssignmentId, candidateId.Value);
+      if (assignment == null)
+      {
+        return NotFound(new { success = false, message = "الاختبار غير موجود." });
+      }
+
+      var statistics = _calculationService.GetProgressStatistics(assignment);
+
+      return Ok(new
+      {
+        success = true,
+        statistics = statistics
       });
     }
 

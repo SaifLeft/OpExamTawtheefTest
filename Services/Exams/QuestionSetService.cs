@@ -36,11 +36,13 @@ namespace TawtheefTest.Services.Exams
   {
     private readonly ApplicationDbContext _context;
     private readonly IQuestionSetLibraryService _libraryService;
+    private readonly IFileMangmanent _file;
 
-    public QuestionSetService(ApplicationDbContext context, IQuestionSetLibraryService libraryService)
+    public QuestionSetService(ApplicationDbContext context, IQuestionSetLibraryService libraryService, IFileMangmanent file)
     {
       _context = context;
       _libraryService = libraryService;
+      _file = file;
     }
     public async Task<(bool Success, string FileName, string ErrorMessage)> SaveFileAsync(IFormFile file, string contentSourceType)
     {
@@ -49,9 +51,23 @@ namespace TawtheefTest.Services.Exams
         if (file?.Length > 0)
         {
           ContentSourceType contentSourceTypeEnum = (ContentSourceType)Enum.Parse(typeof(ContentSourceType), contentSourceType, true);
-          // Note: This would need to be injected properly
-          // For now, returning a placeholder
-          return (true, $"file_{DateTime.Now:yyyyMMddHHmmss}_{file.FileName}", string.Empty);
+          var result = _file.SaveFile(file, contentSourceTypeEnum);
+
+          if (result != null)
+          {
+            if (result.IsSuccess)
+            {
+              return (true, result.FileName, string.Empty);
+            }
+            else
+            {
+              return (false, string.Empty, result.Message);
+            }
+          }
+          else
+          {
+            return (false, string.Empty, "فشل في حفظ الملف");
+          }
         }
         return (false, string.Empty, "ملف غير صالح");
       }

@@ -93,8 +93,8 @@ namespace TawtheefTest.Services
         await UpdateQuestionSetStatusAsync(questionSet, QuestionSetStatus.Processing);
 
         // إرسال الطلب إلى API وتلقي الاستجابة
-        //string responseString = await SendQuestionGenerationRequestAsync(request);
-        string responseString = await File.ReadAllTextAsync("Test_MultiSelect_Arabic_Medium_10_4_4_2_Topic.json");
+        string responseString = await SendQuestionGenerationRequestAsync(request);
+        //string responseString = await File.ReadAllTextAsync("Test_MultiSelect_Arabic_Medium_10_4_4_2_Topic.json");
 
         // حفظ الرسبون في سجل الأحداث
         _logger.LogInformation("استجابة API لتوليد الأسئلة: {Response}", responseString);
@@ -300,10 +300,10 @@ namespace TawtheefTest.Services
           QuestionText = tfQuestion.QuestionText,
           Index = tfQuestion.Index,
           QuestionType = questionSet.QuestionType,
-          CreatedAt = DateTime.Now,
           DifficultyLevel = questionSet.DifficultySet,
           TrueFalseAnswer = tfQuestion.Answer == 1,
           ExternalId = tfQuestion.Id,
+          CreatedAt = DateTime.Now,
         };
 
         questions.Add(question);
@@ -328,9 +328,9 @@ namespace TawtheefTest.Services
           Index = multiSelectQuestion.Index,
           QuestionType = questionSet.QuestionType,
           DifficultyLevel = questionSet.DifficultySet,
-          Options = CreateOptions(multiSelectQuestion.Options, null, multiSelectQuestion.AnswerIndexs?.Select(x => (long)x).ToList()),
-          Answer = multiSelectQuestion.AnswerIndexs != null ? string.Join(",", multiSelectQuestion.AnswerIndexs) : null,
-          AnswerIndex = null,
+          Options = CreateMultiSelectOptions(multiSelectQuestion.Options, multiSelectQuestion.Answer, multiSelectQuestion.AnswerIndexs),
+          Answer = string.Join(",,,", multiSelectQuestion.Answer),
+          AnswerIndexs = string.Join(",,,", multiSelectQuestion.AnswerIndexs),
           CreatedAt = DateTime.Now,
         };
 
@@ -386,7 +386,8 @@ namespace TawtheefTest.Services
 
         case "open":
         case "shortanswer":
-          question.Answer = opExamQuestion.SampleAnswer ?? opExamQuestion.Answer;
+          question.Answer = opExamQuestion.Answer;
+          question.SampleAnswer = opExamQuestion.SampleAnswer;
           _logger.LogInformation($"تم إنشاء سؤال إجابة قصيرة: {question.QuestionText}, الإجابة النموذجية: {question.Answer}");
           break;
 
@@ -413,8 +414,7 @@ namespace TawtheefTest.Services
           break;
 
         case "multiselect":
-          question.Options = CreateOptions(opExamQuestion.Options, opExamQuestion.AnswerIndex);
-          question.Answer = opExamQuestion.Answer;
+          question.Options = CreateMultiSelectOptions(opExamQuestion.Options, opExamQuestion.Answer, opExamQuestion.AnswerIndex);
           break;
       }
     }
@@ -456,7 +456,7 @@ namespace TawtheefTest.Services
         {
           Text = shuffledOrder[i],
           CorrectOrder = 0,
-          DisplayOrder = i +1
+          DisplayOrder = i + 1
         });
       }
 
@@ -465,7 +465,7 @@ namespace TawtheefTest.Services
         result.Add(new OrderingItem
         {
           Text = correctlyOrdered[i],
-          CorrectOrder = i +1,
+          CorrectOrder = i + 1,
           DisplayOrder = 0
         });
       }
@@ -492,6 +492,26 @@ namespace TawtheefTest.Services
         {
           isCorrect = answerIndexs.Contains(i);
         }
+
+        result.Add(new Option
+        {
+          Text = options[i],
+          Index = i + 1,
+          IsCorrect = isCorrect,
+        });
+      }
+
+      return result;
+    }
+    private List<Option> CreateMultiSelectOptions(List<string> options, List<string> Answers, List<int> answerIndexs)
+    {
+      if (options == null) return new List<Option>();
+
+      var result = new List<Option>();
+      for (int i = 0; i < options.Count; i++)
+      {
+        bool isCorrect = answerIndexs.Contains(i);
+
 
         result.Add(new Option
         {

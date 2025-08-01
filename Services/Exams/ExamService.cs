@@ -35,32 +35,33 @@ namespace TawtheefTest.Services.Exams
 
     public async Task<List<ExamDto>> GetAllExamsAsync()
     {
-      return await _context.Exams
+      var rr =  await _context.Exams
           .Include(e => e.Assignments)
           .Include(e => e.Job)
               .ThenInclude(e => e.Candidates)
           .Include(e => e.ExamQuestionSetMappings)
               .ThenInclude(eqs => eqs.QuestionSet)
-          .Select(e => new ExamDto
-          {
-            Id = e.Id,
-            Name = e.Name,
-            JobId = e.JobId,
-            JobName = e.Job.Title,
-            Duration = e.Duration,
-            StartDate = e.StartDate,
-            EndDate = e.EndDate,
-            CreatedDate = e.CreatedAt,
-            CandidatesCount = e.Job.Candidates.Count(),
-            QuestionSets = e.ExamQuestionSetMappings.Select(eqs => new QuestionSetDto
-            {
-              Id = eqs.QuestionSet.Id,
-              Name = eqs.QuestionSet.Name,
-              Status = (QuestionSetStatus)Enum.Parse(typeof(QuestionSetStatus), eqs.QuestionSet.Status),
-              QuestionCount = eqs.QuestionSet.QuestionCount
-            }).ToList()
-          })
           .ToListAsync();
+
+      return rr.Select(e => new ExamDto
+      {
+        Id = e.Id,
+        Name = e.Name,
+        JobId = e.JobId,
+        JobName = e.Job.Title,
+        Duration = e.Duration,
+        StartDate = e.StartDate,
+        EndDate = e.EndDate,
+        CreatedDate = e.CreatedAt,
+        CandidatesCount = e.Job.Candidates.Count(),
+        QuestionSets = e.ExamQuestionSetMappings.Select(eqs => new QuestionSetDto
+        {
+          Id = eqs.QuestionSet.Id,
+          Name = eqs.QuestionSet.Name,
+          Status = (QuestionSetStatus)Enum.Parse(typeof(QuestionSetStatus), eqs.QuestionSet.Status),
+          QuestionCount = eqs.QuestionSet.QuestionCount
+        }).ToList()
+      }).ToList();
     }
 
     public async Task<ExamDetailsDTO> GetExamDetailsAsync(int id)

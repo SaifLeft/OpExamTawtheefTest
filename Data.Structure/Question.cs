@@ -23,8 +23,6 @@ public partial class Question
 
     public int DisplayOrder { get; set; }
 
-    public int? AnswerIndex { get; set; }
-
     public string Answer { get; set; }
 
     public bool? TrueFalseAnswer { get; set; }
@@ -36,6 +34,8 @@ public partial class Question
     public string ExternalId { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public string AnswerIndexs { get; set; }
 
     public virtual ICollection<CandidateAnswer> CandidateAnswers { get; set; } = new List<CandidateAnswer>();
 

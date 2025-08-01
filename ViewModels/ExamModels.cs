@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using TawtheefTest.Data.Structure;
+using TawtheefTest.Enums;
 
 namespace TawtheefTest.ViewModels
 {
@@ -38,17 +40,25 @@ namespace TawtheefTest.ViewModels
     public int TotalQuestions { get; set; }
     public int CompletedQuestions { get; set; }
     public TimeSpan? RemainingTime { get; set; }
-    public List<CandidateAnswerViewModel> Answers { get; set; }
+    public List<CandidateAnswerViewModel> Answers { get; set; } = new List<CandidateAnswerViewModel>();
     public List<CandidateQuestionViewModel> Questions { get; set; } = new List<CandidateQuestionViewModel>();
     public List<int> FlaggedQuestions { get; set; } = new List<int>();
     public int CurrentQuestionIndex { get; set; } = 0;
+    public int ProgressPercentage { get; set; }
+    public List<CandidateAnswer> CandidateAnswers { get; set; } = new List<CandidateAnswer>();
 
-    // الخاصية المضافة لإصلاح الأخطاء
-    public bool IsCompleted => Status == "Completed";
-
-    // خصائص إضافية لإصلاح أخطاء Index.cshtml
+    // خصائص محسّنة
+    public bool IsCompleted => Status == AssignmentStatus.Completed.ToString();
     public string ExamName => ExamTitle;
     public string JobName => JobTitle;
+    public int RemainingQuestions => TotalQuestions - CompletedQuestions;
+    public bool HasTimeRemaining => RemainingTime.HasValue && RemainingTime.Value.TotalSeconds > 0;
+    public string FormattedRemainingTime => RemainingTime?.ToString(@"hh\:mm\:ss") ?? "00:00:00";
+
+    // خصائص للإحصائيات
+    public double CompletionRate => TotalQuestions > 0 ? (double)CompletedQuestions / TotalQuestions * 100 : 0;
+    public bool IsNearlyComplete => CompletionRate >= 80;
+    public bool HasFlaggedQuestions => FlaggedQuestions?.Any() == true;
   }
 
   public class AssignmentResultViewModel

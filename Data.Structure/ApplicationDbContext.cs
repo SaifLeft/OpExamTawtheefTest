@@ -361,7 +361,7 @@ public partial class ApplicationDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Answer).HasColumnName("answer");
-            entity.Property(e => e.AnswerIndex).HasColumnName("answer_index");
+            entity.Property(e => e.AnswerIndexs).HasColumnName("answer_indexs");
             entity.Property(e => e.CreatedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
